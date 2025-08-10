@@ -1,0 +1,57 @@
+Create a website for my coin Krypt Terminal - An AI agent specialised in web3 development that is building a blockchain on its own.
+
+Website Key features to have:
+-CryptoAI Useable interface for site users to interact with. (ClaudeAI to code comprehensive, advanced, responsive, helpful CryptoAI & user interface) This will be known as Krypt Terminal. "Krypt" being that AI
+-Needs multiple parts of user interactivity/goals and incentives.
+-A Roadmap would be wonderful. (Any ideas you have for this would be great)
+-Usage of the CryptoAI would earn you like credits to a "Raffle" sort of thing where at certain milestones, a random user with a randomly selected ticket would win and receive prize. (Would be Giving away tokens of the coin associated to it.)
+-I need reasoning for people to come and keep using the terminal, and a good set of upgrades planned in the future.
+-Will need documentation page supporting the Krpyt Terminal code. (MUST NOT HAVE ANYTHING LINKED TO CLAUDE CODING IT except possible API requests)
+-Can't stress it enough will need features to bring traders back to use it after investigating it and to make people trust it and the developer.
+-Need a unique eyecatching design. Terminal themed kind of.
+-Will need an "Early Access Users" count somewhere that is accurate and live
+-Needs to be able to hand heavy traffic of lots of people coming to the website and using all the features.
+-Cannot crash on heavy traffic. (Have been told to look at using cloudflare, no clue how to use)
+-Advertises my token and its statistics (CA will be developed when website is ready)
+-Will need a live statistics of "Lines of Code, GitHub commits, Tests" from the terminal
+-Airdrop feature for set amount of "users"
+
+Krypt Chat Key features/what is it:
+-to have an agent "Krypt" which people send requests to and get answered accurately about the project. This can be advanced broad requests.
+-To focus on memecoin trading support, memecoin statistic, memecoin trader statistics.
+-A big key feature I want it to have is wallet research. What that means is finding out about wallets and what the parent wallet may be for it. If its a side wallet/burner wallet.
+-Has the ability to suggest what some of the best wallets are to track, NFA
+-Krypt Terminal will have 2 sections. "Chat" section on the right where users can ask the questions we spoke about. "Terminal" Section where it is actively coding a blockchain and pushing the codes to a live GitHub repo.
+
+Krypt Terminal Key Features/what is it:
+-Users will not be able to interact with this.
+-This will be a "Krypt" the agent coding his own blockchain. (Which will be it coding the blockchain via sending requests to ClaudeAI API - NOT TO BE SEEN BY USERS)
+-Will display logs of what it is coding/working on, mainly just output like what it coded, when it does commits, when it is moving onto a new phase.
+-Will continuously be working on it, even when people leave the site and come back, it will be further along.
+-Will have a development logs tab that logs all of the actions it is doing, so when people do leave and come back to the site they can look upon what it has done.
+-Anything that you can suggest for this part would be muchly appreciated.
+-To be able to function continuously even with a very high traffic of users coming to the site.
+
+Blockchain Requirements (This is what Krypt is meant to be working on in the terminal):
+-A highly sophisticated blockchain that will deployed upon completion.
+-Will have 640 set components which is to be split into 4 phases.
+-640 Components is not to be public to people
+-4 phases and live % tracking is to be public to people.
+-It is to be timed to work on these 640 components across 2 weeks. (This is not to be publicly be displayed to people anywhere)
+-Codes a real blockchain using API requests with ClaudeAI
+
+Key things I need you to remember/keep in knowledge
+-This site is going to be visited by 100's-10000's of unique users, It needs to be able to handle the traffic.
+-Each user is to have their own unique "chat" interface. So other peoples messages are not showing in it.
+-The Terminal interface where "Krpyt" is coding the blockchain is to be the same for everyone and continuously working. (No User input)
+-Data in live statistics needs to be pulled from live data and have a storage somewhere.
+-Remembers user ID's so that wallets that are linked to them for interactive features regarding the Token are unique and only belonging to them.
+-I will be having Airdrops in the site that distriubtes tokens to "All current wallet holders" this needs to only be triggered once upon hitting goal and to handle possibly sending tokens out to 1000's of different wallets at a time.
+
+
+
+
+
+
+
+

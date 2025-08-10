@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-terminal-bg text-terminal-green font-mono;
+    background-image: 
+      repeating-linear-gradient(
+        0deg,
+        rgba(0, 255, 0, 0.03),
+        rgba(0, 255, 0, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+  }
+
+  ::selection {
+    @apply bg-terminal-green text-terminal-bg;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-terminal-gray;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-terminal-green hover:bg-terminal-dark-green;
+  }
+}
+
+@layer components {
+  .terminal-window {
+    @apply bg-black/90 border border-terminal-green rounded-lg p-4;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+  }
+
+  .terminal-prompt {
+    @apply flex items-center gap-2;
+  }
+
+  .terminal-prompt::before {
+    content: '>';
+    @apply text-terminal-green animate-blink;
+  }
+
+  .terminal-text {
+    @apply text-terminal-green;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+  }
+
+  .terminal-button {
+    @apply px-4 py-2 border border-terminal-green bg-transparent text-terminal-green;
+    @apply hover:bg-terminal-green hover:text-terminal-bg transition-all duration-200;
+    @apply active:scale-95;
+  }
+
+  .terminal-input {
+    @apply bg-transparent border border-terminal-green text-terminal-green px-3 py-2;
+    @apply focus:outline-none focus:border-terminal-dark-green focus:shadow-lg;
+    @apply placeholder-terminal-dark-green/50;
+  }
+
+  .glow-text {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes scanline {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  .scanline {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scanline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to bottom, transparent, rgba(0, 255, 0, 0.2), transparent);
+    animation: scanline 8s linear infinite;
+  }
+}

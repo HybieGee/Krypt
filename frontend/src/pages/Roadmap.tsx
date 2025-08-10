@@ -1,0 +1,153 @@
+import { useState } from 'react'
+
+export default function Roadmap() {
+  const [activePhase, setActivePhase] = useState(0)
+
+  const phases = [
+    {
+      title: 'Phase 1: Foundation',
+      status: 'in-progress',
+      items: [
+        { text: 'Launch Krypt Terminal platform', completed: true },
+        { text: 'Deploy initial AI capabilities', completed: true },
+        { text: 'Begin blockchain development', completed: true },
+        { text: 'Community building', completed: false },
+        { text: 'Token launch', completed: false },
+      ],
+    },
+    {
+      title: 'Phase 2: Expansion',
+      status: 'upcoming',
+      items: [
+        { text: 'Advanced wallet analysis features', completed: false },
+        { text: 'Trading bot integration', completed: false },
+        { text: 'Mobile app development', completed: false },
+        { text: 'Partnership announcements', completed: false },
+        { text: 'First airdrop distribution', completed: false },
+      ],
+    },
+    {
+      title: 'Phase 3: Innovation',
+      status: 'upcoming',
+      items: [
+        { text: 'Blockchain testnet launch', completed: false },
+        { text: 'Smart contract deployment', completed: false },
+        { text: 'DEX integration', completed: false },
+        { text: 'Cross-chain capabilities', completed: false },
+        { text: 'Governance implementation', completed: false },
+      ],
+    },
+    {
+      title: 'Phase 4: Dominance',
+      status: 'upcoming',
+      items: [
+        { text: 'Mainnet launch', completed: false },
+        { text: 'Full ecosystem deployment', completed: false },
+        { text: 'Major exchange listings', completed: false },
+        { text: 'Global adoption campaign', completed: false },
+        { text: 'Decentralized autonomous operation', completed: false },
+      ],
+    },
+  ]
+
+  return (
+    <div className="terminal-window max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold text-terminal-green mb-6">
+        Development Roadmap
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {phases.map((phase, index) => (
+          <button
+            key={index}
+            onClick={() => setActivePhase(index)}
+            className={`p-4 border rounded-lg transition-all ${
+              activePhase === index
+                ? 'border-terminal-green bg-terminal-green/10'
+                : 'border-terminal-green/30 hover:border-terminal-green/60'
+            }`}
+          >
+            <div className={`text-lg font-bold mb-2 ${
+              phase.status === 'in-progress' 
+                ? 'text-terminal-green animate-pulse' 
+                : 'text-terminal-green/60'
+            }`}>
+              {phase.title}
+            </div>
+            <div className={`text-xs ${
+              phase.status === 'in-progress' 
+                ? 'text-yellow-400' 
+                : 'text-terminal-green/40'
+            }`}>
+              {phase.status === 'in-progress' ? 'IN PROGRESS' : 'UPCOMING'}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="terminal-window">
+        <h2 className="text-xl font-bold text-terminal-green mb-4">
+          {phases[activePhase].title} Details
+        </h2>
+        
+        <div className="space-y-3">
+          {phases[activePhase].items.map((item, index) => (
+            <div key={index} className="flex items-center space-x-3">
+              <div className={`w-4 h-4 border-2 rounded ${
+                item.completed 
+                  ? 'border-terminal-green bg-terminal-green' 
+                  : 'border-terminal-green/50'
+              }`}>
+                {item.completed && (
+                  <svg className="w-full h-full text-terminal-bg" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <span className={`${
+                item.completed 
+                  ? 'text-terminal-green' 
+                  : 'text-terminal-green/60'
+              }`}>
+                {item.text}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-terminal-green/30">
+          <div className="text-sm text-terminal-green/70">
+            <p>Estimated Timeline: Q1 2024 - Q4 2024</p>
+            <p className="mt-2">
+              Our roadmap is dynamic and will evolve based on community feedback 
+              and technological advancements.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="terminal-window">
+          <h3 className="text-lg text-terminal-green mb-2">Current Focus</h3>
+          <p className="text-sm text-terminal-green/70">
+            Building core infrastructure and establishing community presence
+          </p>
+        </div>
+        
+        <div className="terminal-window">
+          <h3 className="text-lg text-terminal-green mb-2">Next Milestone</h3>
+          <p className="text-sm text-terminal-green/70">
+            Token launch and first airdrop distribution to early supporters
+          </p>
+        </div>
+        
+        <div className="terminal-window">
+          <h3 className="text-lg text-terminal-green mb-2">Long-term Vision</h3>
+          <p className="text-sm text-terminal-green/70">
+            Fully autonomous blockchain ecosystem powered by AI
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
