@@ -15,7 +15,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold glow-text">KRYPT TERMINAL</h1>
+            <h1 className="text-2xl font-bold text-terminal-green">KRYPT TERMINAL</h1>
             <span className="text-terminal-green/60 text-sm">
               v1.0.0
             </span>
@@ -42,19 +42,6 @@ export default function Header() {
                 {time.toLocaleTimeString()}
               </span>
             </div>
-
-            {user ? (
-              <button className="terminal-button text-sm">
-                {user.walletAddress 
-                  ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`
-                  : 'Connect Wallet'
-                }
-              </button>
-            ) : (
-              <button className="terminal-button text-sm">
-                Connect
-              </button>
-            )}
           </div>
         </div>
       </div>

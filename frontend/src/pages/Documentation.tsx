@@ -11,7 +11,7 @@ export default function Documentation() {
           <p className="text-terminal-green/80 leading-relaxed">
             Krypt Terminal is an advanced AI-powered platform for Web3 development. 
             Our autonomous AI agent is actively building a next-generation blockchain 
-            infrastructure with 640 components across 4 critical phases.
+            infrastructure across 4 critical phases.
           </p>
         </section>
 
@@ -31,7 +31,7 @@ export default function Documentation() {
             <div>
               <h3 className="text-lg text-terminal-green/90 mb-2">Blockchain Development</h3>
               <ul className="list-disc list-inside space-y-1 text-terminal-green/70 ml-4">
-                <li>640 components being developed autonomously</li>
+                <li>Blockchain components being developed autonomously</li>
                 <li>4 development phases: Infrastructure, Consensus, Smart Contracts, Network</li>
                 <li>Real-time progress tracking</li>
                 <li>Automatic deployment upon completion</li>

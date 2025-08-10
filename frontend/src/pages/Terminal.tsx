@@ -90,7 +90,7 @@ export default function Terminal() {
           </h3>
           <ProgressBar progress={blockchainProgress} />
           
-          <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
+          <div className="grid grid-cols-3 gap-4 mt-4 text-xs">
             <div>
               <span className="text-terminal-green/60">Current Phase:</span>
               <span className="ml-2 text-terminal-green">
@@ -107,12 +107,6 @@ export default function Terminal() {
               <span className="text-terminal-green/60">Phase Progress:</span>
               <span className="ml-2 text-terminal-green">
                 {blockchainProgress.phaseProgress.toFixed(1)}%
-              </span>
-            </div>
-            <div>
-              <span className="text-terminal-green/60">Est. Completion:</span>
-              <span className="ml-2 text-terminal-green">
-                {new Date(blockchainProgress.estimatedCompletion).toLocaleDateString()}
               </span>
             </div>
           </div>

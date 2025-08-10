@@ -46,7 +46,7 @@ app.use('/api', limiter)
 
 app.use('/api', apiRoutes)
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
     logger.info(`WebSocket disconnected: ${socket.id}`)
   })
 
-  socket.on('chat:message', async (data) => {
+  socket.on('chat:message', async (_data) => {
     socket.emit('chat:response', { 
       id: Date.now().toString(),
       message: 'Response from Krypt',

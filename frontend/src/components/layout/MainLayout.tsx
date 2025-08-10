@@ -9,41 +9,57 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-terminal-bg">
-      <div className="fixed inset-0 opacity-10 pointer-events-none">
-        <div className="scanline h-full w-full" />
-      </div>
-      
       <Header />
       
-      <nav className="border-b border-terminal-green/30 bg-black/50 backdrop-blur-sm">
+      <nav className="bg-terminal-gray border-b border-terminal-green sticky top-[88px] z-40 -mt-px">
         <div className="container mx-auto px-4">
-          <div className="flex space-x-8">
+          <div className="flex space-x-0">
             <Link
               to="/"
-              className={`py-3 px-4 border-b-2 transition-colors ${
-                location.pathname === '/'
-                  ? 'border-terminal-green text-terminal-green'
-                  : 'border-transparent text-terminal-green/60 hover:text-terminal-green'
+              className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
+                location.pathname === '/' 
+                  ? 'text-terminal-bg bg-terminal-green' 
+                  : 'text-terminal-green hover:bg-terminal-green/10 hover:text-terminal-green'
               }`}
             >
               Terminal
             </Link>
             <Link
+              to="/wallet"
+              className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
+                location.pathname === '/wallet' 
+                  ? 'text-terminal-bg bg-terminal-green' 
+                  : 'text-terminal-green hover:bg-terminal-green/10 hover:text-terminal-green'
+              }`}
+            >
+              Wallet
+            </Link>
+            <Link
+              to="/tokens"
+              className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
+                location.pathname === '/tokens' 
+                  ? 'text-terminal-bg bg-terminal-green' 
+                  : 'text-terminal-green hover:bg-terminal-green/10 hover:text-terminal-green'
+              }`}
+            >
+              Tokens
+            </Link>
+            <Link
               to="/roadmap"
-              className={`py-3 px-4 border-b-2 transition-colors ${
-                location.pathname === '/roadmap'
-                  ? 'border-terminal-green text-terminal-green'
-                  : 'border-transparent text-terminal-green/60 hover:text-terminal-green'
+              className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
+                location.pathname === '/roadmap' 
+                  ? 'text-terminal-bg bg-terminal-green' 
+                  : 'text-terminal-green hover:bg-terminal-green/10 hover:text-terminal-green'
               }`}
             >
               Roadmap
             </Link>
             <Link
               to="/docs"
-              className={`py-3 px-4 border-b-2 transition-colors ${
-                location.pathname === '/docs'
-                  ? 'border-terminal-green text-terminal-green'
-                  : 'border-transparent text-terminal-green/60 hover:text-terminal-green'
+              className={`px-6 py-3 text-sm font-medium transition-all duration-200 ${
+                location.pathname === '/docs' 
+                  ? 'text-terminal-bg bg-terminal-green' 
+                  : 'text-terminal-green hover:bg-terminal-green/10 hover:text-terminal-green'
               }`}
             >
               Documentation
@@ -52,11 +68,14 @@ export default function MainLayout() {
         </div>
       </nav>
 
-      <main className="flex-1 relative z-10">
-        <div className="container mx-auto px-4 py-6">
+      <main className="flex-1 relative">
+        <div className="container mx-auto px-4 py-8">
           {connectionStatus === 'disconnected' && (
-            <div className="mb-4 p-3 border border-red-500 bg-red-500/10 text-red-400 rounded">
-              Connection lost. Attempting to reconnect...
+            <div className="mb-6 p-4 border border-red-500/50 bg-red-500/10 text-red-400 rounded-lg terminal-window">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="font-mono">Connection lost. Attempting to reconnect...</span>
+              </div>
             </div>
           )}
           <Outlet />

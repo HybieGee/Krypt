@@ -4,6 +4,7 @@ import { devtools, persist } from 'zustand/middleware'
 interface User {
   id: string
   walletAddress?: string
+  balance?: number
   credits: number
   raffleTickets: number
   isEarlyAccess: boolean
@@ -49,6 +50,7 @@ interface StoreState {
   updateBlockchainProgress: (progress: Partial<BlockchainProgress>) => void
   updateStatistics: (stats: Partial<Statistics>) => void
   clearChatMessages: () => void
+  updateUserWallet: (walletAddress: string, balance: number) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -62,7 +64,7 @@ export const useStore = create<StoreState>()(
         blockchainProgress: {
           currentPhase: 1,
           phaseProgress: 0,
-          totalComponents: 640,
+          totalComponents: 1000,
           completedComponents: 0,
           estimatedCompletion: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         },
@@ -89,6 +91,17 @@ export const useStore = create<StoreState>()(
           statistics: { ...state.statistics, ...stats },
         })),
         clearChatMessages: () => set({ chatMessages: [] }),
+        updateUserWallet: (walletAddress, balance) => set((state) => ({
+          user: state.user ? { ...state.user, walletAddress, balance } : {
+            id: Math.random().toString(36).substring(7),
+            walletAddress,
+            balance,
+            credits: 0,
+            raffleTickets: 0,
+            isEarlyAccess: true,
+            joinedAt: new Date(),
+          }
+        })),
       }),
       {
         name: 'krypt-terminal-storage',

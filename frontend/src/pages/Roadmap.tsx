@@ -117,7 +117,7 @@ export default function Roadmap() {
 
         <div className="mt-6 pt-6 border-t border-terminal-green/30">
           <div className="text-sm text-terminal-green/70">
-            <p>Estimated Timeline: Q1 2024 - Q4 2024</p>
+            <p>Estimated Timeline: Q3 2025 - Q2 2026</p>
             <p className="mt-2">
               Our roadmap is dynamic and will evolve based on community feedback 
               and technological advancements.

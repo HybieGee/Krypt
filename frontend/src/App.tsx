@@ -4,6 +4,8 @@ import MainLayout from './components/layout/MainLayout'
 import Terminal from './pages/Terminal'
 import Documentation from './pages/Documentation'
 import Roadmap from './pages/Roadmap'
+import Tokens from './pages/Tokens'
+import Wallet from './pages/Wallet'
 import { useStore } from './store/useStore'
 import { initializeWebSocket } from './services/websocket'
 
@@ -31,10 +33,14 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Terminal />} />
-          <Route path="docs" element={<Documentation />} />
+          <Route path="wallet" element={<Wallet />} />
+          <Route path="tokens" element={<Tokens />} />
           <Route path="roadmap" element={<Roadmap />} />
+          <Route path="docs" element={<Documentation />} />
         </Route>
       </Routes>
     </Router>
   )
 }
+
+export default App
