@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 
 export default function Tokens() {
-  const { user, updateUserWallet, updateUserMintedAmount, toggleMining, setStaking } = useStore()
+  const { user, updateUserWallet, updateUserMintedAmount, toggleMining, addStake } = useStore()
   const [activeTab, setActiveTab] = useState<'wallet' | 'mint' | 'mine' | 'stake'>('wallet')
   const [mintAmount, setMintAmount] = useState('')
   const [stakeAmount, setStakeAmount] = useState('')
@@ -69,8 +69,8 @@ export default function Tokens() {
     if (user?.walletAddress) {
       // Remove staked amount from balance
       updateUserWallet(user.walletAddress, (user.balance || 0) - amount)
-      // Add to staking
-      setStaking(amount, stakeDuration)
+      // Add new stake
+      addStake(amount, stakeDuration)
       setStakeAmount('')
       setStakeStatus('success')
       
@@ -196,7 +196,7 @@ export default function Tokens() {
               </div>
               <div className="flex justify-between">
                 <span className="text-terminal-green/60">Staked:</span>
-                <span className="text-terminal-green">{(user?.stakedAmount || 0).toLocaleString()}</span>
+                <span className="text-terminal-green">{(user?.stakes?.reduce((total, stake) => total + stake.amount, 0) || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-terminal-green/60">Minted:</span>
@@ -504,22 +504,44 @@ export default function Tokens() {
                       </div>
                     </div>
 
-                    {/* Current Staking Display - moved below staking options */}
-                    {user?.stakedAmount && user.stakedAmount > 0 && (
+                    {/* Active Staking Display - moved below staking options */}
+                    {user?.stakes && user.stakes.length > 0 && (
                       <div className="border border-terminal-green p-4 rounded bg-terminal-green/5">
                         <h4 className="text-terminal-green font-bold mb-3">🔒 Active Staking</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-terminal-green/70">Amount Staked:</span>
-                            <span className="text-terminal-green font-bold">{user.stakedAmount.toLocaleString()} KRYPT</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-terminal-green/70">Duration:</span>
-                            <span className="text-terminal-green">{user.stakeDuration || 1} day{(user.stakeDuration || 1) > 1 ? 's' : ''}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-terminal-green/70">Daily Rewards:</span>
-                            <span className="text-terminal-green">{(user.stakedAmount * 0.01).toFixed(2)} KRYPT</span>
+                        <div className="space-y-3">
+                          {user.stakes.map((stake, index) => (
+                            <div key={stake.id} className="border border-terminal-green/30 p-3 rounded bg-terminal-green/5">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-terminal-green font-semibold">Stake #{index + 1}</span>
+                                <span className="text-terminal-green/60 text-xs">
+                                  {new Date(stake.startDate).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-terminal-green/70">Amount:</span>
+                                  <span className="text-terminal-green font-bold">{stake.amount.toLocaleString()} KRYPT</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-terminal-green/70">Duration:</span>
+                                  <span className="text-terminal-green">{stake.duration} day{stake.duration > 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-terminal-green/70">Daily Rewards:</span>
+                                  <span className="text-terminal-green">{stake.dailyReturn.toFixed(2)} KRYPT</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <div className="border-t border-terminal-green/30 pt-3 mt-3">
+                            <div className="flex justify-between text-sm font-bold">
+                              <span className="text-terminal-green/70">Total Staked:</span>
+                              <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + stake.amount, 0).toLocaleString()} KRYPT</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-bold">
+                              <span className="text-terminal-green/70">Total Daily Rewards:</span>
+                              <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + stake.dailyReturn, 0).toFixed(2)} KRYPT</span>
+                            </div>
                           </div>
                         </div>
                       </div>

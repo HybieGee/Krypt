@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
+interface StakeEntry {
+  id: string
+  amount: number
+  startDate: Date
+  duration: number
+  dailyReturn: number
+}
+
 interface User {
   id: string
   walletAddress?: string
@@ -10,9 +18,7 @@ interface User {
   isEarlyAccess: boolean
   joinedAt: Date
   isMining?: boolean
-  stakedAmount?: number
-  stakeStartDate?: Date
-  stakeDuration?: number
+  stakes: StakeEntry[]
   mintedAmount?: number
 }
 
@@ -58,7 +64,7 @@ interface StoreState {
   updateUserWallet: (walletAddress: string, balance: number) => void
   updateUserMintedAmount: (amount: number) => void
   toggleMining: () => void
-  setStaking: (amount: number, duration: number) => void
+  addStake: (amount: number, duration: number) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -109,6 +115,7 @@ export const useStore = create<StoreState>()(
             isEarlyAccess: true,
             joinedAt: new Date(),
             mintedAmount: 0,
+            stakes: [],
           }
         })),
         updateUserMintedAmount: (amount) => set((state) => ({
@@ -117,12 +124,19 @@ export const useStore = create<StoreState>()(
         toggleMining: () => set((state) => ({
           user: state.user ? { ...state.user, isMining: !state.user.isMining } : null
         })),
-        setStaking: (amount, duration) => set((state) => ({
+        addStake: (amount, duration) => set((state) => ({
           user: state.user ? { 
             ...state.user, 
-            stakedAmount: (state.user.stakedAmount || 0) + amount,
-            stakeStartDate: new Date(),
-            stakeDuration: duration
+            stakes: [
+              ...(state.user.stakes || []),
+              {
+                id: Math.random().toString(36).substring(7),
+                amount,
+                startDate: new Date(),
+                duration,
+                dailyReturn: amount * 0.01
+              }
+            ]
           } : null
         })),
       }),
