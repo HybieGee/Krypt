@@ -12,7 +12,8 @@
       "Bash(git commit:*)",
       "Bash(copy .env.development .env)",
       "Bash(npm install)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
