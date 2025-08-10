@@ -3,12 +3,15 @@ import { useStore } from '@/store/useStore'
 
 export default function Tokens() {
   const { user, updateUserWallet } = useStore()
-  const [activeTab, setActiveTab] = useState<'mint' | 'mine' | 'stake'>('mint')
+  const [activeTab, setActiveTab] = useState<'wallet' | 'mint' | 'mine' | 'stake'>('wallet')
   const [mintAmount, setMintAmount] = useState('')
   const [stakeAmount, setStakeAmount] = useState('')
   const [stakeDuration, setStakeDuration] = useState<1 | 7 | 30>(1)
   const [isMining, setIsMining] = useState(false)
   const [userMintedCount, setUserMintedCount] = useState(0)
+  const [transferAmount, setTransferAmount] = useState('')
+  const [transferAddress, setTransferAddress] = useState('')
+  const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   
   // Mock leaderboard data
   const [leaderboard] = useState([
@@ -93,6 +96,40 @@ export default function Tokens() {
     return (parseFloat(stakeAmount) || 0) * 0.01 * duration
   }
 
+  const handleTransfer = async () => {
+    if (!transferAmount || !transferAddress || !user?.walletAddress) return
+
+    setTransferStatus('loading')
+    
+    try {
+      const amount = parseFloat(transferAmount)
+      if (amount > (user.balance || 0)) {
+        throw new Error('Insufficient balance')
+      }
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Update balance (this would normally be handled by the backend)
+      updateUserWallet(user.walletAddress, (user.balance || 0) - amount)
+      
+      setTransferStatus('success')
+      setTransferAmount('')
+      setTransferAddress('')
+      
+      setTimeout(() => setTransferStatus('idle'), 3000)
+    } catch (error) {
+      setTransferStatus('error')
+      setTimeout(() => setTransferStatus('idle'), 3000)
+    }
+  }
+
+  const copyAddress = () => {
+    if (user?.walletAddress) {
+      navigator.clipboard.writeText(user.walletAddress)
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="terminal-window">
@@ -116,6 +153,16 @@ export default function Tokens() {
           <div className="terminal-window">
             <h3 className="text-lg font-bold text-terminal-green mb-4">Operations</h3>
             <div className="space-y-2">
+              <button
+                onClick={() => setActiveTab('wallet')}
+                className={`w-full text-left p-3 border transition-colors ${
+                  activeTab === 'wallet'
+                    ? 'border-terminal-green bg-terminal-green/10 text-terminal-green'
+                    : 'border-terminal-green/30 hover:border-terminal-green/60 text-terminal-green/60'
+                }`}
+              >
+                💳 Wallet
+              </button>
               <button
                 onClick={() => setActiveTab('mint')}
                 className={`w-full text-left p-3 border transition-colors ${
@@ -193,6 +240,111 @@ export default function Tokens() {
         {/* Main Content Area */}
         <div className="lg:col-span-2">
           <div className="terminal-window h-full">
+            {activeTab === 'wallet' && (
+              <div>
+                <h2 className="text-xl font-bold text-terminal-green mb-4">KRYPT Wallet</h2>
+                <p className="text-terminal-green/70 mb-6 text-sm">
+                  Your secure wallet for KRYPT tokens. Auto-generated and stored securely in your browser.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="border border-terminal-green/30 p-4 rounded">
+                      <h3 className="text-lg font-bold text-terminal-green mb-4">Wallet Details</h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-terminal-green/60 text-sm mb-2">Wallet Address</label>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex-1 bg-terminal-gray/50 border border-terminal-green/30 p-3 rounded font-mono text-sm text-terminal-green break-all">
+                              {user?.walletAddress || 'Generating...'}
+                            </div>
+                            <button
+                              onClick={copyAddress}
+                              className="terminal-button px-3 py-2 text-xs"
+                              disabled={!user?.walletAddress}
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-terminal-green/60 text-sm mb-2">Balance</label>
+                          <div className="bg-terminal-gray/50 border border-terminal-green/30 p-3 rounded">
+                            <span className="text-2xl font-bold text-terminal-green">
+                              {(user?.balance || 0).toLocaleString()}
+                            </span>
+                            <span className="text-terminal-green/60 ml-2">KRYPT</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="border border-terminal-green/30 p-4 rounded">
+                      <h3 className="text-lg font-bold text-terminal-green mb-4">Transfer Tokens</h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-terminal-green/60 text-sm mb-2">Recipient Address</label>
+                          <input
+                            type="text"
+                            value={transferAddress}
+                            onChange={(e) => setTransferAddress(e.target.value)}
+                            placeholder="0x..."
+                            className="terminal-input w-full"
+                            disabled={transferStatus === 'loading'}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-terminal-green/60 text-sm mb-2">Amount</label>
+                          <input
+                            type="number"
+                            value={transferAmount}
+                            onChange={(e) => setTransferAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="terminal-input w-full"
+                            disabled={transferStatus === 'loading'}
+                            max={user?.balance || 0}
+                          />
+                        </div>
+
+                        <button
+                          onClick={handleTransfer}
+                          disabled={!transferAmount || !transferAddress || transferStatus === 'loading'}
+                          className="terminal-button w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {transferStatus === 'loading' ? 'Processing...' : 'Transfer Tokens'}
+                        </button>
+
+                        {transferStatus === 'success' && (
+                          <div className="p-3 bg-terminal-green/10 border border-terminal-green/30 rounded text-terminal-green text-sm">
+                            ✓ Transfer successful!
+                          </div>
+                        )}
+
+                        {transferStatus === 'error' && (
+                          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+                            ✗ Transfer failed. Please check your balance and try again.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-terminal-green/30 p-4 rounded">
+                      <h3 className="text-lg font-bold text-terminal-green mb-4">Recent Transactions</h3>
+                      <div className="text-terminal-green/60 text-center py-4 text-sm">
+                        No transactions yet. Start by minting or mining tokens!
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'mint' && (
               <div>
                 <h2 className="text-xl font-bold text-terminal-green mb-4">Mint KRYPT Tokens (FREE)</h2>

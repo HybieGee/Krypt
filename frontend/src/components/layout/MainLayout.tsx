@@ -11,7 +11,7 @@ export default function MainLayout() {
     <div className="min-h-screen flex flex-col bg-terminal-bg">
       <Header />
       
-      <nav className="bg-terminal-gray border-b border-terminal-green sticky top-[88px] z-40 -mt-px">
+      <nav className="bg-terminal-gray border-b border-terminal-green sticky top-[87px] z-40">
         <div className="container mx-auto px-4">
           <div className="flex space-x-0">
             <Link
@@ -23,16 +23,6 @@ export default function MainLayout() {
               }`}
             >
               Terminal
-            </Link>
-            <Link
-              to="/wallet"
-              className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
-                location.pathname === '/wallet' 
-                  ? 'text-terminal-bg bg-terminal-green' 
-                  : 'text-terminal-green hover:bg-terminal-green/10 hover:text-terminal-green'
-              }`}
-            >
-              Wallet
             </Link>
             <Link
               to="/tokens"

@@ -90,17 +90,11 @@ export default function Terminal() {
           </h3>
           <ProgressBar progress={blockchainProgress} />
           
-          <div className="grid grid-cols-3 gap-4 mt-4 text-xs">
+          <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
             <div>
               <span className="text-terminal-green/60">Current Phase:</span>
               <span className="ml-2 text-terminal-green">
                 Phase {blockchainProgress.currentPhase}/4
-              </span>
-            </div>
-            <div>
-              <span className="text-terminal-green/60">Components:</span>
-              <span className="ml-2 text-terminal-green">
-                {blockchainProgress.completedComponents}/{blockchainProgress.totalComponents}
               </span>
             </div>
             <div>
