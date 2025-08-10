@@ -3,7 +3,7 @@ import { logger } from '../utils/logger'
 
 const router = Router()
 
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (_req, res) => {
   try {
     const stats = {
       totalUsers: Math.floor(Math.random() * 1000) + 100,
@@ -21,7 +21,7 @@ router.get('/stats', async (req, res) => {
 
 router.post('/chat', async (req, res) => {
   try {
-    const { message, userId } = req.body
+    const { message } = req.body
     
     if (process.env.USE_MOCK_AI === 'true') {
       const mockResponse = {
@@ -39,12 +39,12 @@ router.post('/chat', async (req, res) => {
   }
 })
 
-router.get('/blockchain/progress', async (req, res) => {
+router.get('/blockchain/progress', async (_req, res) => {
   try {
     const progress = {
       currentPhase: 1,
       phaseProgress: 25,
-      totalComponents: 640,
+      totalComponents: 1000,
       completedComponents: 40,
       percentComplete: 6.25,
       estimatedCompletion: new Date(Date.now() + 13 * 24 * 60 * 60 * 1000),

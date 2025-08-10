@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
-import { getSocket } from '@/services/websocket'
 import axios from 'axios'
 
 export default function ChatInterface() {

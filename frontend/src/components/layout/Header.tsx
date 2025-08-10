@@ -2,7 +2,7 @@ import { useStore } from '@/store/useStore'
 import { useState, useEffect } from 'react'
 
 export default function Header() {
-  const { statistics, user } = useStore()
+  const { statistics } = useStore()
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
