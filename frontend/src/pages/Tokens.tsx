@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 
 export default function Tokens() {
-  const { user, updateUserWallet, toggleMining, setStaking } = useStore()
+  const { user, updateUserWallet, updateUserMintedAmount, toggleMining, setStaking } = useStore()
   const [activeTab, setActiveTab] = useState<'wallet' | 'mint' | 'mine' | 'stake'>('wallet')
   const [mintAmount, setMintAmount] = useState('')
   const [stakeAmount, setStakeAmount] = useState('')
   const [stakeDuration, setStakeDuration] = useState<1 | 7 | 30>(1)
-  const [userMintedCount, setUserMintedCount] = useState(0)
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -39,7 +38,8 @@ export default function Tokens() {
 
   const handleMint = () => {
     const amount = parseInt(mintAmount) || 0
-    const newTotal = userMintedCount + amount
+    const currentMinted = user?.mintedAmount || 0
+    const newTotal = currentMinted + amount
     
     if (newTotal > 1000) {
       alert('Maximum mint limit is 1000 tokens per user')
@@ -48,7 +48,7 @@ export default function Tokens() {
     
     if (user?.walletAddress) {
       updateUserWallet(user.walletAddress, (user.balance || 0) + amount)
-      setUserMintedCount(newTotal)
+      updateUserMintedAmount(amount)
       setMintAmount('')
     }
   }
@@ -200,7 +200,7 @@ export default function Tokens() {
               </div>
               <div className="flex justify-between">
                 <span className="text-terminal-green/60">Minted:</span>
-                <span className="text-terminal-green">{userMintedCount}/1000</span>
+                <span className="text-terminal-green">{user?.mintedAmount || 0}/1000</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-terminal-green/60">Mining:</span>
@@ -356,16 +356,16 @@ export default function Tokens() {
                       onChange={(e) => setMintAmount(e.target.value)}
                       placeholder="Enter amount (max 1000 total)"
                       className="terminal-input w-full"
-                      max={1000 - userMintedCount}
+                      max={1000 - (user?.mintedAmount || 0)}
                     />
                     <div className="text-terminal-green/60 text-xs mt-1">
-                      Remaining: {1000 - userMintedCount} tokens
+                      Remaining: {1000 - (user?.mintedAmount || 0)} tokens
                     </div>
                   </div>
                   
                   <button 
                     onClick={handleMint}
-                    disabled={!mintAmount || userMintedCount >= 1000}
+                    disabled={!mintAmount || (user?.mintedAmount || 0) >= 1000}
                     className="terminal-button w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Mint Tokens (FREE)
@@ -503,10 +503,8 @@ export default function Tokens() {
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-4">
-                    {/* Current Staking Display */}
+                    {/* Current Staking Display - moved below staking options */}
                     {user?.stakedAmount && user.stakedAmount > 0 && (
                       <div className="border border-terminal-green p-4 rounded bg-terminal-green/5">
                         <h4 className="text-terminal-green font-bold mb-3">🔒 Active Staking</h4>
@@ -526,6 +524,9 @@ export default function Tokens() {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  <div className="space-y-4">
 
                     <div className="border border-terminal-green/30 p-4 rounded">
                       <h4 className="text-terminal-green font-bold mb-3">Stake New Tokens</h4>
