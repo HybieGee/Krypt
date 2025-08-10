@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 
 export default function Tokens() {
-  const { user, updateUserWallet } = useStore()
+  const { user, updateUserWallet, toggleMining, setStaking } = useStore()
   const [activeTab, setActiveTab] = useState<'wallet' | 'mint' | 'mine' | 'stake'>('wallet')
   const [mintAmount, setMintAmount] = useState('')
   const [stakeAmount, setStakeAmount] = useState('')
   const [stakeDuration, setStakeDuration] = useState<1 | 7 | 30>(1)
-  const [isMining, setIsMining] = useState(false)
   const [userMintedCount, setUserMintedCount] = useState(0)
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
   // Mock leaderboard data
   const [leaderboard] = useState([
@@ -35,23 +35,7 @@ export default function Tokens() {
     }
   }, [user, updateUserWallet])
   
-  // Mining effect
-  useEffect(() => {
-    let miningInterval: NodeJS.Timeout
-    
-    if (isMining && activeTab === 'mine') {
-      miningInterval = setInterval(() => {
-        const miningReward = Math.random() * 5 + 1 // 1-6 tokens per interval
-        if (user?.walletAddress) {
-          updateUserWallet(user.walletAddress, (user.balance || 0) + miningReward)
-        }
-      }, 5000) // Every 5 seconds
-    }
-    
-    return () => {
-      if (miningInterval) clearInterval(miningInterval)
-    }
-  }, [isMining, activeTab, user, updateUserWallet])
+  // Mining is now handled globally in App.tsx
 
   const handleMint = () => {
     const amount = parseInt(mintAmount) || 0
@@ -69,7 +53,7 @@ export default function Tokens() {
     }
   }
 
-  const handleStake = () => {
+  const handleStake = async () => {
     const amount = parseFloat(stakeAmount) || 0
     
     if (amount > (user?.balance || 0)) {
@@ -77,19 +61,26 @@ export default function Tokens() {
       return
     }
     
-    const dailyReturn = amount * 0.01 // 1% daily return
-    const totalReturn = dailyReturn * stakeDuration
+    setStakeStatus('loading')
+    
+    // Simulate staking process
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
     if (user?.walletAddress) {
-      // Remove staked amount and add total return after duration
-      updateUserWallet(user.walletAddress, (user.balance || 0) - amount + totalReturn)
+      // Remove staked amount from balance
+      updateUserWallet(user.walletAddress, (user.balance || 0) - amount)
+      // Add to staking
+      setStaking(amount, stakeDuration)
       setStakeAmount('')
-      alert(`Staked ${amount} KRYPT for ${stakeDuration} days. Total return: ${totalReturn.toFixed(2)} KRYPT`)
+      setStakeStatus('success')
+      
+      // Reset success message after 4 seconds
+      setTimeout(() => setStakeStatus('idle'), 4000)
     }
   }
 
-  const toggleMining = () => {
-    setIsMining(!isMining)
+  const handleToggleMining = () => {
+    toggleMining()
   }
 
   const getDailyReturn = (duration: number) => {
@@ -200,8 +191,12 @@ export default function Tokens() {
             <h4 className="text-sm font-bold text-terminal-green mb-3">Your Balance</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-terminal-green/60">KRYPT:</span>
+                <span className="text-terminal-green/60">Available:</span>
                 <span className="text-terminal-green">{(user?.balance || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-terminal-green/60">Staked:</span>
+                <span className="text-terminal-green">{(user?.stakedAmount || 0).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-terminal-green/60">Minted:</span>
@@ -209,8 +204,8 @@ export default function Tokens() {
               </div>
               <div className="flex justify-between">
                 <span className="text-terminal-green/60">Mining:</span>
-                <span className={isMining ? 'text-terminal-green animate-pulse' : 'text-terminal-green/60'}>
-                  {isMining ? 'Active' : 'Inactive'}
+                <span className={user?.isMining ? 'text-terminal-green animate-pulse' : 'text-terminal-green/60'}>
+                  {user?.isMining ? 'Active' : 'Inactive'}
                 </span>
               </div>
             </div>
@@ -401,24 +396,24 @@ export default function Tokens() {
                     <div className="border border-terminal-green/30 p-4 rounded">
                       <h4 className="text-terminal-green font-bold mb-3">Mining Control</h4>
                       <button
-                        onClick={toggleMining}
+                        onClick={handleToggleMining}
                         className={`w-full py-4 px-6 border font-bold transition-all ${
-                          isMining
+                          user?.isMining
                             ? 'border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20'
                             : 'border-terminal-green bg-terminal-green/10 text-terminal-green hover:bg-terminal-green/20'
                         }`}
                       >
-                        {isMining ? '🛑 Stop Mining' : '▶️ Start Mining'}
+                        {user?.isMining ? '🛑 Stop Mining' : '▶️ Start Mining'}
                       </button>
                       
-                      {isMining && (
+                      {user?.isMining && (
                         <div className="mt-4 p-3 bg-terminal-green/5 border border-terminal-green/30 rounded">
                           <div className="flex items-center space-x-2">
                             <div className="w-2 h-2 bg-terminal-green rounded-full animate-pulse" />
-                            <span className="text-terminal-green text-sm">Mining Active</span>
+                            <span className="text-terminal-green text-sm">Mining Active Globally</span>
                           </div>
                           <div className="text-terminal-green/60 text-xs mt-1">
-                            Earning 1-6 tokens every 5 seconds
+                            Earning 1-6 tokens every 5 seconds on all pages
                           </div>
                         </div>
                       )}
@@ -429,8 +424,8 @@ export default function Tokens() {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-terminal-green/60">Status:</span>
-                          <span className={isMining ? 'text-terminal-green' : 'text-terminal-green/60'}>
-                            {isMining ? 'Active' : 'Inactive'}
+                          <span className={user?.isMining ? 'text-terminal-green' : 'text-terminal-green/60'}>
+                            {user?.isMining ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -510,9 +505,30 @@ export default function Tokens() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-4">
+                    {/* Current Staking Display */}
+                    {user?.stakedAmount && user.stakedAmount > 0 && (
+                      <div className="border border-terminal-green p-4 rounded bg-terminal-green/5">
+                        <h4 className="text-terminal-green font-bold mb-3">🔒 Active Staking</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-terminal-green/70">Amount Staked:</span>
+                            <span className="text-terminal-green font-bold">{user.stakedAmount.toLocaleString()} KRYPT</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-terminal-green/70">Duration:</span>
+                            <span className="text-terminal-green">{user.stakeDuration || 1} day{(user.stakeDuration || 1) > 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-terminal-green/70">Daily Rewards:</span>
+                            <span className="text-terminal-green">{(user.stakedAmount * 0.01).toFixed(2)} KRYPT</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="border border-terminal-green/30 p-4 rounded">
-                      <h4 className="text-terminal-green font-bold mb-3">Stake Tokens</h4>
+                      <h4 className="text-terminal-green font-bold mb-3">Stake New Tokens</h4>
                       <div className="space-y-4">
                         <div>
                           <label className="block text-terminal-green/70 text-sm mb-2">Amount to Stake</label>
@@ -523,6 +539,7 @@ export default function Tokens() {
                             placeholder="Enter amount"
                             className="terminal-input w-full"
                             max={user?.balance || 0}
+                            disabled={stakeStatus === 'loading'}
                           />
                           <div className="text-terminal-green/60 text-xs mt-1">
                             Available: {(user?.balance || 0).toLocaleString()} KRYPT
@@ -548,11 +565,31 @@ export default function Tokens() {
 
                         <button 
                           onClick={handleStake}
-                          disabled={!stakeAmount || parseFloat(stakeAmount) > (user?.balance || 0)}
+                          disabled={!stakeAmount || parseFloat(stakeAmount) > (user?.balance || 0) || stakeStatus === 'loading'}
                           className="terminal-button w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Stake for {stakeDuration} Day{stakeDuration > 1 ? 's' : ''}
+                          {stakeStatus === 'loading' ? 'Staking...' : `Stake for ${stakeDuration} Day${stakeDuration > 1 ? 's' : ''}`}
                         </button>
+
+                        {/* Themed Success Message */}
+                        {stakeStatus === 'success' && (
+                          <div className="border border-terminal-green bg-terminal-green/10 p-4 rounded relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-terminal-green/20 via-terminal-green/10 to-terminal-green/20 animate-pulse"></div>
+                            <div className="relative z-10">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <div className="w-3 h-3 bg-terminal-green rounded-full animate-ping"></div>
+                                <span className="text-terminal-green font-bold text-lg">🔒 STAKING ACTIVATED</span>
+                                <div className="w-3 h-3 bg-terminal-green rounded-full animate-ping"></div>
+                              </div>
+                              <div className="text-terminal-green/80 text-sm">
+                                Your KRYPT tokens are now earning daily rewards!
+                              </div>
+                              <div className="text-terminal-green text-xs mt-2 font-mono">
+                                &gt; SECURE_STAKING_PROTOCOL_ENABLED
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

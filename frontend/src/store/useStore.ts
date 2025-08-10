@@ -9,6 +9,10 @@ interface User {
   raffleTickets: number
   isEarlyAccess: boolean
   joinedAt: Date
+  isMining?: boolean
+  stakedAmount?: number
+  stakeStartDate?: Date
+  stakeDuration?: number
 }
 
 interface TerminalLog {
@@ -51,6 +55,8 @@ interface StoreState {
   updateStatistics: (stats: Partial<Statistics>) => void
   clearChatMessages: () => void
   updateUserWallet: (walletAddress: string, balance: number) => void
+  toggleMining: () => void
+  setStaking: (amount: number, duration: number) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -101,6 +107,17 @@ export const useStore = create<StoreState>()(
             isEarlyAccess: true,
             joinedAt: new Date(),
           }
+        })),
+        toggleMining: () => set((state) => ({
+          user: state.user ? { ...state.user, isMining: !state.user.isMining } : null
+        })),
+        setStaking: (amount, duration) => set((state) => ({
+          user: state.user ? { 
+            ...state.user, 
+            stakedAmount: (state.user.stakedAmount || 0) + amount,
+            stakeStartDate: new Date(),
+            stakeDuration: duration
+          } : null
         })),
       }),
       {
