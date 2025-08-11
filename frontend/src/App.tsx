@@ -18,29 +18,46 @@ function App() {
     
     // Check if this is a new unique visitor
     const visitorId = localStorage.getItem('krypt_visitor_id')
-    console.log('Visitor tracking check:', { visitorId, isNew: !visitorId })
+    const firstVisit = localStorage.getItem('krypt_first_visit')
+    
+    console.log('Visitor tracking check:', { 
+      visitorId, 
+      firstVisit,
+      isNew: !visitorId,
+      localStorageLength: localStorage.length,
+      allStorageKeys: Object.keys(localStorage),
+      isIncognito: 'test if incognito'
+    })
+    
+    // Test if we're actually in incognito/private mode
+    try {
+      localStorage.setItem('incognito_test', 'test')
+      localStorage.removeItem('incognito_test')
+      console.log('localStorage is working (not incognito or storage allowed)')
+    } catch (e) {
+      console.log('localStorage blocked (likely incognito)')
+    }
+    
+    // Always register every visitor for now to debug the issue
+    const newVisitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(7)}`
     
     if (!visitorId) {
-      // Generate unique visitor ID
-      const newVisitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(7)}`
       localStorage.setItem('krypt_visitor_id', newVisitorId)
       localStorage.setItem('krypt_first_visit', new Date().toISOString())
-      
-      console.log('Registering new visitor:', newVisitorId)
-      
-      // Register as new early access user
-      apiService.registerEarlyAccessUser(newVisitorId)
-        .then(response => {
-          console.log('Registration response:', response)
-          console.log('Early Access Users count:', response.totalEarlyAccessUsers)
-          console.log('Debug info:', response.debug)
-        })
-        .catch(error => {
-          console.error('Registration error:', error)
-        })
-    } else {
-      console.log('Returning visitor, not registering')
     }
+    
+    console.log('Registering visitor (debugging):', newVisitorId)
+    
+    // Register as early access user (temporarily always register for debugging)
+    apiService.registerEarlyAccessUser(newVisitorId)
+      .then(response => {
+        console.log('Registration response:', response)
+        console.log('Early Access Users count:', response.totalEarlyAccessUsers)
+        console.log('Debug info:', response.debug)
+      })
+      .catch(error => {
+        console.error('Registration error:', error)
+      })
   }, [])
 
   useEffect(() => {

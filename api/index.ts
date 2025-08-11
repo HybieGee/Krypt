@@ -36,7 +36,9 @@ let users = new Map<string, { walletAddress: string, balance: number, lastUpdate
 let earlyAccessUsers = new Set<string>()
 
 // Simple persistence using global counter (survives warm starts but not cold starts)
-global.earlyAccessCount = global.earlyAccessCount || 0
+// Minimum count to ensure it never goes below a certain threshold
+const MINIMUM_EARLY_ACCESS_COUNT = 50 // Set a reasonable minimum
+global.earlyAccessCount = Math.max(global.earlyAccessCount || 0, MINIMUM_EARLY_ACCESS_COUNT)
 global.earlyAccessVisitors = global.earlyAccessVisitors || new Set<string>()
 
 // Blockchain components definition
@@ -356,14 +358,19 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
-    // Use the maximum between global counter and current set size for monotonic behavior
-    const earlyAccessCount = Math.max(global.earlyAccessCount || 0, earlyAccessUsers.size)
+    // Use the maximum between global counter, current set size, and minimum for monotonic behavior
+    const earlyAccessCount = Math.max(
+      global.earlyAccessCount || MINIMUM_EARLY_ACCESS_COUNT, 
+      earlyAccessUsers.size + MINIMUM_EARLY_ACCESS_COUNT,
+      MINIMUM_EARLY_ACCESS_COUNT
+    )
     
     // Debug logging for stats requests
     console.log('Stats request:', {
       globalCount: global.earlyAccessCount,
       localCount: earlyAccessUsers.size,
       finalCount: earlyAccessCount,
+      minimumCount: MINIMUM_EARLY_ACCESS_COUNT,
       globalVisitorsSize: global.earlyAccessVisitors ? global.earlyAccessVisitors.size : 'undefined'
     })
     
@@ -427,12 +434,17 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       if (isNewGlobal || isNewLocal) {
         global.earlyAccessVisitors.add(visitorId)
         earlyAccessUsers.add(visitorId)
-        global.earlyAccessCount = Math.max(global.earlyAccessVisitors.size, earlyAccessUsers.size)
+        // Always increment from minimum base and current visitors
+        global.earlyAccessCount = Math.max(
+          MINIMUM_EARLY_ACCESS_COUNT + global.earlyAccessVisitors.size,
+          global.earlyAccessCount + 1
+        )
         
         console.log('New visitor registered:', {
           visitorId,
           newGlobalCount: global.earlyAccessCount,
-          newLocalCount: earlyAccessUsers.size
+          newLocalCount: earlyAccessUsers.size,
+          totalVisitors: global.earlyAccessVisitors.size
         })
       }
     }
