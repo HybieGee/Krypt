@@ -130,7 +130,7 @@ async function developNextComponent() {
         id: (Date.now() + 2).toString(),
         timestamp: new Date().toISOString(),
         type: 'code',
-        message: `✓ Developed ${componentName} (${result.lines} lines) - AI generation complete`,
+        message: `✓ Developed ${componentName} (${result.lines} lines) - Krypt has completed`,
         details: { 
           componentIndex: componentIndex + 1,
           phase: currentProgress.currentPhase,
@@ -139,17 +139,15 @@ async function developNextComponent() {
         }
       })
 
-      // Simulate commits every 10 components
-      if (currentProgress.componentsCompleted % 10 === 0) {
-        currentProgress.commits++
-        developmentLogs.unshift({
-          id: (Date.now() + 1).toString(),
-          timestamp: new Date().toISOString(),
-          type: 'commit',
-          message: `📦 Committed to krypt-blockchain repo: ${currentProgress.componentsCompleted}/640 components`,
-          details: { commits: currentProgress.commits }
-        })
-      }
+      // Commit after each component (not every 10)
+      currentProgress.commits++
+      developmentLogs.unshift({
+        id: (Date.now() + 3).toString(),
+        timestamp: new Date().toISOString(),
+        type: 'commit',
+        message: `📦 Committed to krypt-blockchain repo`,
+        details: { commits: currentProgress.commits }
+      })
 
       // Simulate tests every 20 components  
       if (currentProgress.componentsCompleted % 20 === 0) {

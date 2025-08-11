@@ -15,12 +15,34 @@ interface Props {
 export default function TerminalDisplay({ logs }: Props) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [currentTyping, setCurrentTyping] = useState('')
+  const [isUserScrolling, setIsUserScrolling] = useState(false)
 
+  // Auto-scroll only if user isn't manually scrolling
   useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+    if (terminalRef.current && !isUserScrolling) {
+      const container = terminalRef.current
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50
+      
+      if (isAtBottom) {
+        container.scrollTop = container.scrollHeight
+      }
     }
-  }, [logs])
+  }, [logs, isUserScrolling])
+
+  // Handle scroll events to detect user interaction
+  const handleScroll = () => {
+    if (terminalRef.current) {
+      const container = terminalRef.current
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50
+      
+      setIsUserScrolling(!isAtBottom)
+      
+      // Reset to auto-scroll if user scrolls to bottom
+      if (isAtBottom && isUserScrolling) {
+        setIsUserScrolling(false)
+      }
+    }
+  }
 
   // Smooth typing animation system
   useEffect(() => {
@@ -94,6 +116,7 @@ export default function TerminalDisplay({ logs }: Props) {
   return (
     <div 
       ref={terminalRef}
+      onScroll={handleScroll}
       className="h-96 overflow-y-auto bg-black p-4 font-mono text-xs leading-relaxed custom-scrollbar"
       style={{
         scrollbarWidth: 'thin',

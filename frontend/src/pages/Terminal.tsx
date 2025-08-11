@@ -28,7 +28,7 @@ export default function Terminal() {
   }, [addTerminalLog, updateBlockchainProgress])
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-240px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20">
       <div className="lg:col-span-2 flex flex-col space-y-4">
         <div className="terminal-window flex-1 flex flex-col">
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
@@ -63,7 +63,7 @@ export default function Terminal() {
             {activeTab === 'terminal' ? (
               <TerminalDisplay logs={terminalLogs.slice(-20)} />
             ) : (
-              <div className="h-full overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+              <div className="h-96 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                 {terminalLogs.map((log) => (
                   <div key={log.id} className="text-xs">
                     <span className="text-terminal-green/60">
