@@ -39,6 +39,13 @@ let earlyAccessUsers = new Set<string>()
 global.earlyAccessCount = global.earlyAccessCount || 0
 global.uniqueWallets = global.uniqueWallets || new Set<string>()
 
+// Initialize global counter from existing users on startup
+if (users.size > 0 && users.size > global.earlyAccessCount) {
+  global.earlyAccessCount = Math.max(global.earlyAccessCount, users.size)
+  // Add existing wallet addresses to global set
+  Array.from(users.keys()).forEach(wallet => global.uniqueWallets.add(wallet))
+}
+
 // Blockchain components definition
 const blockchainComponents = [
   // Phase 1: Core Infrastructure (160 components)
@@ -358,17 +365,25 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   if (url === '/api/stats') {
     // Count Early Access Users based on unique wallet addresses created
     const uniqueWallets = users.size
+    const globalWallets = global.uniqueWallets ? global.uniqueWallets.size : 0
+    
+    // Use the maximum between all wallet tracking methods
     const earlyAccessCount = Math.max(
       global.earlyAccessCount || 0, 
-      uniqueWallets
+      uniqueWallets,
+      globalWallets
     )
+    
+    // Update global counter to match current maximum
+    global.earlyAccessCount = earlyAccessCount
     
     // Debug logging for stats requests
     console.log('Stats request:', {
-      uniqueWallets: uniqueWallets,
+      localWallets: uniqueWallets,
+      globalWallets: globalWallets,
       globalCount: global.earlyAccessCount,
       finalCount: earlyAccessCount,
-      walletsInMemory: Array.from(users.keys()).slice(0, 3) // Show first 3 wallet addresses for debugging
+      walletsInMemory: Array.from(users.keys()).slice(0, 5) // Show first 5 wallet addresses for debugging
     })
     
     const stats = {
@@ -444,12 +459,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       // Track unique wallets globally for persistence
       if (isNewWallet) {
         global.uniqueWallets.add(walletAddress)
-        global.earlyAccessCount = Math.max(global.uniqueWallets.size, users.size)
+        // Update the global counter immediately
+        const newCount = Math.max(global.uniqueWallets.size, users.size, global.earlyAccessCount || 0)
+        global.earlyAccessCount = newCount
         
         console.log('New wallet registered:', {
-          walletAddress,
-          totalWallets: users.size,
-          globalWallets: global.uniqueWallets.size,
+          walletAddress: walletAddress.substring(0, 10) + '...',
+          totalLocalWallets: users.size,
+          totalGlobalWallets: global.uniqueWallets.size,
           earlyAccessCount: global.earlyAccessCount
         })
       }
