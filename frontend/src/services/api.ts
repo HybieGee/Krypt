@@ -110,6 +110,21 @@ class ApiService {
     return response.json()
   }
 
+  async registerEarlyAccessUser(visitorId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/early-access`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ visitorId })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to register early access user: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

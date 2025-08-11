@@ -12,6 +12,23 @@ import ApiService from './services/api'
 function App() {
   const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
 
+  // Track unique visitors
+  useEffect(() => {
+    const apiService = ApiService.getInstance()
+    
+    // Check if this is a new unique visitor
+    const visitorId = localStorage.getItem('krypt_visitor_id')
+    if (!visitorId) {
+      // Generate unique visitor ID
+      const newVisitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      localStorage.setItem('krypt_visitor_id', newVisitorId)
+      localStorage.setItem('krypt_first_visit', new Date().toISOString())
+      
+      // Register as new early access user
+      apiService.registerEarlyAccessUser(newVisitorId).catch(console.error)
+    }
+  }, [])
+
   useEffect(() => {
     const apiService = ApiService.getInstance()
     

@@ -20,7 +20,7 @@ export default function Header() {
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-terminal-green">KRYPT TERMINAL</h1>
               <span className="text-terminal-green/60 text-sm">
-                v1.6.3
+                v1.6.4
               </span>
             </div>
             
@@ -81,14 +81,7 @@ export default function Header() {
 
           <div className="flex items-center space-x-6 text-sm">
             <div className="flex items-center space-x-2">
-              <span className="text-terminal-green/60">Users:</span>
-              <span className="text-terminal-green font-bold">
-                {statistics.totalUsers.toLocaleString()}
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className="text-terminal-green/60">Early Access:</span>
+              <span className="text-terminal-green/60">Early Access Users:</span>
               <span className="text-terminal-green font-bold">
                 {statistics.earlyAccessUsers.toLocaleString()}
               </span>

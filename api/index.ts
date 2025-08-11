@@ -25,6 +25,9 @@ let progressLock = false
 // In-memory storage for users and balances
 let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
 
+// In-memory storage for unique early access users
+let earlyAccessUsers = new Set<string>()
+
 // Blockchain components definition
 const blockchainComponents = [
   // Phase 1: Core Infrastructure (160 components)
@@ -343,8 +346,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   // Stats endpoint
   if (url === '/api/stats') {
     const stats = {
-      total_users: { value: 0, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: 0, lastUpdated: new Date().toISOString() },
+      total_users: { value: earlyAccessUsers.size, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: earlyAccessUsers.size, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },
@@ -378,6 +381,20 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         isEarlyAccess: true,
         joinedAt: new Date().toISOString()
       }
+    })
+  }
+
+  // Early access user registration endpoint
+  if (url === '/api/early-access' && method === 'POST') {
+    const { visitorId } = req.body || {}
+    
+    if (visitorId && !earlyAccessUsers.has(visitorId)) {
+      earlyAccessUsers.add(visitorId)
+    }
+    
+    return res.json({
+      success: true,
+      totalEarlyAccessUsers: earlyAccessUsers.size
     })
   }
 
