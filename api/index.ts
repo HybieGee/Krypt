@@ -87,7 +87,7 @@ async function developNextComponent() {
     // Stop development if API key is not configured - only log once
     if (!isDevelopmentStopped) {
       isDevelopmentStopped = true
-      developmentLogs.unshift({
+      developmentLogs.push({
         id: `warning-${Date.now()}`,
         timestamp: new Date().toISOString(),
         type: 'warning',
@@ -111,7 +111,7 @@ async function developNextComponent() {
   const baseId = `component-${componentIndex}`
 
   // Show Krypt is starting to work
-  developmentLogs.unshift({
+  developmentLogs.push({
     id: `${baseId}-analyzing`,
     timestamp: new Date().toISOString(),
     type: 'system',
@@ -120,7 +120,7 @@ async function developNextComponent() {
   })
 
   // Show API request is being made
-  developmentLogs.unshift({
+  developmentLogs.push({
     id: `${baseId}-request`,
     timestamp: new Date().toISOString(),
     type: 'api',
@@ -133,7 +133,7 @@ async function developNextComponent() {
     
     if (result) {
       // Show successful API response
-      developmentLogs.unshift({
+      developmentLogs.push({
         id: `${baseId}-response`,
         timestamp: new Date().toISOString(),
         type: 'api',
@@ -153,7 +153,7 @@ async function developNextComponent() {
       currentProgress.lastUpdated = Date.now()
       
       // Add development log showing completion
-      developmentLogs.unshift({
+      developmentLogs.push({
         id: `${baseId}-complete`,
         timestamp: new Date().toISOString(),
         type: 'code',
@@ -170,7 +170,7 @@ async function developNextComponent() {
 
       // Commit after each component (not every 10)
       currentProgress.commits++
-      developmentLogs.unshift({
+      developmentLogs.push({
         id: `${baseId}-commit`,
         timestamp: new Date().toISOString(),
         type: 'commit',
@@ -181,7 +181,7 @@ async function developNextComponent() {
       // Simulate tests every 20 components  
       if (currentProgress.componentsCompleted % 20 === 0) {
         currentProgress.testsRun += 10
-        developmentLogs.unshift({
+        developmentLogs.push({
           id: `component-${componentIndex}-tests`,
           timestamp: new Date().toISOString(),
           type: 'test',
@@ -195,7 +195,7 @@ async function developNextComponent() {
         const phaseNames = ['Core Infrastructure', 'Consensus Mechanism', 'Smart Contract Layer', 'Network & Security']
         const completedPhase = Math.floor(currentProgress.componentsCompleted / 160)
         
-        developmentLogs.unshift({
+        developmentLogs.push({
           id: `phase-${completedPhase}-complete`,
           timestamp: new Date().toISOString(),
           type: 'phase',
@@ -206,9 +206,9 @@ async function developNextComponent() {
 
     }
 
-    // Keep only last 50 logs
+    // Keep only last 50 logs (oldest first, newest last)
     if (developmentLogs.length > 50) {
-      developmentLogs = developmentLogs.slice(0, 50)
+      developmentLogs = developmentLogs.slice(-50)
     }
 
   } finally {

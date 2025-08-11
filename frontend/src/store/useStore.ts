@@ -172,12 +172,15 @@ export const useStore = create<StoreState>()(
               details: log.details
             }))
           
-          // Merge existing logs with new logs, maintaining order (newest first)
-          const mergedLogs = [...newLogs, ...state.terminalLogs]
+          // Merge existing logs with new logs, maintaining chronological order (oldest first)
+          const allLogs = [...state.terminalLogs, ...newLogs]
+          
+          // Sort by timestamp to ensure proper chronological order
+          const sortedLogs = allLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
           
           // Keep only the most recent 100 logs to prevent memory issues
           return {
-            terminalLogs: mergedLogs.slice(0, 100)
+            terminalLogs: sortedLogs.slice(-100)
           }
         }),
         setStats: (stats) => set(() => ({
