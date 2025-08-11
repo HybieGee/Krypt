@@ -363,32 +363,33 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
-    // Count Early Access Users based on unique wallet addresses created
-    const uniqueWallets = users.size
+    // Primary count should be the global counter (persists across cold starts)
     const globalWallets = global.uniqueWallets ? global.uniqueWallets.size : 0
+    const localWallets = users.size
     
-    // Use the maximum between all wallet tracking methods
+    // Global counter is the authoritative source - only increase it, never decrease
     const earlyAccessCount = Math.max(
       global.earlyAccessCount || 0, 
-      uniqueWallets,
       globalWallets
     )
     
-    // Update global counter to match current maximum
-    global.earlyAccessCount = earlyAccessCount
+    // Ensure global counter never goes backward
+    if (earlyAccessCount > (global.earlyAccessCount || 0)) {
+      global.earlyAccessCount = earlyAccessCount
+    }
     
     // Debug logging for stats requests
-    console.log('Stats request:', {
-      localWallets: uniqueWallets,
+    console.log('Stats request (global-first):', {
+      authoritativeCount: global.earlyAccessCount,
       globalWallets: globalWallets,
-      globalCount: global.earlyAccessCount,
-      finalCount: earlyAccessCount,
-      walletsInMemory: Array.from(users.keys()).slice(0, 5) // Show first 5 wallet addresses for debugging
+      localWallets: localWallets,
+      finalCount: global.earlyAccessCount,
+      walletsInMemory: Array.from(users.keys()).slice(0, 3)
     })
     
     const stats = {
-      total_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
+      total_users: { value: global.earlyAccessCount, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: global.earlyAccessCount, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },
@@ -459,15 +460,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       // Track unique wallets globally for persistence
       if (isNewWallet) {
         global.uniqueWallets.add(walletAddress)
-        // Update the global counter immediately
-        const newCount = Math.max(global.uniqueWallets.size, users.size, global.earlyAccessCount || 0)
-        global.earlyAccessCount = newCount
+        // Always increment the persistent counter for new wallets
+        global.earlyAccessCount = (global.earlyAccessCount || 0) + 1
         
         console.log('New wallet registered:', {
           walletAddress: walletAddress.substring(0, 10) + '...',
           totalLocalWallets: users.size,
           totalGlobalWallets: global.uniqueWallets.size,
-          earlyAccessCount: global.earlyAccessCount
+          persistentCount: global.earlyAccessCount
         })
       }
       
