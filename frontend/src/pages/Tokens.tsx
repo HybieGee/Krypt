@@ -13,9 +13,8 @@ export default function Tokens() {
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
-  // Live leaderboard data with stable user management
-  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])
-  const [, setKnownUsers] = useState<Set<string>>(new Set())
+  // Live leaderboard data
+  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])  
   
   // Auto-generate wallet if needed
   useEffect(() => {
@@ -46,64 +45,29 @@ export default function Tokens() {
         if (isActive && data && Array.isArray(data)) {
           
           setLeaderboard((prevLeaderboard: Array<{ address: string; balance: number }>) => {
-            // Process new data
-            const newValidData = data.filter((holder: any) => 
-              holder && 
-              holder.address && 
-              typeof holder.balance === 'number' && 
-              holder.balance >= 0 // Allow 0 balance users to stay visible
-            )
+            // Process and filter valid data in one step
+            const validData = data
+              .filter((holder: any) => 
+                holder && 
+                holder.address && 
+                typeof holder.balance === 'number' && 
+                holder.balance > 0 // Only show users with positive balance
+              )
+              .sort((a: any, b: any) => b.balance - a.balance) // Sort by balance descending
+              .slice(0, 10) // Top 10 users only
             
-            // Update known users set
-            setKnownUsers((prev: Set<string>) => {
-              const newSet = new Set(prev)
-              newValidData.forEach((holder: any) => newSet.add(holder.address))
-              return newSet
-            })
-            
-            // Merge new data with existing users to maintain stability
-            const mergedUsers = new Map<string, { address: string; balance: number }>()
-            
-            // Keep all existing users and update their balances
-            prevLeaderboard.forEach((existingUser: { address: string; balance: number }) => {
-              const newData = newValidData.find((newUser: any) => newUser.address === existingUser.address)
-              if (newData) {
-                // Update existing user with new balance
-                mergedUsers.set(existingUser.address, {
-                  address: existingUser.address,
-                  balance: newData.balance
-                })
-              } else {
-                // Keep existing user even if not in new data (prevents disappearing)
-                mergedUsers.set(existingUser.address, existingUser)
-              }
-            })
-            
-            // Add any genuinely new users
-            newValidData.forEach((newUser: any) => {
-              if (!mergedUsers.has(newUser.address)) {
-                mergedUsers.set(newUser.address, newUser)
-              }
-            })
-            
-            // Convert back to array and sort by balance
-            const finalData = Array.from(mergedUsers.values())
-              .filter((user: { address: string; balance: number }) => user.balance > 0) // Only show users with positive balance
-              .sort((a: { address: string; balance: number }, b: { address: string; balance: number }) => b.balance - a.balance)
-              .slice(0, 10) // Top 10 users
-            
-            // Optimized change detection for frequent updates
-            if (finalData.length !== prevLeaderboard.length) {
-              return finalData
+            // Fast comparison - if lengths differ, update immediately
+            if (validData.length !== prevLeaderboard.length) {
+              return validData
             }
             
-            // Check if any balance or order has changed
-            const hasChanges = finalData.some((user: { address: string; balance: number }, index: number) => {
+            // Quick check if any position or balance changed
+            const hasChanges = validData.some((user: any, index: number) => {
               const prevUser = prevLeaderboard[index]
               return !prevUser || user.address !== prevUser.address || user.balance !== prevUser.balance
             })
             
-            return hasChanges ? finalData : prevLeaderboard
+            return hasChanges ? validData : prevLeaderboard
           })
         }
       } catch (error) {
@@ -115,8 +79,8 @@ export default function Tokens() {
     // Initial fetch
     updateLeaderboard()
     
-    // Poll every 1 second for rapid balance updates while maintaining stability
-    const interval = setInterval(updateLeaderboard, 1000)
+    // Poll every 500ms for ultra-fast balance updates with optimized processing
+    const interval = setInterval(updateLeaderboard, 500)
     
     return () => {
       isActive = false
