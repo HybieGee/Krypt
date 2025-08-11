@@ -25,12 +25,9 @@ let progressLock = false
 // In-memory storage for users and balances
 let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
 
-// Simple timestamp-based visitor counting that works across serverless instances
-// Each wallet gets a unique timestamp, we count based on unique wallet creation times
-let uniqueWallets = new Map<string, number>() // wallet address -> timestamp
-
-// Simulate a minimum baseline count to avoid appearing empty
-const BASELINE_COUNT = 12
+// Dead simple visitor counter - starts at 0, only goes up
+let visitorCount = 0
+let seenVisitors = new Set<string>()
 
 // Blockchain components definition
 const blockchainComponents = [
@@ -349,21 +346,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
-    // Use baseline count plus unique wallets in this instance
-    const earlyAccessCount = BASELINE_COUNT + uniqueWallets.size
-    
-    // Debug logging for stats requests
-    console.log('Stats request (timestamp-based):', {
-      baselineCount: BASELINE_COUNT,
-      uniqueWalletsThisInstance: uniqueWallets.size,
-      totalCount: earlyAccessCount,
-      currentLocalUsers: users.size,
-      someWallets: Array.from(uniqueWallets.keys()).slice(0, 3).map(w => w.substring(0, 10) + '...')
+    console.log('Stats request:', {
+      visitorCount: visitorCount,
+      seenVisitorsThisInstance: seenVisitors.size
     })
     
     const stats = {
-      total_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
+      total_users: { value: visitorCount, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: visitorCount, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },
@@ -400,13 +390,23 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  // Early access user registration endpoint (now tracks wallets with baseline count)
-  if (url === '/api/early-access' && method === 'POST') {
-    // Return current baseline + unique wallets count
+  // Visitor registration - simple counter increment
+  if (url === '/api/register-visitor' && method === 'POST') {
+    const { visitorId } = req.body || {}
+    
+    if (visitorId && !seenVisitors.has(visitorId)) {
+      seenVisitors.add(visitorId)
+      visitorCount++
+      
+      console.log('New visitor registered:', {
+        visitorId: visitorId.substring(0, 8),
+        newCount: visitorCount
+      })
+    }
+    
     return res.json({
       success: true,
-      totalEarlyAccessUsers: BASELINE_COUNT + uniqueWallets.size,
-      method: 'baseline-plus-unique-wallets'
+      totalVisitors: visitorCount
     })
   }
 
@@ -415,31 +415,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const { walletAddress, balance } = req.body || {}
     
     if (walletAddress && typeof balance === 'number') {
-      const isNewWallet = !users.has(walletAddress)
-      
       users.set(walletAddress, { 
         walletAddress, 
         balance, 
         lastUpdated: new Date() 
       })
       
-      // Track unique wallets with timestamp
-      if (isNewWallet && !uniqueWallets.has(walletAddress)) {
-        uniqueWallets.set(walletAddress, Date.now())
-        
-        console.log('NEW WALLET ADDED:', {
-          walletAddress: walletAddress.substring(0, 10) + '...',
-          uniqueWalletsCount: uniqueWallets.size,
-          totalCount: BASELINE_COUNT + uniqueWallets.size
-        })
-      } else {
-        console.log('Wallet registration skipped:', {
-          reason: !isNewWallet ? 'exists in memory' : 'already tracked',
-          walletAddress: walletAddress.substring(0, 10) + '...'
-        })
-      }
-      
-      return res.json({ success: true, balance, totalUsers: BASELINE_COUNT + uniqueWallets.size })
+      return res.json({ success: true, balance })
     }
     
     return res.status(400).json({ error: 'Invalid wallet address or balance' })

@@ -12,28 +12,47 @@ import ApiService from './services/api'
 function App() {
   const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
 
-  // Auto-create wallet for Early Access Users tracking on first visit
+  // Simple visitor tracking - register unique visitor ID
+  useEffect(() => {
+    const apiService = ApiService.getInstance()
+    
+    let visitorId = localStorage.getItem('krypt_visitor_id')
+    if (!visitorId) {
+      // Generate unique visitor ID (UUID-like)
+      visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
+      localStorage.setItem('krypt_visitor_id', visitorId)
+      
+      console.log('New visitor, registering:', visitorId.substring(0, 12) + '...')
+      
+      // Register visitor
+      fetch('/api/register-visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Visitor registered, total:', data.totalVisitors)
+        })
+        .catch(console.error)
+    }
+  }, [])
+
+  // Auto-create wallet for token functionality
   useEffect(() => {
     if (!user?.walletAddress) {
       const generatedAddress = `0x${Math.random().toString(16).substring(2, 42)}`
-      console.log('Creating wallet for new visitor:', generatedAddress.substring(0, 10) + '...')
       updateUserWallet(generatedAddress, 0)
     }
   }, [user, updateUserWallet])
 
-  // Sync wallet to backend immediately when created
+  // Sync wallet balance to backend
   useEffect(() => {
     const apiService = ApiService.getInstance()
     
     if (user?.walletAddress && user?.balance !== undefined) {
-      console.log('Syncing wallet to backend for Early Access tracking')
       apiService.updateUserBalance(user.walletAddress, user.balance)
-        .then(response => {
-          console.log('Wallet synced, total users:', response.totalUsers)
-        })
-        .catch(error => {
-          console.error('Failed to sync wallet:', error)
-        })
+        .catch(console.error)
     }
   }, [user?.walletAddress, user?.balance])
 
