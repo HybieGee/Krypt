@@ -15,7 +15,7 @@ interface Props {
 export default function ProgressBar({ progress }: Props) {
   // Add safety checks to prevent glitches
   const safeCompletedComponents = Math.max(0, progress.completedComponents || 0)
-  const safeTotalComponents = Math.max(1, progress.totalComponents || 640)
+  const safeTotalComponents = Math.max(1, progress.totalComponents || 1500)
   const overallProgress = Math.min(100, Math.max(0, (safeCompletedComponents / safeTotalComponents) * 100))
   const phases = ['Core Infrastructure', 'Consensus', 'Smart Contracts', 'Network']
 

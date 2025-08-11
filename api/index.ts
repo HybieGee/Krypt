@@ -10,7 +10,7 @@ const anthropic = process.env.ANTHROPIC_API_KEY
 let currentProgress = {
   currentPhase: 1,
   componentsCompleted: 0,
-  totalComponents: 640,
+  totalComponents: 1500,
   percentComplete: 0,
   linesOfCode: 0,
   commits: 0,
@@ -78,7 +78,7 @@ Generate only the code, no explanations.`
 }
 
 async function developNextComponent() {
-  if (isGeneratingComponent || currentProgress.componentsCompleted >= 640) {
+  if (isGeneratingComponent || currentProgress.componentsCompleted >= 1500) {
     return
   }
 
@@ -148,8 +148,8 @@ async function developNextComponent() {
       // Real AI generated component
       currentProgress.componentsCompleted++
       currentProgress.linesOfCode += result.lines
-      currentProgress.percentComplete = (currentProgress.componentsCompleted / 640) * 100
-      currentProgress.currentPhase = Math.floor(currentProgress.componentsCompleted / 160) + 1
+      currentProgress.percentComplete = (currentProgress.componentsCompleted / 1500) * 100
+      currentProgress.currentPhase = Math.floor(currentProgress.componentsCompleted / 375) + 1
       currentProgress.lastUpdated = Date.now()
       
       // Add development log showing completion
@@ -160,7 +160,7 @@ async function developNextComponent() {
         message: `✓ Development completed (${result.lines} lines) - Krypt has completed`,
         details: { 
           componentIndex: componentIndex + 1,
-          totalComponents: 640,
+          totalComponents: 1500,
           phase: currentProgress.currentPhase,
           code: result.code, // Full generated code
           aiGenerated: true,
@@ -191,9 +191,9 @@ async function developNextComponent() {
       }
 
       // Phase completion
-      if (currentProgress.componentsCompleted % 160 === 0) {
+      if (currentProgress.componentsCompleted % 375 === 0) {
         const phaseNames = ['Core Infrastructure', 'Consensus Mechanism', 'Smart Contract Layer', 'Network & Security']
-        const completedPhase = Math.floor(currentProgress.componentsCompleted / 160)
+        const completedPhase = Math.floor(currentProgress.componentsCompleted / 375)
         
         developmentLogs.push({
           id: `phase-${completedPhase}-complete`,
@@ -218,18 +218,18 @@ async function developNextComponent() {
 // Development state tracking
 let isDevelopmentStopped = !anthropic // Stop immediately if no API key
 
-// Start immediate development on startup, then continue every 3 minutes
-if (anthropic && currentProgress.componentsCompleted < 640) {
+// Start immediate development on startup, then continue every 1 minute
+if (anthropic && currentProgress.componentsCompleted < 1500) {
   // Immediate first development
   setTimeout(() => developNextComponent(), 1000) // Start after 1 second
 }
 
 // Background development - trigger component development when needed
 setInterval(async () => {
-  if (currentProgress.componentsCompleted < 640) {
+  if (currentProgress.componentsCompleted < 1500) {
     await developNextComponent()
   }
-}, 180000) // Develop a component every 3 minutes (180 seconds = 640 components * 3 min = ~32 hours)
+}, 60000) // Develop a component every 1 minute (60 seconds = 1500 components * 1 min = 25 hours)
 
 // AI typing simulation data
 const typingSnippets = [
@@ -317,15 +317,15 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const progressSnapshot = { ...currentProgress }
     
     // Calculate phase progress - ensure we don't divide by zero and handle edge cases
-    const componentsInCurrentPhase = progressSnapshot.componentsCompleted % 160
+    const componentsInCurrentPhase = progressSnapshot.componentsCompleted % 375
     const phaseProgress = componentsInCurrentPhase === 0 && progressSnapshot.componentsCompleted > 0 
       ? 100 // Phase just completed
-      : (componentsInCurrentPhase / 160) * 100
+      : (componentsInCurrentPhase / 375) * 100
     
     const response = {
       ...progressSnapshot,
       phaseProgress,
-      percentComplete: (progressSnapshot.componentsCompleted / 640) * 100
+      percentComplete: (progressSnapshot.componentsCompleted / 1500) * 100
     }
     
     return res.json(response)
