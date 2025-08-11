@@ -7,7 +7,7 @@ let progressCache = null
 let logsCache = null
 let leaderboardCache = null
 let cacheTimestamps = {}
-const CACHE_TTL = 10000 // 10 seconds
+const CACHE_TTL = 2000 // 2 seconds for faster updates
 
 // Development configuration
 const BLOCKCHAIN_COMPONENTS = 4500
@@ -491,9 +491,9 @@ async function handleLeaderboard(env, corsHeaders) {
     // Sort by balance descending
     leaderboard.sort((a, b) => b.balance - a.balance)
     
-    // Format for Top Holders display - just wallet and balance
+    // Format for Top Holders display - match frontend expectations
     const rankedLeaderboard = leaderboard.slice(0, 10).map((user, index) => ({
-      walletAddress: user.walletAddress.substring(0, 6) + '...' + user.walletAddress.slice(-4),
+      address: user.walletAddress.substring(0, 6) + '...' + user.walletAddress.slice(-4),
       balance: user.balance
     }))
     
