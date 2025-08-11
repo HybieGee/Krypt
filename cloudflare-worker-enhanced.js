@@ -13,14 +13,7 @@ const CACHE_TTL = 10000 // 10 seconds
 const BLOCKCHAIN_COMPONENTS = 4500
 const DEVELOPMENT_INTERVAL = 15000 // 15 seconds between components
 
-// Mock leaderboard data for display
-const MOCK_LEADERBOARD = [
-  { rank: 1, walletAddress: '0x742d...8921', balance: 125000, percentage: 12.5 },
-  { rank: 2, walletAddress: '0x9f3a...2841', balance: 98500, percentage: 9.85 },
-  { rank: 3, walletAddress: '0x3c5b...7632', balance: 87300, percentage: 8.73 },
-  { rank: 4, walletAddress: '0x8e4d...9183', balance: 76200, percentage: 7.62 },
-  { rank: 5, walletAddress: '0x2a9f...4571', balance: 65100, percentage: 6.51 }
-]
+// No mock data - use real user balances only
 
 export default {
   async fetch(request, env, ctx) {
@@ -472,11 +465,39 @@ async function handleUpdateBalance(request, env, corsHeaders) {
   }
 }
 
-// ===== LEADERBOARD WITH MOCK DATA =====
+// ===== LEADERBOARD WITH REAL DATA =====
 async function handleLeaderboard(env, corsHeaders) {
   try {
-    // Return mock leaderboard data for display
-    return new Response(JSON.stringify(MOCK_LEADERBOARD), {
+    // List all user balance keys
+    const list = await env.KRYPT_DATA.list({ prefix: 'user:' })
+    const leaderboard = []
+    let totalBalance = 0
+    
+    // Fetch all user balances
+    for (const key of list.keys) {
+      const userData = await env.KRYPT_DATA.get(key.name)
+      if (userData) {
+        const user = JSON.parse(userData)
+        if (user.balance > 0) {
+          leaderboard.push({
+            walletAddress: user.walletAddress,
+            balance: user.balance
+          })
+          totalBalance += user.balance
+        }
+      }
+    }
+    
+    // Sort by balance descending
+    leaderboard.sort((a, b) => b.balance - a.balance)
+    
+    // Format for Top Holders display - just wallet and balance
+    const rankedLeaderboard = leaderboard.slice(0, 10).map((user, index) => ({
+      walletAddress: user.walletAddress.substring(0, 6) + '...' + user.walletAddress.slice(-4),
+      balance: user.balance
+    }))
+    
+    return new Response(JSON.stringify(rankedLeaderboard), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
