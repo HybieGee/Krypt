@@ -152,7 +152,7 @@ export const useStore = create<StoreState>()(
           // Ensure we never go backwards in progress (prevents flickering)
           const newProgress = {
             currentPhase: Math.max(progress.currentPhase ?? currentProgress.currentPhase ?? 1, currentProgress.currentPhase ?? 1),
-            phaseProgress: Math.max(0, Math.min(100, progress.phaseProgress ?? currentProgress.phaseProgress ?? 0)),
+            phaseProgress: Math.max(progress.phaseProgress ?? currentProgress.phaseProgress ?? 0, currentProgress.phaseProgress ?? 0),
             totalComponents: progress.totalComponents ?? currentProgress.totalComponents,
             completedComponents: Math.max(progress.componentsCompleted ?? currentProgress.completedComponents ?? 0, currentProgress.completedComponents ?? 0),
             linesOfCode: Math.max(progress.linesOfCode ?? currentProgress.linesOfCode ?? 0, currentProgress.linesOfCode ?? 0),

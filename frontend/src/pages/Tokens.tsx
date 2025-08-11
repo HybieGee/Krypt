@@ -24,12 +24,29 @@ export default function Tokens() {
     }
   }, [user, updateUserWallet])
 
-  // Sync user balance to backend when balance changes
+  // Sync user balance to backend when balance changes and trigger immediate leaderboard refresh
   useEffect(() => {
     const apiService = ApiService.getInstance()
     
     if (user?.walletAddress && user?.balance !== undefined) {
+      // Update balance first
       apiService.updateUserBalance(user.walletAddress, user.balance)
+        .then(() => {
+          // Immediately fetch fresh leaderboard data after balance update
+          return apiService.getLeaderboard()
+        })
+        .then(data => {
+          if (data && Array.isArray(data)) {
+            const validData = data.filter(holder => 
+              holder && 
+              holder.address && 
+              typeof holder.balance === 'number' && 
+              holder.balance > 0
+            ).sort((a, b) => b.balance - a.balance)
+            
+            setLeaderboard(validData)
+          }
+        })
         .catch(console.error)
     }
   }, [user?.balance, user?.walletAddress])
@@ -42,12 +59,25 @@ export default function Tokens() {
     const fetchLeaderboard = async () => {
       try {
         const data = await apiService.getLeaderboard()
-        if (isActive && data && Array.isArray(data) && data.length > 0) {
+        if (isActive && data && Array.isArray(data)) {
           setLeaderboard(prevLeaderboard => {
-            // Only update if data has actually changed to prevent unnecessary re-renders
-            const dataString = JSON.stringify(data)
+            // Always update with fresh data, even if empty array
+            // This ensures we get real-time updates when users gain/lose tokens
+            const validData = data.filter(holder => 
+              holder && 
+              holder.address && 
+              typeof holder.balance === 'number' && 
+              holder.balance > 0
+            )
+            
+            // Sort by balance descending to ensure consistent ordering
+            const sortedData = validData.sort((a, b) => b.balance - a.balance)
+            
+            // Only update if data has actually changed
+            const dataString = JSON.stringify(sortedData)
             const prevString = JSON.stringify(prevLeaderboard)
-            return dataString !== prevString ? data : prevLeaderboard
+            
+            return dataString !== prevString ? sortedData : prevLeaderboard
           })
         }
       } catch (error) {
@@ -59,8 +89,8 @@ export default function Tokens() {
     // Initial fetch
     fetchLeaderboard()
     
-    // Poll every 5 seconds (slightly slower to reduce server load)
-    const interval = setInterval(fetchLeaderboard, 5000)
+    // Poll every 2 seconds for faster updates
+    const interval = setInterval(fetchLeaderboard, 2000)
     
     return () => {
       isActive = false
@@ -268,10 +298,8 @@ export default function Tokens() {
             <h4 className="text-sm font-bold text-terminal-green mb-3">Top Holders</h4>
             <div className="space-y-1 text-xs">
               {leaderboard.length > 0 ? (
-                leaderboard
-                  .filter(holder => holder && holder.address && typeof holder.balance === 'number' && holder.balance > 0)
-                  .map((holder, index) => (
-                  <div key={`${holder.address}-${holder.balance}`} className="flex items-center justify-between py-1">
+                leaderboard.map((holder, index) => (
+                  <div key={`${holder.address}-${index}`} className="flex items-center justify-between py-1">
                     <div className="flex items-center space-x-2">
                       <span className="text-terminal-green/60 w-4">#{index + 1}</span>
                       <span className="text-terminal-green font-mono text-[10px]">
