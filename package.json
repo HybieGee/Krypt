@@ -1,6 +1,6 @@
 {
   "name": "krypt-terminal",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "private": true,
   "description": "Krypt Terminal - AI-powered Web3 development platform",
   "scripts": {

@@ -13,8 +13,9 @@ export default function Tokens() {
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
-  // Live leaderboard data
-  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])
+  // Live leaderboard data with stable user management
+  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>([])
+  const [knownUsers, setKnownUsers] = useState<Set<string>>(new Set())
   
   // Auto-generate wallet if needed
   useEffect(() => {
@@ -24,73 +25,94 @@ export default function Tokens() {
     }
   }, [user, updateUserWallet])
 
-  // Sync user balance to backend when balance changes and trigger immediate leaderboard refresh
+  // Sync user balance to backend when balance changes
   useEffect(() => {
     const apiService = ApiService.getInstance()
     
     if (user?.walletAddress && user?.balance !== undefined) {
-      // Update balance first
       apiService.updateUserBalance(user.walletAddress, user.balance)
-        .then(() => {
-          // Immediately fetch fresh leaderboard data after balance update
-          return apiService.getLeaderboard()
-        })
-        .then(data => {
-          if (data && Array.isArray(data)) {
-            const validData = data.filter(holder => 
-              holder && 
-              holder.address && 
-              typeof holder.balance === 'number' && 
-              holder.balance > 0
-            ).sort((a, b) => b.balance - a.balance)
-            
-            setLeaderboard(validData)
-          }
-        })
         .catch(console.error)
     }
   }, [user?.balance, user?.walletAddress])
 
-  // Single leaderboard management effect
+  // Stable leaderboard management with user persistence
   useEffect(() => {
     const apiService = ApiService.getInstance()
-    let isActive = true // Prevent race conditions
+    let isActive = true
     
-    const fetchLeaderboard = async () => {
+    const updateLeaderboard = async () => {
       try {
         const data = await apiService.getLeaderboard()
         if (isActive && data && Array.isArray(data)) {
+          
           setLeaderboard(prevLeaderboard => {
-            // Always update with fresh data, even if empty array
-            // This ensures we get real-time updates when users gain/lose tokens
-            const validData = data.filter(holder => 
+            // Create a map of current users for quick lookup
+            const currentUsers = new Map(prevLeaderboard.map(user => [user.address, user]))
+            
+            // Process new data
+            const newValidData = data.filter(holder => 
               holder && 
               holder.address && 
               typeof holder.balance === 'number' && 
-              holder.balance > 0
+              holder.balance >= 0 // Allow 0 balance users to stay visible
             )
             
-            // Sort by balance descending to ensure consistent ordering
-            const sortedData = validData.sort((a, b) => b.balance - a.balance)
+            // Update known users set
+            setKnownUsers(prev => {
+              const newSet = new Set(prev)
+              newValidData.forEach(holder => newSet.add(holder.address))
+              return newSet
+            })
             
-            // Only update if data has actually changed
-            const dataString = JSON.stringify(sortedData)
-            const prevString = JSON.stringify(prevLeaderboard)
+            // Merge new data with existing users to maintain stability
+            const mergedUsers = new Map()
             
-            return dataString !== prevString ? sortedData : prevLeaderboard
+            // Keep all existing users and update their balances
+            prevLeaderboard.forEach(existingUser => {
+              const newData = newValidData.find(newUser => newUser.address === existingUser.address)
+              if (newData) {
+                // Update existing user with new balance
+                mergedUsers.set(existingUser.address, {
+                  address: existingUser.address,
+                  balance: newData.balance
+                })
+              } else {
+                // Keep existing user even if not in new data (prevents disappearing)
+                mergedUsers.set(existingUser.address, existingUser)
+              }
+            })
+            
+            // Add any genuinely new users
+            newValidData.forEach(newUser => {
+              if (!mergedUsers.has(newUser.address)) {
+                mergedUsers.set(newUser.address, newUser)
+              }
+            })
+            
+            // Convert back to array and sort by balance
+            const finalData = Array.from(mergedUsers.values())
+              .filter(user => user.balance > 0) // Only show users with positive balance
+              .sort((a, b) => b.balance - a.balance)
+              .slice(0, 10) // Top 10 users
+            
+            // Only update if the data has meaningfully changed
+            const currentString = JSON.stringify(finalData.map(u => ({ address: u.address, balance: u.balance })))
+            const prevString = JSON.stringify(prevLeaderboard.map(u => ({ address: u.address, balance: u.balance })))
+            
+            return currentString !== prevString ? finalData : prevLeaderboard
           })
         }
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error)
-        // Keep existing leaderboard data on error
+        // Keep existing data on error - no flickering
       }
     }
     
     // Initial fetch
-    fetchLeaderboard()
+    updateLeaderboard()
     
-    // Poll every 2 seconds for faster updates
-    const interval = setInterval(fetchLeaderboard, 2000)
+    // Poll every 3 seconds - slightly slower for more stability
+    const interval = setInterval(updateLeaderboard, 3000)
     
     return () => {
       isActive = false
@@ -299,14 +321,17 @@ export default function Tokens() {
             <div className="space-y-1 text-xs">
               {leaderboard.length > 0 ? (
                 leaderboard.map((holder, index) => (
-                  <div key={`${holder.address}-${index}`} className="flex items-center justify-between py-1">
+                  <div 
+                    key={holder.address} 
+                    className="flex items-center justify-between py-1 transition-all duration-300"
+                  >
                     <div className="flex items-center space-x-2">
                       <span className="text-terminal-green/60 w-4">#{index + 1}</span>
                       <span className="text-terminal-green font-mono text-[10px]">
                         {holder.address}
                       </span>
                     </div>
-                    <span className="text-terminal-green">
+                    <span className="text-terminal-green font-semibold">
                       {holder.balance.toLocaleString()}
                     </span>
                   </div>
