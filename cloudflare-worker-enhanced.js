@@ -237,7 +237,7 @@ async function handleSetCount(request, env, corsHeaders) {
   }
 }
 
-// ===== CLEAR VISITOR RECORDS FOR TESTING =====
+// ===== NUCLEAR RESET - EVERYTHING =====
 async function handleClearVisitors(request, env, corsHeaders) {
   try {
     const { adminKey } = await request.json()
@@ -248,6 +248,14 @@ async function handleClearVisitors(request, env, corsHeaders) {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+
+    // Reset development progress to initial state
+    const resetProgress = getDefaultProgress()
+    resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
+    
+    // Clear development logs
+    await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
 
     // Get all visitor and fingerprint records
     const visitorList = await env.EARLY_ACCESS.list({ prefix: 'visitor:' })
@@ -266,27 +274,33 @@ async function handleClearVisitors(request, env, corsHeaders) {
     
     await Promise.all(deletePromises)
     
-    // Reset count to 0
+    // Reset visitor count to 0
     await env.EARLY_ACCESS.put('total_count', '0')
     
-    // Clear cache
+    // Clear all caches
     countCache = null
-    delete cacheTimestamps.visitor_count
+    progressCache = null
+    logsCache = null
+    leaderboardCache = null
+    Object.keys(cacheTimestamps).forEach(key => delete cacheTimestamps[key])
 
-    console.log(`Cleared ${visitorList.keys.length} visitor records and ${fingerprintList.keys.length} fingerprint records`)
+    console.log(`NUCLEAR RESET: Cleared ${visitorList.keys.length} visitor records, ${fingerprintList.keys.length} fingerprint records, reset progress and logs`)
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'All visitor records cleared for testing',
+      message: 'Nuclear reset completed - EVERYTHING cleared',
       visitorsCleared: visitorList.keys.length,
       fingerprintsCleared: fingerprintList.keys.length,
-      newCount: 0
+      progressReset: true,
+      logsReset: true,
+      newCount: 0,
+      timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error('Clear visitors error:', error)
-    return new Response(JSON.stringify({ error: 'Failed to clear visitors' }), {
+    console.error('Nuclear reset error:', error)
+    return new Response(JSON.stringify({ error: 'Nuclear reset failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

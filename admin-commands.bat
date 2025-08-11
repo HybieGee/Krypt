@@ -8,7 +8,7 @@ echo 1. Set visitor count to 1
 echo 2. Set visitor count to custom number
 echo 3. Reset ALL (progress, logs, visitors)
 echo 4. Reset progress only
-echo 5. Clear ALL visitor records (testing)
+echo 5. NUCLEAR RESET (everything + visitor records)
 echo 6. Add test user balance
 echo 7. Exit
 echo.
@@ -59,16 +59,24 @@ pause
 goto END
 
 :CLEAR_VISITORS
-echo WARNING: This will clear ALL visitor tracking records!
-echo This means ALL current users will be counted as new visitors when they return.
-set /p confirm="Are you sure? (yes/no): "
+echo =============================================
+echo    ⚠️  NUCLEAR RESET WARNING ⚠️ 
+echo =============================================
+echo This will reset EVERYTHING:
+echo - Development progress (back to 0)
+echo - Development logs (all cleared)
+echo - Visitor count (back to 0)
+echo - ALL visitor records (everyone becomes new)
+echo.
+echo This is the ULTIMATE reset for testing!
+set /p confirm="Are you ABSOLUTELY sure? (yes/no): "
 if %confirm%==yes (
-    echo Clearing all visitor records...
+    echo Performing NUCLEAR RESET...
     curl -X POST "https://kryptterminal.com/api/admin/clear-visitors" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\"}"
     echo.
-    echo All visitor records cleared! Everyone will now count as new visitors.
+    echo NUCLEAR RESET COMPLETE! Everything is now fresh.
 ) else (
-    echo Clear cancelled.
+    echo Nuclear reset cancelled - wise choice!
 )
 pause
 goto END
