@@ -15,7 +15,8 @@
       "Bash(npm run build:*)",
       "Bash(rm:*)",
       "Bash(npm install:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(git reset:*)"
     ],
     "deny": []
   }

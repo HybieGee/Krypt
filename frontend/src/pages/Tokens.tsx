@@ -47,9 +47,13 @@ export default function Tokens() {
     const pollLeaderboard = async () => {
       try {
         const data = await apiService.getLeaderboard()
-        setLeaderboard(data)
+        // Only update if we actually get data to prevent empty flashes
+        if (data && Array.isArray(data)) {
+          setLeaderboard(data)
+        }
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error)
+        // Keep existing leaderboard data on error
       }
     }
     

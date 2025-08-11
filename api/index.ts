@@ -100,7 +100,7 @@ async function developNextComponent() {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     type: 'api',
-    message: `🔄 Sending request to Krypt AI (claude-3-haiku-20240307)...`,
+    message: `🔄 Sending request to Krypt AI...`,
     details: { endpoint: 'anthropic.messages.create', model: 'claude-3-haiku-20240307' }
   })
 
@@ -181,14 +181,17 @@ async function developNextComponent() {
       }
 
     } else {
-      // Stop development if API key is not configured
-      developmentLogs.unshift({
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        type: 'warning',
-        message: `⚠️ Krypt AI development halted - API key required`,
-        details: { note: 'Add ANTHROPIC_API_KEY environment variable to continue real AI development' }
-      })
+      // Stop development if API key is not configured - only log once
+      if (!isDevelopmentStopped) {
+        isDevelopmentStopped = true
+        developmentLogs.unshift({
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          type: 'warning',
+          message: `⚠️ Krypt AI development halted - API key required`,
+          details: { note: 'Add API key environment variable to continue development' }
+        })
+      }
       
       // Do not simulate or continue development without API key
       return
@@ -203,9 +206,12 @@ async function developNextComponent() {
     isGeneratingComponent = false
   }
 }
+// Development state tracking
+let isDevelopmentStopped = false
+
 // Background development - trigger component development when needed
 setInterval(async () => {
-  if (currentProgress.componentsCompleted < 640) {
+  if (currentProgress.componentsCompleted < 640 && !isDevelopmentStopped) {
     await developNextComponent()
   }
 }, 10000) // Develop a component every 10 seconds

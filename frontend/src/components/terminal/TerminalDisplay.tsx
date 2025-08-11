@@ -175,21 +175,23 @@ export default function TerminalDisplay({ logs }: Props) {
         )}
 
         {/* AI typing simulation */}
-        <div className="mt-4 space-y-1">
-          <div className="text-terminal-green/60">
-            <span className="text-terminal-green/60">$</span> krypt --develop --ai-mode
+        {logs.length > 0 && (
+          <div className="mt-4 space-y-1">
+            <div className="text-terminal-green/60">
+              <span className="text-terminal-green/60">$</span> krypt --develop --ai-mode
+            </div>
+            <div className="text-terminal-green/80">
+              🤖 Krypt is coding...
+            </div>
+            <div className="text-terminal-green flex items-center">
+              <span className="text-terminal-green/60 mr-2">&gt;</span>
+              <span className="font-mono text-sm">
+                {currentTyping}
+                <span className="animate-pulse">█</span>
+              </span>
+            </div>
           </div>
-          <div className="text-terminal-green/80">
-            🤖 Krypt is coding...
-          </div>
-          <div className="text-terminal-green flex items-center">
-            <span className="text-terminal-green/60 mr-2">&gt;</span>
-            <span className="font-mono text-sm">
-              {currentTyping}
-              <span className="animate-pulse">█</span>
-            </span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )
