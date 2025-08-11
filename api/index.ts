@@ -68,7 +68,7 @@ Generate only the code, no explanations.`
       return { code, lines }
     }
   } catch (error) {
-    console.error('Claude API error:', error)
+    console.error('Krypt AI error:', error)
   }
 
   return null
@@ -97,7 +97,7 @@ async function developNextComponent() {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     type: 'api',
-    message: `🔄 Sending request to Claude API (claude-3-haiku-20240307)...`,
+    message: `🔄 Sending request to Krypt AI (claude-3-haiku-20240307)...`,
     details: { endpoint: 'anthropic.messages.create', model: 'claude-3-haiku-20240307' }
   })
 
@@ -110,7 +110,7 @@ async function developNextComponent() {
         id: (Date.now() + 1).toString(),
         timestamp: new Date().toISOString(),
         type: 'api',
-        message: `✅ Claude API response received (${result.lines} lines generated)`,
+        message: `✅ Krypt AI response received (${result.lines} lines generated)`,
         details: { 
           responseTime: '1.2s',
           tokensUsed: Math.floor(result.lines * 2.5),
@@ -183,7 +183,7 @@ async function developNextComponent() {
         id: Date.now().toString(),
         timestamp: new Date().toISOString(),
         type: 'warning',
-        message: `⚠️ Claude API key not configured - using simulation mode`,
+        message: `⚠️ Krypt AI key not configured - using simulation mode`,
         details: { note: 'Add ANTHROPIC_API_KEY environment variable for real AI development' }
       })
 
@@ -243,6 +243,18 @@ export default ${componentName.replace('_', '')};`
           linesGenerated: mockLines
         }
       })
+
+      // Simulate tests every 20 components in simulation mode too
+      if (currentProgress.componentsCompleted % 20 === 0) {
+        currentProgress.testsRun += 10
+        developmentLogs.unshift({
+          id: (Date.now() + 3).toString(),
+          timestamp: new Date().toISOString(),
+          type: 'test',
+          message: `✅ Tests passed: 10/10 (Total: ${currentProgress.testsRun}) - Simulated`,
+          details: { testsRun: currentProgress.testsRun, simulated: true }
+        })
+      }
     }
 
     // Keep only last 50 logs

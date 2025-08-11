@@ -171,7 +171,7 @@ export default function TerminalDisplay({ logs }: Props) {
             <span className="text-terminal-green/60">$</span> krypt --develop --ai-mode
           </div>
           <div className="text-terminal-green/80">
-            🤖 AI Developer (Claude) is coding...
+            🤖 AI Developer (Krypt) is coding...
           </div>
           <div className="text-terminal-green flex items-center">
             <span className="text-terminal-green/60 mr-2">&gt;</span>

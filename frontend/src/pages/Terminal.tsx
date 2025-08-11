@@ -8,6 +8,7 @@ import { getSocket } from '@/services/websocket'
 export default function Terminal() {
   const { blockchainProgress, terminalLogs, addTerminalLog, updateBlockchainProgress } = useStore()
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
+  const [logFilter, setLogFilter] = useState<string>('all')
 
   useEffect(() => {
     const socket = getSocket()
@@ -26,6 +27,12 @@ export default function Terminal() {
       socket.off('blockchain:progress')
     }
   }, [addTerminalLog, updateBlockchainProgress])
+
+  // Filter logs based on selected filter
+  const filteredLogs = terminalLogs.filter(log => {
+    if (logFilter === 'all') return true
+    return log.type === logFilter
+  })
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20">
@@ -63,8 +70,33 @@ export default function Terminal() {
             {activeTab === 'terminal' ? (
               <TerminalDisplay logs={terminalLogs.slice(-20)} />
             ) : (
-              <div className="h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                {terminalLogs.map((log) => (
+              <>
+                {/* Log Filter */}
+                <div className="mb-3 pb-2 border-b border-terminal-green/20">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-xs text-terminal-green/60">Filter:</span>
+                    <select
+                      value={logFilter}
+                      onChange={(e) => setLogFilter(e.target.value)}
+                      className="bg-black border border-terminal-green/30 text-terminal-green text-xs px-2 py-1 rounded focus:outline-none focus:border-terminal-green"
+                    >
+                      <option value="all">All Logs</option>
+                      <option value="code">Code Generation</option>
+                      <option value="commit">Commits</option>
+                      <option value="api">API Requests</option>
+                      <option value="system">System</option>
+                      <option value="test">Tests</option>
+                      <option value="phase">Phase Changes</option>
+                      <option value="warning">Warnings</option>
+                    </select>
+                    <span className="text-xs text-terminal-green/40">
+                      ({filteredLogs.length} logs)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                  {filteredLogs.map((log) => (
                   <div key={log.id} className="border-l-2 border-terminal-green/20 pl-3">
                     {/* Log Header */}
                     <div className="flex items-start justify-between mb-1">
@@ -83,11 +115,6 @@ export default function Terminal() {
                           {log.type.toUpperCase()}
                         </span>
                       </div>
-                      {log.details?.componentIndex && (
-                        <span className="text-[10px] text-terminal-green/40">
-                          Component {log.details.componentIndex}/{log.details.totalComponents || 640}
-                        </span>
-                      )}
                     </div>
 
                     {/* Log Message */}
@@ -141,7 +168,8 @@ export default function Terminal() {
                     )}
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         </div>
