@@ -135,8 +135,8 @@ export default function Tokens() {
     // Initial fetch
     updateLeaderboard()
     
-    // Poll every 1.5 seconds for fast updates with stability
-    const interval = setInterval(updateLeaderboard, 1500)
+    // Poll every 800ms for very responsive updates with bulletproof stability
+    const interval = setInterval(updateLeaderboard, 800)
     
     return () => {
       isActive = false
