@@ -80,6 +80,7 @@ export function useEarlyAccessTracking() {
               .then(data => {
                 const newCount = data.count || 0
                 if (newCount !== count) {
+                  console.log('Count updated:', count, '→', newCount)
                   setCount(newCount)
                   updateStatistics({ earlyAccessUsers: newCount })
                 }
@@ -108,6 +109,7 @@ export function useEarlyAccessTracking() {
           .then(data => {
             const newCount = data.count || 0
             if (newCount !== count) {
+              console.log('Count updated:', count, '→', newCount)
               setCount(newCount)
               updateStatistics({ earlyAccessUsers: newCount })
             }
