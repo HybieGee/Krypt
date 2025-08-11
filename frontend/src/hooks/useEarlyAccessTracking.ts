@@ -79,9 +79,13 @@ export function useEarlyAccessTracking() {
               })
               .then(data => {
                 const newCount = data.count || 0
+                console.log('Polling check - Current:', count, 'API:', newCount)
                 if (newCount !== count) {
                   console.log('Count updated:', count, '→', newCount)
                   setCount(newCount)
+                  updateStatistics({ earlyAccessUsers: newCount })
+                } else {
+                  // Force periodic updates even if count seems same
                   updateStatistics({ earlyAccessUsers: newCount })
                 }
               })
@@ -108,9 +112,13 @@ export function useEarlyAccessTracking() {
           })
           .then(data => {
             const newCount = data.count || 0
+            console.log('Polling check - Current:', count, 'API:', newCount)
             if (newCount !== count) {
               console.log('Count updated:', count, '→', newCount)
               setCount(newCount)
+              updateStatistics({ earlyAccessUsers: newCount })
+            } else {
+              // Force periodic updates even if count seems same
               updateStatistics({ earlyAccessUsers: newCount })
             }
           })
