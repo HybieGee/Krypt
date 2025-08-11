@@ -1,7 +1,20 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { redis, isRedisAvailable } from '../../lib/redis'
 import crypto from 'crypto'
-import isbot from 'isbot'
+
+// Simple bot detection without external dependency
+function isBot(userAgent: string): boolean {
+  if (!userAgent) return true
+  
+  const botPatterns = [
+    /bot/i, /crawler/i, /spider/i, /scraper/i,
+    /googlebot/i, /bingbot/i, /slurp/i, /duckduckbot/i,
+    /baiduspider/i, /yandexbot/i, /facebookexternalhit/i,
+    /twitterbot/i, /linkedinbot/i, /whatsapp/i, /telegram/i
+  ]
+  
+  return botPatterns.some(pattern => pattern.test(userAgent))
+}
 
 // In-memory fallback when Redis is not available
 let fallbackVisitors = new Set<string>()

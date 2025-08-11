@@ -27,13 +27,8 @@ export function useEarlyAccessTracking() {
         return response.json()
       }
       
-      // First try the Redis-based endpoint
-      tryVisitEndpoint('/api/early-access/visit')
-        .catch(error => {
-          console.warn('Redis endpoint failed, trying simple endpoint:', error)
-          // Fallback to simple endpoint
-          return tryVisitEndpoint('/api/early-access/simple-visit')
-        })
+      // Use Cloudflare Worker endpoint
+      tryVisitEndpoint('https://kryptterminal.com/api/early-access/visit')
         .then(data => {
           const newCount = data.count || 0
           setCount(newCount)
@@ -47,7 +42,7 @@ export function useEarlyAccessTracking() {
 
     // Set up real-time updates via Server-Sent Events
     try {
-      const eventSource = new EventSource('/api/early-access/stream')
+      const eventSource = new EventSource('https://kryptterminal.com/api/early-access/stream')
       eventSourceRef.current = eventSource
 
       eventSource.onmessage = (event) => {
@@ -72,18 +67,15 @@ export function useEarlyAccessTracking() {
         // Fallback to polling if SSE fails
         if (!fallbackIntervalRef.current) {
           fallbackIntervalRef.current = setInterval(() => {
-            // Try count endpoint first, fallback to simple visit
-            fetch('/api/early-access/count')
+            // Use Cloudflare Worker count endpoint
+            fetch('https://kryptterminal.com/api/early-access/count')
               .then(response => {
                 if (!response.ok) throw new Error('Count endpoint failed')
                 return response.json()
               })
               .catch(error => {
-                console.warn('Count endpoint failed, using simple visit:', error)
-                return fetch('/api/early-access/simple-visit', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' }
-                }).then(r => r.json())
+                console.error('Count endpoint failed:', error)
+                return { count: 0 }
               })
               .then(data => {
                 const newCount = data.count || 0
@@ -104,17 +96,14 @@ export function useEarlyAccessTracking() {
       
       // Immediate fallback to polling
       fallbackIntervalRef.current = setInterval(() => {
-        fetch('/api/early-access/count')
+        fetch('https://kryptterminal.com/api/early-access/count')
           .then(response => {
             if (!response.ok) throw new Error('Count endpoint failed')
             return response.json()
           })
           .catch(error => {
-            console.warn('Count endpoint failed, using simple visit:', error)
-            return fetch('/api/early-access/simple-visit', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            }).then(r => r.json())
+            console.error('Count endpoint failed:', error)
+            return { count: 0 }
           })
           .then(data => {
             const newCount = data.count || 0
