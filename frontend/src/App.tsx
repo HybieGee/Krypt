@@ -12,8 +12,30 @@ import ApiService from './services/api'
 function App() {
   const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
 
-  // Early Access Users now tracked via wallet creation instead of visitor IDs
-  // No separate visitor tracking needed - count increases when wallets are created
+  // Auto-create wallet for Early Access Users tracking on first visit
+  useEffect(() => {
+    if (!user?.walletAddress) {
+      const generatedAddress = `0x${Math.random().toString(16).substring(2, 42)}`
+      console.log('Creating wallet for new visitor:', generatedAddress.substring(0, 10) + '...')
+      updateUserWallet(generatedAddress, 0)
+    }
+  }, [user, updateUserWallet])
+
+  // Sync wallet to backend immediately when created
+  useEffect(() => {
+    const apiService = ApiService.getInstance()
+    
+    if (user?.walletAddress && user?.balance !== undefined) {
+      console.log('Syncing wallet to backend for Early Access tracking')
+      apiService.updateUserBalance(user.walletAddress, user.balance)
+        .then(response => {
+          console.log('Wallet synced, total users:', response.totalUsers)
+        })
+        .catch(error => {
+          console.error('Failed to sync wallet:', error)
+        })
+    }
+  }, [user?.walletAddress, user?.balance])
 
   useEffect(() => {
     const apiService = ApiService.getInstance()

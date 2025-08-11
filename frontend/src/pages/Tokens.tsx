@@ -16,23 +16,9 @@ export default function Tokens() {
   // Live leaderboard data
   const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])  
   
-  // Auto-generate wallet if needed
-  useEffect(() => {
-    if (!user?.walletAddress) {
-      const generatedAddress = `0x${Math.random().toString(16).substring(2, 42)}`
-      updateUserWallet(generatedAddress, 0)
-    }
-  }, [user, updateUserWallet])
+  // Wallet is now auto-created globally in App.tsx on first visit
 
-  // Sync user balance to backend when balance changes
-  useEffect(() => {
-    const apiService = ApiService.getInstance()
-    
-    if (user?.walletAddress && user?.balance !== undefined) {
-      apiService.updateUserBalance(user.walletAddress, user.balance)
-        .catch(console.error)
-    }
-  }, [user?.balance, user?.walletAddress])
+  // Balance sync now handled globally in App.tsx
 
   // Stable leaderboard management with user persistence
   useEffect(() => {

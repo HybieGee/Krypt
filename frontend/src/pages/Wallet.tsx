@@ -7,13 +7,7 @@ export default function Wallet() {
   const [transferAddress, setTransferAddress] = useState('')
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
-  // Generate wallet address if user doesn't have one
-  useEffect(() => {
-    if (!user?.walletAddress) {
-      const generatedAddress = `0x${Math.random().toString(16).substring(2, 42)}`
-      updateUserWallet(generatedAddress, 0)
-    }
-  }, [user, updateUserWallet])
+  // Wallet is now auto-created globally in App.tsx on first visit
 
   const handleTransfer = async () => {
     if (!transferAmount || !transferAddress || !user?.walletAddress) return
