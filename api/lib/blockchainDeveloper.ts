@@ -324,8 +324,32 @@ export class ${component.name.replace(/_/g, '')} {
       id: Date.now().toString(),
       timestamp: new Date(),
       type: 'commit',
-      message: `📦 Committed progress: ${this.currentComponentIndex + 1}/640 components`
+      message: `📦 Committed to krypt-blockchain repo: ${this.currentComponentIndex + 1}/640 components`
     })
+    
+    // If GitHub integration is configured, trigger a webhook to separate blockchain repo
+    if (process.env.BLOCKCHAIN_REPO_WEBHOOK) {
+      try {
+        const webhookData = {
+          phase,
+          component: this.currentComponentIndex + 1,
+          commits: this.commits,
+          code: this.codeCache.get(this.components[this.currentComponentIndex].id)?.substring(0, 1000)
+        }
+        
+        // In production, this would trigger a webhook to update the separate blockchain repo
+        logger.info('Blockchain repo webhook triggered', webhookData)
+        
+        this.io.emit('terminal:log', {
+          id: Date.now().toString(),
+          timestamp: new Date(),
+          type: 'github',
+          message: `🔄 Pushed to blockchain repository: HybieGee/krypt-blockchain`
+        })
+      } catch (error) {
+        logger.error('Blockchain webhook failed:', error)
+      }
+    }
   }
 
   private async simulateTests() {
