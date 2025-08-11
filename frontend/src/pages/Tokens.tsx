@@ -135,6 +135,13 @@ export default function Tokens() {
     return stakeAmt * 0.005 * duration // Default to 0.5%
   }
 
+  const getDailyPercentage = (duration: number) => {
+    if (duration === 1) return 0.5  // 0.5% daily
+    if (duration === 7) return 0.8  // 0.8% daily
+    if (duration === 30) return 1.2 // 1.2% daily
+    return 0.5 // Default to 0.5%
+  }
+
   const handleTransfer = async () => {
     if (!transferAmount || !transferAddress || !user?.walletAddress) return
 
@@ -579,6 +586,10 @@ export default function Tokens() {
                                 <div className="flex justify-between">
                                   <span className="text-terminal-green/70">Duration:</span>
                                   <span className="text-terminal-green">{stake.duration} day{stake.duration > 1 ? 's' : ''}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-terminal-green/70">Daily Rate:</span>
+                                  <span className="text-terminal-green">{getDailyPercentage(stake.duration)}% daily</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-terminal-green/70">Daily Rewards:</span>

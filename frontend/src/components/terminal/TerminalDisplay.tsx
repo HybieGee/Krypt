@@ -91,7 +91,7 @@ export default function TerminalDisplay({ logs }: Props) {
   return (
     <div 
       ref={terminalRef}
-      className="h-96 overflow-y-auto bg-black p-4 font-mono text-xs leading-relaxed custom-scrollbar"
+      className="h-96 overflow-y-auto bg-black p-4 font-mono text-xs leading-relaxed custom-scrollbar terminal-scroll"
       style={{
         scrollbarWidth: 'thin',
         scrollbarColor: '#00ff41 #1a1a1a'

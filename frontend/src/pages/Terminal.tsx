@@ -9,6 +9,7 @@ export default function Terminal() {
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
   const liveViewRef = useRef<HTMLDivElement>(null)
+  const logsViewRef = useRef<HTMLDivElement>(null)
 
   // Force scroll to top on component mount only
   useEffect(() => {
@@ -21,6 +22,20 @@ export default function Terminal() {
     return log.type === logFilter
   })
 
+  // Jump to bottom functions
+  const jumpToBottomLiveView = () => {
+    const terminalElement = liveViewRef.current?.querySelector('.terminal-scroll')
+    if (terminalElement) {
+      terminalElement.scrollTop = terminalElement.scrollHeight
+    }
+  }
+
+  const jumpToBottomLogs = () => {
+    if (logsViewRef.current) {
+      logsViewRef.current.scrollTop = logsViewRef.current.scrollHeight
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20">
       <div className="lg:col-span-2 flex flex-col space-y-4">
@@ -29,26 +44,35 @@ export default function Terminal() {
             <h2 className="text-lg font-bold text-terminal-green">
               Krypt Development Terminal
             </h2>
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-3">
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveTab('terminal')}
+                  className={`px-3 py-1 text-sm transition-colors ${
+                    activeTab === 'terminal'
+                      ? 'text-terminal-green border-b border-terminal-green'
+                      : 'text-terminal-green/60 hover:text-terminal-green'
+                  }`}
+                >
+                  Live View
+                </button>
+                <button
+                  onClick={() => setActiveTab('logs')}
+                  className={`px-3 py-1 text-sm transition-colors ${
+                    activeTab === 'logs'
+                      ? 'text-terminal-green border-b border-terminal-green'
+                      : 'text-terminal-green/60 hover:text-terminal-green'
+                  }`}
+                >
+                  Development Logs ({terminalLogs.length})
+                </button>
+              </div>
               <button
-                onClick={() => setActiveTab('terminal')}
-                className={`px-3 py-1 text-sm transition-colors ${
-                  activeTab === 'terminal'
-                    ? 'text-terminal-green border-b border-terminal-green'
-                    : 'text-terminal-green/60 hover:text-terminal-green'
-                }`}
+                onClick={activeTab === 'terminal' ? jumpToBottomLiveView : jumpToBottomLogs}
+                className="px-2 py-1 text-xs bg-terminal-green/10 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/20 transition-colors rounded"
+                title="Jump to bottom"
               >
-                Live View
-              </button>
-              <button
-                onClick={() => setActiveTab('logs')}
-                className={`px-3 py-1 text-sm transition-colors ${
-                  activeTab === 'logs'
-                    ? 'text-terminal-green border-b border-terminal-green'
-                    : 'text-terminal-green/60 hover:text-terminal-green'
-                }`}
-              >
-                Development Logs ({terminalLogs.length})
+                ↓ Bottom
               </button>
             </div>
           </div>
@@ -82,7 +106,7 @@ export default function Terminal() {
                   </div>
                 </div>
 
-                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar" ref={logsViewRef}>
                   {filteredLogs.map((log) => (
                   <div key={log.id} className="border-l-2 border-terminal-green/20 pl-3">
                     {/* Log Header */}
