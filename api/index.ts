@@ -1,6 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
 
+// Global type declarations for serverless function persistence
+declare global {
+  var earlyAccessCount: number
+  var earlyAccessVisitors: Set<string>
+}
+
 // Initialize Claude AI if API key is available
 const anthropic = process.env.ANTHROPIC_API_KEY 
   ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -25,8 +31,13 @@ let progressLock = false
 // In-memory storage for users and balances
 let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
 
-// In-memory storage for unique early access users
+// In-memory storage for unique early access users (resets on cold starts)
+// Using a global variable to maintain some persistence during warm starts
 let earlyAccessUsers = new Set<string>()
+
+// Simple persistence using global counter (survives warm starts but not cold starts)
+global.earlyAccessCount = global.earlyAccessCount || 0
+global.earlyAccessVisitors = global.earlyAccessVisitors || new Set<string>()
 
 // Blockchain components definition
 const blockchainComponents = [
@@ -345,9 +356,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
+    // Use the maximum between global counter and current set size for monotonic behavior
+    const earlyAccessCount = Math.max(global.earlyAccessCount || 0, earlyAccessUsers.size)
+    
     const stats = {
-      total_users: { value: earlyAccessUsers.size, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: earlyAccessUsers.size, lastUpdated: new Date().toISOString() },
+      total_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },
@@ -388,13 +402,15 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   if (url === '/api/early-access' && method === 'POST') {
     const { visitorId } = req.body || {}
     
-    if (visitorId && !earlyAccessUsers.has(visitorId)) {
-      earlyAccessUsers.add(visitorId)
+    if (visitorId && !global.earlyAccessVisitors.has(visitorId)) {
+      global.earlyAccessVisitors.add(visitorId)
+      global.earlyAccessCount = global.earlyAccessVisitors.size
+      earlyAccessUsers.add(visitorId) // Also update local set
     }
     
     return res.json({
       success: true,
-      totalEarlyAccessUsers: earlyAccessUsers.size
+      totalEarlyAccessUsers: Math.max(global.earlyAccessCount, earlyAccessUsers.size)
     })
   }
 
