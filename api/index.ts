@@ -83,12 +83,12 @@ async function developNextComponent() {
   const componentIndex = currentProgress.componentsCompleted
   const componentName = blockchainComponents[componentIndex % blockchainComponents.length] + `_${componentIndex + 1}`
 
-  // Show AI is starting to work
+  // Show Krypt is starting to work
   developmentLogs.unshift({
     id: (Date.now() - 1).toString(),
     timestamp: new Date().toISOString(),
     type: 'system',
-    message: `🤖 AI analyzing requirements for ${componentName}...`,
+    message: `🤖 Krypt analyzing requirements for component...`,
     details: { phase: Math.floor(componentIndex / 160) + 1, status: 'analyzing' }
   })
 
@@ -130,7 +130,7 @@ async function developNextComponent() {
         id: (Date.now() + 2).toString(),
         timestamp: new Date().toISOString(),
         type: 'code',
-        message: `✓ Developed ${componentName} (${result.lines} lines) - Krypt has completed`,
+        message: `✓ Development completed (${result.lines} lines) - Krypt has completed`,
         details: { 
           componentIndex: componentIndex + 1,
           totalComponents: 640,
@@ -233,7 +233,7 @@ export default ${componentName.replace('_', '')};`
         id: (Date.now() + 1).toString(),
         timestamp: new Date().toISOString(),
         type: 'code',
-        message: `✓ Simulated ${componentName} (${mockLines} lines) - Demo Mode`,
+        message: `✓ Development completed (${mockLines} lines) - Demo Mode`,
         details: { 
           componentIndex: componentIndex + 1,
           totalComponents: 640,
@@ -378,8 +378,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   // Stats endpoint
   if (url === '/api/stats') {
     const stats = {
-      total_users: { value: 1247, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: 892, lastUpdated: new Date().toISOString() },
+      total_users: { value: 0, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: 0, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },

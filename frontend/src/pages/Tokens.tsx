@@ -12,19 +12,8 @@ export default function Tokens() {
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
-  // Mock leaderboard data
-  const [leaderboard] = useState([
-    { address: '0x1a2b...3c4d', balance: 50000 },
-    { address: '0x5e6f...7g8h', balance: 45000 },
-    { address: '0x9i0j...1k2l', balance: 42000 },
-    { address: '0x3m4n...5o6p', balance: 38000 },
-    { address: '0x7q8r...9s0t', balance: 35000 },
-    { address: '0x1u2v...3w4x', balance: 32000 },
-    { address: '0x5y6z...7a8b', balance: 28000 },
-    { address: '0x9c0d...1e2f', balance: 25000 },
-    { address: '0x3g4h...5i6j', balance: 22000 },
-    { address: '0x7k8l...9m0n', balance: 20000 },
-  ])
+  // Leaderboard will be populated with real data when available
+  const [leaderboard] = useState([])
   
   // Auto-generate wallet if needed
   useEffect(() => {
@@ -215,19 +204,25 @@ export default function Tokens() {
           <div className="terminal-window">
             <h4 className="text-sm font-bold text-terminal-green mb-3">Top Holders</h4>
             <div className="space-y-1 text-xs">
-              {leaderboard.map((holder, index) => (
-                <div key={index} className="flex items-center justify-between py-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-terminal-green/60 w-4">#{index + 1}</span>
-                    <span className="text-terminal-green font-mono text-[10px]">
-                      {holder.address}
+              {leaderboard.length > 0 ? (
+                leaderboard.map((holder, index) => (
+                  <div key={index} className="flex items-center justify-between py-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-terminal-green/60 w-4">#{index + 1}</span>
+                      <span className="text-terminal-green font-mono text-[10px]">
+                        {holder.address}
+                      </span>
+                    </div>
+                    <span className="text-terminal-green">
+                      {holder.balance.toLocaleString()}
                     </span>
                   </div>
-                  <span className="text-terminal-green">
-                    {holder.balance.toLocaleString()}
-                  </span>
+                ))
+              ) : (
+                <div className="text-terminal-green/60 text-center py-4">
+                  Leaderboard will appear when users start holding tokens
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
