@@ -145,19 +145,33 @@ export const useStore = create<StoreState>()(
             ]
           } : null
         })),
-        setProgress: (progress) => set((state) => ({
-          blockchainProgress: { 
-            ...state.blockchainProgress, 
-            currentPhase: progress.currentPhase || state.blockchainProgress.currentPhase,
-            phaseProgress: progress.phaseProgress || state.blockchainProgress.phaseProgress,
-            totalComponents: progress.totalComponents || state.blockchainProgress.totalComponents,
-            completedComponents: progress.componentsCompleted || state.blockchainProgress.completedComponents,
-            linesOfCode: progress.linesOfCode || state.blockchainProgress.linesOfCode,
-            commits: progress.commits || state.blockchainProgress.commits,
-            testsRun: progress.testsRun || state.blockchainProgress.testsRun,
-            estimatedCompletion: state.blockchainProgress.estimatedCompletion
+        setProgress: (progress) => set((state) => {
+          // Only update if values have actually changed to prevent unnecessary re-renders
+          const currentProgress = state.blockchainProgress
+          const newProgress = {
+            currentPhase: progress.currentPhase ?? currentProgress.currentPhase,
+            phaseProgress: progress.phaseProgress ?? currentProgress.phaseProgress,
+            totalComponents: progress.totalComponents ?? currentProgress.totalComponents,
+            completedComponents: progress.componentsCompleted ?? currentProgress.completedComponents,
+            linesOfCode: progress.linesOfCode ?? currentProgress.linesOfCode,
+            commits: progress.commits ?? currentProgress.commits,
+            testsRun: progress.testsRun ?? currentProgress.testsRun,
+            estimatedCompletion: currentProgress.estimatedCompletion
           }
-        })),
+          
+          // Check if any values actually changed
+          const hasChanged = Object.keys(newProgress).some(key => 
+            newProgress[key] !== currentProgress[key]
+          )
+          
+          if (!hasChanged) {
+            return state // No changes, don't trigger re-render
+          }
+          
+          return {
+            blockchainProgress: newProgress
+          }
+        }),
         addLogs: (logs) => set((state) => {
           // Create a map of existing logs by ID for efficient lookup
           const existingLogsMap = new Map(state.terminalLogs.map(log => [log.id, log]))

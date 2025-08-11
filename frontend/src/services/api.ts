@@ -32,6 +32,8 @@ class ApiService {
   private static instance: ApiService
   private isPolling: boolean = false
   private pollInterval: NodeJS.Timeout | null = null
+  private lastProgressData: ProgressData | null = null
+  private lastLogsData: LogEntry[] = []
 
   static getInstance(): ApiService {
     if (!ApiService.instance) {
@@ -140,7 +142,7 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 5 seconds
+    // Poll every 5 seconds for live statistics
     this.pollInterval = setInterval(poll, 5000)
   }
 
