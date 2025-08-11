@@ -375,14 +375,16 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
-    // Use file-based persistent count
+    // Reload visitor data to get latest count
+    visitorData = loadVisitorCount()
     const earlyAccessCount = visitorData.count
     
     // Debug logging for stats requests
     console.log('Stats request (file-based):', {
       persistentCount: earlyAccessCount,
       totalWalletsEver: visitorData.wallets.length,
-      currentLocalUsers: users.size
+      currentLocalUsers: users.size,
+      someWallets: visitorData.wallets.slice(0, 3).map(w => w.substring(0, 10) + '...')
     })
     
     const stats = {
@@ -448,15 +450,33 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       })
       
       // Track unique wallets with file-based persistence
-      if (isNewWallet && !visitorData.wallets.includes(walletAddress)) {
+      // Reload visitor data to get latest from file (in case other instances updated it)
+      visitorData = loadVisitorCount()
+      
+      const walletExistsInFile = visitorData.wallets.includes(walletAddress)
+      
+      console.log('Wallet registration check:', {
+        walletAddress: walletAddress.substring(0, 10) + '...',
+        isNewWallet,
+        walletExistsInFile,
+        currentCount: visitorData.count,
+        walletsInFile: visitorData.wallets.length
+      })
+      
+      if (isNewWallet && !walletExistsInFile) {
         visitorData.wallets.push(walletAddress)
         visitorData.count++
         saveVisitorCount(visitorData)
         
-        console.log('New wallet registered:', {
+        console.log('NEW WALLET ADDED:', {
           walletAddress: walletAddress.substring(0, 10) + '...',
-          totalVisitors: visitorData.count,
-          currentLocalUsers: users.size
+          newCount: visitorData.count,
+          totalWalletsInFile: visitorData.wallets.length
+        })
+      } else {
+        console.log('Wallet registration skipped:', {
+          reason: !isNewWallet ? 'exists in memory' : 'exists in file',
+          walletAddress: walletAddress.substring(0, 10) + '...'
         })
       }
       
