@@ -137,7 +137,7 @@ export default function TerminalDisplay({ logs }: Props) {
           Starting autonomous development process...
         </div>
 
-        {logs.map((log) => (
+        {logs.length > 0 ? logs.map((log) => (
           <div key={log.id} className="flex flex-col space-y-1">
             <div className="flex items-start">
               <span className="text-terminal-green/60 mr-2">
@@ -164,7 +164,15 @@ export default function TerminalDisplay({ logs }: Props) {
               </div>
             )}
           </div>
-        ))}
+        )) : (
+          <div className="flex flex-col items-center justify-center h-32 space-y-2">
+            <div className="text-terminal-green/40 text-lg">⏸️</div>
+            <div className="text-terminal-green/60 text-sm">Terminal Paused</div>
+            <div className="text-terminal-green/40 text-xs text-center">
+              Development will resume when API is available
+            </div>
+          </div>
+        )}
 
         {/* AI typing simulation */}
         <div className="mt-4 space-y-1">

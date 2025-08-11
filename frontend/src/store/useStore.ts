@@ -36,6 +36,9 @@ interface BlockchainProgress {
   totalComponents: number
   completedComponents: number
   estimatedCompletion: Date
+  linesOfCode?: number
+  commits?: number
+  testsRun?: number
 }
 
 interface Statistics {

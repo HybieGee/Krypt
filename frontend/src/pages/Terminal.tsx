@@ -68,7 +68,7 @@ export default function Terminal() {
 
           <div className="flex-1 overflow-hidden">
             {activeTab === 'terminal' ? (
-              <TerminalDisplay logs={terminalLogs.slice(-20)} />
+              <TerminalDisplay logs={terminalLogs.slice(0, 20)} />
             ) : (
               <>
                 {/* Log Filter */}

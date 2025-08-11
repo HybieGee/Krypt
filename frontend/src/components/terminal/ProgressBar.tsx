@@ -73,9 +73,6 @@ export default function ProgressBar({ progress }: Props) {
       <div className="mt-4 pt-3 border-t border-terminal-green/20">
         <div className="flex justify-between items-center text-xs">
           <div className="text-terminal-green/60 font-semibold">Development Stats</div>
-          <div className="text-terminal-green/40 text-[10px]">
-            {progress.completedComponents}/{progress.totalComponents} components
-          </div>
         </div>
         <div className="grid grid-cols-3 gap-3 mt-2">
           <div className="text-center">
