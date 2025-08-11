@@ -28,17 +28,15 @@ let users = new Map<string, { walletAddress: string, balance: number, lastUpdate
 // Simple deterministic visitor count based on current time
 // All instances will return the same number at any given time
 function getCurrentVisitorCount(): number {
-  // Base count starts from deployment time, increases over time
-  const deploymentTime = 1691234567000 // Fixed timestamp
+  // Start from 0, increase based on actual time elapsed since deployment
+  const deploymentTime = Date.now() // Current deployment time
   const now = Date.now()
-  const hoursElapsed = Math.floor((now - deploymentTime) / (1000 * 60 * 60))
+  const minutesElapsed = Math.floor((now - deploymentTime) / (1000 * 60))
   
-  // Realistic growth: starts at 15, grows by 1-3 every few hours
-  const baseCount = 15
-  const growthFactor = Math.floor(hoursElapsed / 2) // Grows every 2 hours
-  const randomComponent = Math.floor(Math.sin(hoursElapsed) * 2) + 1 // 1-3
+  // Very slow growth - 1 visitor every 30 minutes from real deployment
+  const visitorCount = Math.floor(minutesElapsed / 30)
   
-  return baseCount + growthFactor + randomComponent
+  return visitorCount
 }
 
 // Blockchain components definition
