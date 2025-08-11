@@ -88,7 +88,7 @@ async function developNextComponent() {
     if (!isDevelopmentStopped) {
       isDevelopmentStopped = true
       developmentLogs.unshift({
-        id: Date.now().toString(),
+        id: `warning-${Date.now()}`,
         timestamp: new Date().toISOString(),
         type: 'warning',
         message: `⚠️ Krypt AI development halted - API key required`,
@@ -107,9 +107,12 @@ async function developNextComponent() {
   const componentIndex = currentProgress.componentsCompleted
   const componentName = blockchainComponents[componentIndex % blockchainComponents.length] + `_${componentIndex + 1}`
 
+  // Generate consistent IDs based on component index to prevent duplicates
+  const baseId = `component-${componentIndex}`
+
   // Show Krypt is starting to work
   developmentLogs.unshift({
-    id: (Date.now() - 1).toString(),
+    id: `${baseId}-analyzing`,
     timestamp: new Date().toISOString(),
     type: 'system',
     message: `🤖 Krypt analyzing requirements for component...`,
@@ -118,7 +121,7 @@ async function developNextComponent() {
 
   // Show API request is being made
   developmentLogs.unshift({
-    id: Date.now().toString(),
+    id: `${baseId}-request`,
     timestamp: new Date().toISOString(),
     type: 'api',
     message: `🔄 Sending request to Krypt AI...`,
@@ -131,7 +134,7 @@ async function developNextComponent() {
     if (result) {
       // Show successful API response
       developmentLogs.unshift({
-        id: (Date.now() + 1).toString(),
+        id: `${baseId}-response`,
         timestamp: new Date().toISOString(),
         type: 'api',
         message: `✅ Krypt AI response received (${result.lines} lines generated)`,
@@ -151,7 +154,7 @@ async function developNextComponent() {
       
       // Add development log showing completion
       developmentLogs.unshift({
-        id: (Date.now() + 2).toString(),
+        id: `${baseId}-complete`,
         timestamp: new Date().toISOString(),
         type: 'code',
         message: `✓ Development completed (${result.lines} lines) - Krypt has completed`,
@@ -168,7 +171,7 @@ async function developNextComponent() {
       // Commit after each component (not every 10)
       currentProgress.commits++
       developmentLogs.unshift({
-        id: (Date.now() + 3).toString(),
+        id: `${baseId}-commit`,
         timestamp: new Date().toISOString(),
         type: 'commit',
         message: `📦 Committed to krypt-blockchain repo`,
@@ -179,7 +182,7 @@ async function developNextComponent() {
       if (currentProgress.componentsCompleted % 20 === 0) {
         currentProgress.testsRun += 10
         developmentLogs.unshift({
-          id: (Date.now() + 2).toString(),
+          id: `component-${componentIndex}-tests`,
           timestamp: new Date().toISOString(),
           type: 'test',
           message: `✅ Tests passed: 10/10 (Total: ${currentProgress.testsRun})`,
@@ -193,7 +196,7 @@ async function developNextComponent() {
         const completedPhase = Math.floor(currentProgress.componentsCompleted / 160)
         
         developmentLogs.unshift({
-          id: (Date.now() + 3).toString(),
+          id: `phase-${completedPhase}-complete`,
           timestamp: new Date().toISOString(),
           type: 'phase',
           message: `🎉 Phase ${completedPhase} Complete: ${phaseNames[completedPhase - 1]}`,

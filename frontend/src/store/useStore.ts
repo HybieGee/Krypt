@@ -158,15 +158,28 @@ export const useStore = create<StoreState>()(
             estimatedCompletion: state.blockchainProgress.estimatedCompletion
           }
         })),
-        addLogs: (logs) => set(() => ({
-          terminalLogs: logs.map(log => ({
-            id: log.id || Math.random().toString(36).substring(7),
-            timestamp: new Date(log.timestamp),
-            type: log.type,
-            message: log.message,
-            details: log.details
-          }))
-        })),
+        addLogs: (logs) => set((state) => {
+          // Create a map of existing logs by ID for efficient lookup
+          const existingLogsMap = new Map(state.terminalLogs.map(log => [log.id, log]))
+          
+          // Process new logs and only add if they don't exist
+          const newLogs = logs.filter(log => !existingLogsMap.has(log.id))
+            .map(log => ({
+              id: log.id || Math.random().toString(36).substring(7),
+              timestamp: new Date(log.timestamp),
+              type: log.type,
+              message: log.message,
+              details: log.details
+            }))
+          
+          // Merge existing logs with new logs, maintaining order (newest first)
+          const mergedLogs = [...newLogs, ...state.terminalLogs]
+          
+          // Keep only the most recent 100 logs to prevent memory issues
+          return {
+            terminalLogs: mergedLogs.slice(0, 100)
+          }
+        }),
         setStats: (stats) => set(() => ({
           statistics: {
             totalUsers: stats.total_users?.value || 0,
