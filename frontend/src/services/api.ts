@@ -32,8 +32,6 @@ class ApiService {
   private static instance: ApiService
   private isPolling: boolean = false
   private pollInterval: NodeJS.Timeout | null = null
-  private lastProgressData: ProgressData | null = null
-  private lastLogsData: LogEntry[] = []
 
   static getInstance(): ApiService {
     if (!ApiService.instance) {

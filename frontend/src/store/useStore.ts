@@ -160,9 +160,10 @@ export const useStore = create<StoreState>()(
           }
           
           // Check if any values actually changed
-          const hasChanged = Object.keys(newProgress).some(key => 
-            newProgress[key] !== currentProgress[key]
-          )
+          const hasChanged = Object.keys(newProgress).some((key) => {
+            const typedKey = key as keyof typeof newProgress
+            return newProgress[typedKey] !== currentProgress[typedKey]
+          })
           
           if (!hasChanged) {
             return state // No changes, don't trigger re-render
