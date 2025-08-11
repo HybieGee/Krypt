@@ -97,7 +97,7 @@ export default function TerminalDisplay({ logs }: Props) {
             🤖 AI Developer (Claude) is coding...
           </div>
           <div className="text-terminal-green flex items-center">
-            <span className="text-terminal-green/60 mr-2">></span>
+            <span className="text-terminal-green/60 mr-2">&gt;</span>
             <span className="font-mono text-sm">
               {currentTyping}
               <span className="animate-pulse">█</span>
