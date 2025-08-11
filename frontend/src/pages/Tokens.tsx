@@ -13,7 +13,7 @@ export default function Tokens() {
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
   // Leaderboard will be populated with real data when available
-  const [leaderboard] = useState([])
+  const [leaderboard] = useState<Array<{ address: string; balance: number }>>([])
   
   // Auto-generate wallet if needed
   useEffect(() => {
