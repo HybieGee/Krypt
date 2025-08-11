@@ -25,7 +25,7 @@ interface User {
 interface TerminalLog {
   id: string
   timestamp: Date
-  type: 'code' | 'commit' | 'phase' | 'system'
+  type: 'code' | 'commit' | 'phase' | 'system' | 'api' | 'warning' | 'test' | 'github'
   message: string
   details?: any
 }
