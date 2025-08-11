@@ -58,6 +58,11 @@ export default {
     if (url.pathname === '/api/admin/set-count' && request.method === 'POST') {
       return handleSetCount(request, env, corsHeaders)
     }
+    
+    // Clear all visitor records for testing
+    if (url.pathname === '/api/admin/clear-visitors' && request.method === 'POST') {
+      return handleClearVisitors(request, env, corsHeaders)
+    }
 
     // Development Logs Routes
     if (url.pathname.startsWith('/api/logs')) {
@@ -226,6 +231,62 @@ async function handleSetCount(request, env, corsHeaders) {
   } catch (error) {
     console.error('Set count error:', error)
     return new Response(JSON.stringify({ error: 'Failed to set count' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== CLEAR VISITOR RECORDS FOR TESTING =====
+async function handleClearVisitors(request, env, corsHeaders) {
+  try {
+    const { adminKey } = await request.json()
+    
+    if (adminKey !== 'krypt_master_reset_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Get all visitor and fingerprint records
+    const visitorList = await env.EARLY_ACCESS.list({ prefix: 'visitor:' })
+    const fingerprintList = await env.EARLY_ACCESS.list({ prefix: 'fingerprint:' })
+    
+    // Delete all visitor records
+    const deletePromises = []
+    
+    for (const key of visitorList.keys) {
+      deletePromises.push(env.EARLY_ACCESS.delete(key.name))
+    }
+    
+    for (const key of fingerprintList.keys) {
+      deletePromises.push(env.EARLY_ACCESS.delete(key.name))
+    }
+    
+    await Promise.all(deletePromises)
+    
+    // Reset count to 0
+    await env.EARLY_ACCESS.put('total_count', '0')
+    
+    // Clear cache
+    countCache = null
+    delete cacheTimestamps.visitor_count
+
+    console.log(`Cleared ${visitorList.keys.length} visitor records and ${fingerprintList.keys.length} fingerprint records`)
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'All visitor records cleared for testing',
+      visitorsCleared: visitorList.keys.length,
+      fingerprintsCleared: fingerprintList.keys.length,
+      newCount: 0
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Clear visitors error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to clear visitors' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
