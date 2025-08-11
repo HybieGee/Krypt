@@ -22,29 +22,83 @@ export default function TerminalDisplay({ logs }: Props) {
     }
   }, [logs])
 
-  // Fetch typing simulation every 2 seconds
+  // Smooth typing animation system
   useEffect(() => {
-    const fetchTyping = async () => {
-      try {
-        const response = await fetch('/api/typing')
-        if (response.ok) {
-          const data = await response.json()
-          setCurrentTyping(data.text || '')
-        }
-      } catch (error) {
-        console.error('Failed to fetch typing:', error)
+    let currentText = ''
+    let targetText = ''
+    let isTyping = false
+    let typeIndex = 0
+
+    const codeSnippets = [
+      'export class BlockStructure {',
+      'private merkleRoot: string;',
+      'async validateTransaction(tx: Transaction) {',
+      'import { CryptoUtils } from "./crypto";',
+      'public readonly hash: string = this.calculateHash();',
+      'constructor(data: BlockData, previousHash: string) {',
+      'if (!this.isValidSignature()) {',
+      'throw new ValidationError("Invalid transaction");',
+      'return await this.signTransaction(privateKey);',
+      'interface ConsensusRules {',
+      'private async computeProofOfStake() {',
+      'const stakingPool = new Map<string, number>();',
+      '// Implement Byzantine fault tolerance',
+      'export default class NetworkNode implements P2PNode {',
+      'public verify(): Promise<boolean> {',
+      'async connectToPeer(address: string): Promise<void> {',
+      'this.transactionPool.add(transaction);',
+      'return crypto.createHash("sha256").update(data);',
+      'await this.broadcastToNetwork(block);',
+      'const nonce = this.findValidNonce(difficulty);'
+    ]
+
+    const typeCharacter = () => {
+      if (typeIndex < targetText.length) {
+        currentText = targetText.substring(0, typeIndex + 1)
+        setCurrentTyping(currentText + '█')
+        typeIndex++
+        setTimeout(typeCharacter, 50 + Math.random() * 100) // 50-150ms per character
+      } else {
+        // Finished typing, pause then start new text
+        setTimeout(() => {
+          targetText = codeSnippets[Math.floor(Math.random() * codeSnippets.length)]
+          currentText = ''
+          typeIndex = 0
+          isTyping = false
+        }, 1000 + Math.random() * 2000) // 1-3 second pause
       }
     }
 
-    fetchTyping()
-    const interval = setInterval(fetchTyping, 2000)
+    const startNewText = () => {
+      if (!isTyping) {
+        isTyping = true
+        targetText = codeSnippets[Math.floor(Math.random() * codeSnippets.length)]
+        typeIndex = 0
+        typeCharacter()
+      }
+    }
+
+    // Start immediately
+    startNewText()
+
+    // Check for new text every 100ms
+    const interval = setInterval(() => {
+      if (!isTyping) {
+        startNewText()
+      }
+    }, 100)
+
     return () => clearInterval(interval)
   }, [])
 
   return (
     <div 
       ref={terminalRef}
-      className="h-full overflow-y-auto bg-black p-4 font-mono text-xs leading-relaxed"
+      className="h-96 overflow-y-auto bg-black p-4 font-mono text-xs leading-relaxed custom-scrollbar"
+      style={{
+        scrollbarWidth: 'thin',
+        scrollbarColor: '#00ff41 #1a1a1a'
+      }}
     >
       <div className="space-y-1">
         <div className="text-terminal-green">

@@ -48,4 +48,21 @@
     @apply focus:outline-none focus:border-terminal-dark-green;
     @apply placeholder-terminal-dark-green/50;
   }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-black;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-terminal-green/50 hover:bg-terminal-green;
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-terminal-green;
+  }
 }

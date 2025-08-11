@@ -305,7 +305,17 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       developNextComponent() // Don't wait for it
     }
     
-    return res.json(currentProgress)
+    // Calculate phase progress
+    const componentsInCurrentPhase = currentProgress.componentsCompleted % 160
+    const phaseProgress = (componentsInCurrentPhase / 160) * 100
+    
+    const response = {
+      ...currentProgress,
+      phaseProgress,
+      percentComplete: (currentProgress.componentsCompleted / 640) * 100
+    }
+    
+    return res.json(response)
   }
 
   // Logs endpoint  

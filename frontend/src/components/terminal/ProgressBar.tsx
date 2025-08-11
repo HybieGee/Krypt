@@ -3,6 +3,9 @@ interface BlockchainProgress {
   phaseProgress: number
   totalComponents: number
   completedComponents: number
+  linesOfCode?: number
+  commits?: number
+  testsRun?: number
 }
 
 interface Props {
@@ -64,6 +67,36 @@ export default function ProgressBar({ progress }: Props) {
             </div>
           )
         })}
+      </div>
+
+      {/* Development Statistics */}
+      <div className="mt-4 pt-3 border-t border-terminal-green/20">
+        <div className="flex justify-between items-center text-xs">
+          <div className="text-terminal-green/60 font-semibold">Development Stats</div>
+          <div className="text-terminal-green/40 text-[10px]">
+            {progress.completedComponents}/{progress.totalComponents} components
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-2">
+          <div className="text-center">
+            <div className="text-terminal-green text-sm font-bold">
+              {(progress.linesOfCode || 0).toLocaleString()}
+            </div>
+            <div className="text-terminal-green/60 text-[10px]">Lines of Code</div>
+          </div>
+          <div className="text-center">
+            <div className="text-terminal-green text-sm font-bold">
+              {(progress.commits || 0).toLocaleString()}
+            </div>
+            <div className="text-terminal-green/60 text-[10px]">Commits</div>
+          </div>
+          <div className="text-center">
+            <div className="text-terminal-green text-sm font-bold">
+              {(progress.testsRun || 0).toLocaleString()}
+            </div>
+            <div className="text-terminal-green/60 text-[10px]">Tests Run</div>
+          </div>
+        </div>
       </div>
     </div>
   )
