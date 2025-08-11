@@ -223,7 +223,7 @@ setInterval(async () => {
   if (currentProgress.componentsCompleted < 640) {
     await developNextComponent()
   }
-}, 1200000) // Develop a component every 20 minutes (1200 seconds = 640 components * 20 min = ~8.9 days)
+}, 180000) // Develop a component every 3 minutes (180 seconds = 640 components * 3 min = ~32 hours)
 
 // AI typing simulation data
 const typingSnippets = [

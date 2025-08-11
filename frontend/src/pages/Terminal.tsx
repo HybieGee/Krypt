@@ -10,39 +10,8 @@ export default function Terminal() {
   const [logFilter, setLogFilter] = useState<string>('all')
   const liveViewRef = useRef<HTMLDivElement>(null)
 
-  // Scroll to bottom of Live View when returning to Terminal page
-  useEffect(() => {
-    if (activeTab === 'terminal' && liveViewRef.current) {
-      // Small delay to ensure the component is rendered
-      setTimeout(() => {
-        // Just scroll the terminal display to bottom (don't scroll page)
-        if (liveViewRef.current) {
-          const terminalElement = liveViewRef.current.querySelector('.h-96')
-          if (terminalElement) {
-            terminalElement.scrollTop = terminalElement.scrollHeight
-          }
-        }
-      }, 100)
-    }
-  }, [activeTab])
-
-  // Also scroll terminal to bottom when new logs arrive
-  useEffect(() => {
-    if (activeTab === 'terminal' && liveViewRef.current && terminalLogs.length > 0) {
-      setTimeout(() => {
-        if (liveViewRef.current) {
-          const terminalElement = liveViewRef.current.querySelector('.h-96')
-          if (terminalElement) {
-            // Only auto-scroll if user is near the bottom
-            const isNearBottom = terminalElement.scrollTop >= terminalElement.scrollHeight - terminalElement.clientHeight - 50
-            if (isNearBottom) {
-              terminalElement.scrollTop = terminalElement.scrollHeight
-            }
-          }
-        }
-      }, 50)
-    }
-  }, [terminalLogs, activeTab])
+  // Remove all auto-scrolling - let users scroll manually
+  // useEffect removed to stop auto-scrolling behavior
 
   // Filter logs based on selected filter
   const filteredLogs = terminalLogs.filter(log => {
