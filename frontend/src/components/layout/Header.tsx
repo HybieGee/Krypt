@@ -20,7 +20,7 @@ export default function Header() {
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-terminal-green">KRYPT TERMINAL</h1>
               <span className="text-terminal-green/60 text-sm">
-                v1.6.2
+                v1.6.3
               </span>
             </div>
             
@@ -45,6 +45,16 @@ export default function Header() {
                 }`}
               >
                 Tokens
+              </Link>
+              <Link
+                to="/rewards"
+                className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
+                  location.pathname === '/rewards' 
+                    ? 'text-terminal-bg bg-terminal-green' 
+                    : 'text-terminal-green hover:bg-terminal-green/10'
+                }`}
+              >
+                Rewards
               </Link>
               <Link
                 to="/roadmap"

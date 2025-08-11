@@ -5,6 +5,7 @@ import Terminal from './pages/Terminal'
 import Documentation from './pages/Documentation'
 import Roadmap from './pages/Roadmap'
 import Tokens from './pages/Tokens'
+import Rewards from './pages/Rewards'
 import { useStore } from './store/useStore'
 import ApiService from './services/api'
 
@@ -60,6 +61,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Terminal />} />
           <Route path="tokens" element={<Tokens />} />
+          <Route path="rewards" element={<Rewards />} />
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="docs" element={<Documentation />} />
         </Route>
