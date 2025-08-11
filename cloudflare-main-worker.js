@@ -46,6 +46,11 @@ export default {
     if (url.pathname === '/api/progress/reset' && request.method === 'POST') {
       return handleProgressReset(request, env, corsHeaders)
     }
+    
+    // Master Reset for Launch
+    if (url.pathname === '/api/admin/reset-all' && request.method === 'POST') {
+      return handleMasterReset(request, env, corsHeaders)
+    }
 
     // Development Logs Routes
     if (url.pathname.startsWith('/api/logs')) {
@@ -184,6 +189,69 @@ async function handleStream(env, corsHeaders) {
     return new Response('error: Internal server error\n\n', {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' }
+    })
+  }
+}
+
+// ===== MASTER RESET FOR LAUNCH =====
+async function handleMasterReset(request, env, corsHeaders) {
+  try {
+    const { adminKey, resetVisitors = false } = await request.json().catch(() => ({}))
+    
+    // Verify admin key
+    if (adminKey !== 'krypt_master_reset_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Reset development progress to initial state
+    const resetProgress = getDefaultProgress()
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
+    
+    // Clear development logs
+    await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
+    
+    // Clear all user balances (optional)
+    // This would need to iterate through all user keys
+    
+    // Reset visitor count if requested
+    if (resetVisitors) {
+      await env.EARLY_ACCESS.put('total_count', '0')
+      // Optionally clear all visitor records
+      // const keys = await env.EARLY_ACCESS.list()
+      // for (const key of keys.keys) {
+      //   if (key.name.startsWith('visitor:') || key.name.startsWith('fingerprint:')) {
+      //     await env.EARLY_ACCESS.delete(key.name)
+      //   }
+      // }
+    }
+    
+    // Clear all caches
+    countCache = null
+    progressCache = null
+    logsCache = null
+    leaderboardCache = null
+    Object.keys(cacheTimestamps).forEach(key => delete cacheTimestamps[key])
+
+    console.log('Master reset completed - ready for launch!')
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'System reset for launch completed',
+      resetProgress: true,
+      resetLogs: true,
+      resetVisitors: resetVisitors,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Master reset error:', error)
+    return new Response(JSON.stringify({ error: 'Reset failed' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 }

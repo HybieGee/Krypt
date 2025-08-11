@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypt Terminal API Tester</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .danger {
+            background: #ff0000;
+            color: #fff;
+        }
+        .danger:hover {
+            background: #cc0000;
+        }
+        .response {
+            background: #000;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #00ff00;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .success {
+            color: #00ff00;
+        }
+        input {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px;
+            margin: 5px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖥️ Krypt Terminal API Tester</h1>
+    
+    <div class="section">
+        <h2>📊 Visitor Tracking</h2>
+        <button onclick="testAPI('/api/early-access/count', 'GET', null, 'visitor-count')">Get Count</button>
+        <button onclick="testAPI('/api/early-access/visit', 'POST', {}, 'visitor-visit')">Register Visit</button>
+        <button onclick="manualSetCount()">Set Count Manually</button>
+        <input type="number" id="manual-count" placeholder="Enter count" value="10">
+        <div id="visitor-count" class="response"></div>
+        <div id="visitor-visit" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ Development Progress</h2>
+        <button onclick="testAPI('/api/progress', 'GET', null, 'progress')">Get Progress</button>
+        <button onclick="resetProgress()" class="danger">🔄 Reset Progress (Admin)</button>
+        <div id="progress" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>📈 Statistics</h2>
+        <button onclick="testAPI('/api/stats', 'GET', null, 'stats')">Get Stats</button>
+        <div id="stats" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>📝 Development Logs</h2>
+        <button onclick="testAPI('/api/logs', 'GET', null, 'logs')">Get Logs</button>
+        <div id="logs" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>🏆 Leaderboard</h2>
+        <button onclick="testAPI('/api/leaderboard', 'GET', null, 'leaderboard')">Get Leaderboard</button>
+        <div id="leaderboard" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>💰 User Balance</h2>
+        <input type="text" id="wallet" placeholder="Wallet address" value="0x1234...">
+        <input type="number" id="balance" placeholder="Balance" value="1000">
+        <button onclick="updateBalance()">Update Balance</button>
+        <div id="balance-response" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>🔧 System</h2>
+        <button onclick="testAPI('/api/health', 'GET', null, 'health')">Health Check</button>
+        <div id="health" class="response"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://kryptterminal.com';
+        
+        async function testAPI(endpoint, method, body, elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `Testing ${endpoint}...`;
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(BASE_URL + endpoint, options);
+                const data = await response.json();
+                
+                element.innerHTML = `<span class="success">✓ ${endpoint}</span>\n` +
+                    `Status: ${response.status}\n` +
+                    `Response:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                element.innerHTML = `<span class="error">✗ ${endpoint}</span>\n` +
+                    `Error: ${error.message}`;
+            }
+        }
+        
+        async function resetProgress() {
+            const adminKey = prompt('Enter admin key to reset progress:');
+            if (!adminKey) return;
+            
+            testAPI('/api/progress/reset', 'POST', { adminKey }, 'progress');
+        }
+        
+        async function updateBalance() {
+            const wallet = document.getElementById('wallet').value;
+            const balance = parseFloat(document.getElementById('balance').value);
+            
+            testAPI('/api/user/balance', 'POST', { 
+                walletAddress: wallet, 
+                balance: balance 
+            }, 'balance-response');
+        }
+        
+        async function manualSetCount() {
+            const count = document.getElementById('manual-count').value;
+            const adminKey = prompt('Enter admin key to manually set count:');
+            if (!adminKey) return;
+            
+            // This would need a new endpoint in your worker to manually set count
+            alert('To manually set the count, you need to:\n\n' +
+                  '1. Go to Cloudflare Dashboard\n' +
+                  '2. Workers & Pages → KV\n' +
+                  '3. Click on KRYPT_DATA namespace\n' +
+                  '4. Find key "total_visitors"\n' +
+                  '5. Edit the value to ' + count);
+        }
+        
+        // Auto-refresh visitor count every 5 seconds
+        setInterval(() => {
+            const element = document.getElementById('visitor-count');
+            if (element.innerHTML !== '') {
+                testAPI('/api/early-access/count', 'GET', null, 'visitor-count');
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

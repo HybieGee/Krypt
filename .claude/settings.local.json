@@ -19,7 +19,9 @@
       "Bash(git reset:*)",
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
-      "Bash(vercel dev:*)"
+      "Bash(vercel dev:*)",
+      "Bash(git log:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": []
   }
