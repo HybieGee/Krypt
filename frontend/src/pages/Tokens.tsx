@@ -92,11 +92,18 @@ export default function Tokens() {
               .sort((a: { address: string; balance: number }, b: { address: string; balance: number }) => b.balance - a.balance)
               .slice(0, 10) // Top 10 users
             
-            // Only update if the data has meaningfully changed
-            const currentString = JSON.stringify(finalData.map((u: { address: string; balance: number }) => ({ address: u.address, balance: u.balance })))
-            const prevString = JSON.stringify(prevLeaderboard.map((u: { address: string; balance: number }) => ({ address: u.address, balance: u.balance })))
+            // Optimized change detection for frequent updates
+            if (finalData.length !== prevLeaderboard.length) {
+              return finalData
+            }
             
-            return currentString !== prevString ? finalData : prevLeaderboard
+            // Check if any balance or order has changed
+            const hasChanges = finalData.some((user: { address: string; balance: number }, index: number) => {
+              const prevUser = prevLeaderboard[index]
+              return !prevUser || user.address !== prevUser.address || user.balance !== prevUser.balance
+            })
+            
+            return hasChanges ? finalData : prevLeaderboard
           })
         }
       } catch (error) {
@@ -108,8 +115,8 @@ export default function Tokens() {
     // Initial fetch
     updateLeaderboard()
     
-    // Poll every 3 seconds - slightly slower for more stability
-    const interval = setInterval(updateLeaderboard, 3000)
+    // Poll every 1 second for rapid balance updates while maintaining stability
+    const interval = setInterval(updateLeaderboard, 1000)
     
     return () => {
       isActive = false
