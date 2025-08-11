@@ -39,6 +39,16 @@ function App() {
         })
         .then(data => {
           console.log('VISITOR REGISTERED - Total count:', data.totalVisitors)
+          // Immediately update the stats to show the new count
+          setStats({
+            total_users: { value: data.totalVisitors, lastUpdated: new Date().toISOString() },
+            early_access_users: { value: data.totalVisitors, lastUpdated: new Date().toISOString() },
+            total_lines_of_code: { value: 0, lastUpdated: new Date().toISOString() },
+            total_commits: { value: 0, lastUpdated: new Date().toISOString() },
+            total_tests_run: { value: 0, lastUpdated: new Date().toISOString() },
+            components_completed: { value: 0, lastUpdated: new Date().toISOString() },
+            current_phase: { value: 1, lastUpdated: new Date().toISOString() }
+          })
         })
         .catch(error => {
           console.error('REGISTRATION FAILED:', error)
