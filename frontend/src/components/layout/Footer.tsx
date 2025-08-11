@@ -1,7 +1,4 @@
-import { useStore } from '@/store/useStore'
-
 export default function Footer() {
-  const { statistics } = useStore()
 
   return (
     <footer className="border-t border-terminal-green/30 bg-black/90 backdrop-blur-sm">
