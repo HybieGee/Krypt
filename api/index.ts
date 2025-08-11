@@ -1,11 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
-
-// Global type declarations for serverless function persistence
-declare global {
-  var earlyAccessCount: number
-  var uniqueWallets: Set<string>
-}
+import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { join } from 'path'
 
 // Initialize Claude AI if API key is available
 const anthropic = process.env.ANTHROPIC_API_KEY 
@@ -31,20 +27,36 @@ let progressLock = false
 // In-memory storage for users and balances
 let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
 
-// In-memory storage for unique early access users (resets on cold starts)
-// Using a global variable to maintain some persistence during warm starts
-let earlyAccessUsers = new Set<string>()
+// File-based persistence for visitor count (works across all serverless instances)
+const VISITORS_FILE = '/tmp/visitors.json'
 
-// Simple persistence using global counter (survives warm starts but not cold starts)
-global.earlyAccessCount = global.earlyAccessCount || 0
-global.uniqueWallets = global.uniqueWallets || new Set<string>()
-
-// Initialize global counter from existing users on startup
-if (users.size > 0 && users.size > global.earlyAccessCount) {
-  global.earlyAccessCount = Math.max(global.earlyAccessCount, users.size)
-  // Add existing wallet addresses to global set
-  Array.from(users.keys()).forEach(wallet => global.uniqueWallets.add(wallet))
+interface VisitorData {
+  count: number
+  wallets: string[]
 }
+
+function loadVisitorCount(): VisitorData {
+  try {
+    if (existsSync(VISITORS_FILE)) {
+      const data = readFileSync(VISITORS_FILE, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (error) {
+    console.log('Could not load visitor file, starting fresh:', error)
+  }
+  return { count: 0, wallets: [] }
+}
+
+function saveVisitorCount(data: VisitorData): void {
+  try {
+    writeFileSync(VISITORS_FILE, JSON.stringify(data))
+  } catch (error) {
+    console.error('Failed to save visitor count:', error)
+  }
+}
+
+// Load persistent visitor data on startup
+let visitorData = loadVisitorCount()
 
 // Blockchain components definition
 const blockchainComponents = [
@@ -363,33 +375,19 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
-    // Primary count should be the global counter (persists across cold starts)
-    const globalWallets = global.uniqueWallets ? global.uniqueWallets.size : 0
-    const localWallets = users.size
-    
-    // Global counter is the authoritative source - only increase it, never decrease
-    const earlyAccessCount = Math.max(
-      global.earlyAccessCount || 0, 
-      globalWallets
-    )
-    
-    // Ensure global counter never goes backward
-    if (earlyAccessCount > (global.earlyAccessCount || 0)) {
-      global.earlyAccessCount = earlyAccessCount
-    }
+    // Use file-based persistent count
+    const earlyAccessCount = visitorData.count
     
     // Debug logging for stats requests
-    console.log('Stats request (global-first):', {
-      authoritativeCount: global.earlyAccessCount,
-      globalWallets: globalWallets,
-      localWallets: localWallets,
-      finalCount: global.earlyAccessCount,
-      walletsInMemory: Array.from(users.keys()).slice(0, 3)
+    console.log('Stats request (file-based):', {
+      persistentCount: earlyAccessCount,
+      totalWalletsEver: visitorData.wallets.length,
+      currentLocalUsers: users.size
     })
     
     const stats = {
-      total_users: { value: global.earlyAccessCount, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: global.earlyAccessCount, lastUpdated: new Date().toISOString() },
+      total_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },
@@ -426,21 +424,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  // Early access user registration endpoint (now tracks wallets instead)
+  // Early access user registration endpoint (now tracks wallets with file persistence)
   if (url === '/api/early-access' && method === 'POST') {
-    // Return current wallet-based count
-    const walletCount = Math.max(global.earlyAccessCount || 0, users.size)
-    
-    console.log('Early access count requested (wallet-based):', {
-      totalWallets: users.size,
-      globalCount: global.earlyAccessCount,
-      finalCount: walletCount
-    })
-    
+    // Return current file-based count
     return res.json({
       success: true,
-      totalEarlyAccessUsers: walletCount,
-      method: 'wallet-based-tracking'
+      totalEarlyAccessUsers: visitorData.count,
+      method: 'file-based-wallet-tracking'
     })
   }
 
@@ -457,21 +447,20 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         lastUpdated: new Date() 
       })
       
-      // Track unique wallets globally for persistence
-      if (isNewWallet) {
-        global.uniqueWallets.add(walletAddress)
-        // Always increment the persistent counter for new wallets
-        global.earlyAccessCount = (global.earlyAccessCount || 0) + 1
+      // Track unique wallets with file-based persistence
+      if (isNewWallet && !visitorData.wallets.includes(walletAddress)) {
+        visitorData.wallets.push(walletAddress)
+        visitorData.count++
+        saveVisitorCount(visitorData)
         
         console.log('New wallet registered:', {
           walletAddress: walletAddress.substring(0, 10) + '...',
-          totalLocalWallets: users.size,
-          totalGlobalWallets: global.uniqueWallets.size,
-          persistentCount: global.earlyAccessCount
+          totalVisitors: visitorData.count,
+          currentLocalUsers: users.size
         })
       }
       
-      return res.json({ success: true, balance, totalUsers: global.earlyAccessCount })
+      return res.json({ success: true, balance, totalUsers: visitorData.count })
     }
     
     return res.status(400).json({ error: 'Invalid wallet address or balance' })
