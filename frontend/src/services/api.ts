@@ -79,6 +79,14 @@ class ApiService {
     return response.json()
   }
 
+  async getTyping(): Promise<{ text: string; isActive: boolean; currentComponent: number; phase: number }> {
+    const response = await fetch(`${API_BASE_URL}/typing`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch typing: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,
