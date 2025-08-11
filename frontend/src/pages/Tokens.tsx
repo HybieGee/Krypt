@@ -72,17 +72,24 @@ export default function Tokens() {
               if (newBalance !== undefined) {
                 // We have fresh data for this user
                 if (newBalance > 0) {
-                  // Allow increases (including small mining rewards) but block decreases/glitches
+                  // Allow increases or significant legitimate decreases (like staking)
+                  const balanceDiff = newBalance - existingUser.balance
+                  
                   if (newBalance >= existingUser.balance) {
                     // Balance increased or stayed same - safe to update (includes mining rewards)
                     updatedUsers.push({
                       address: existingUser.address,
                       balance: newBalance
                     })
+                  } else if (Math.abs(balanceDiff) > 50) {
+                    // Large decrease (>50 tokens) - likely legitimate transaction (staking, transfers)
+                    updatedUsers.push({
+                      address: existingUser.address,
+                      balance: newBalance
+                    })
                   } else {
-                    // Balance decreased - keep existing balance to prevent glitching
+                    // Small decrease (<50 tokens) - likely API glitch, keep existing balance
                     // This blocks small negative glitches (-0.1 to -5) that cause backwards jumps
-                    // Mining always increases balance, so decreases are always API artifacts
                     updatedUsers.push({
                       address: existingUser.address,
                       balance: existingUser.balance
