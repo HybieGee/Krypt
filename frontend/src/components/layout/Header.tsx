@@ -20,7 +20,7 @@ export default function Header() {
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold text-terminal-green">KRYPT TERMINAL</h1>
               <span className="text-terminal-green/60 text-sm">
-                v1.4.1
+                v1.5.0
               </span>
             </div>
             
