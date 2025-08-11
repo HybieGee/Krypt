@@ -223,7 +223,7 @@ setInterval(async () => {
   if (currentProgress.componentsCompleted < 640) {
     await developNextComponent()
   }
-}, 10000) // Develop a component every 10 seconds
+}, 300000) // Develop a component every 5 minutes (300 seconds = 640 components * 5 min = ~53 hours)
 
 // AI typing simulation data
 const typingSnippets = [
@@ -309,9 +309,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       developNextComponent() // Don't wait for it
     }
     
-    // Calculate phase progress
+    // Calculate phase progress - ensure we don't divide by zero and handle edge cases
     const componentsInCurrentPhase = currentProgress.componentsCompleted % 160
-    const phaseProgress = (componentsInCurrentPhase / 160) * 100
+    const phaseProgress = componentsInCurrentPhase === 0 && currentProgress.componentsCompleted > 0 
+      ? 100 // Phase just completed
+      : (componentsInCurrentPhase / 160) * 100
     
     const response = {
       ...currentProgress,

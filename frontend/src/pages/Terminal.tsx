@@ -15,10 +15,7 @@ export default function Terminal() {
     if (activeTab === 'terminal' && liveViewRef.current) {
       // Small delay to ensure the component is rendered
       setTimeout(() => {
-        // First, scroll page to top
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-        
-        // Then scroll the terminal display to bottom
+        // Just scroll the terminal display to bottom (don't scroll page)
         if (liveViewRef.current) {
           const terminalElement = liveViewRef.current.querySelector('.h-96')
           if (terminalElement) {

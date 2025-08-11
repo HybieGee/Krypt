@@ -13,7 +13,10 @@ interface Props {
 }
 
 export default function ProgressBar({ progress }: Props) {
-  const overallProgress = (progress.completedComponents / progress.totalComponents) * 100
+  // Add safety checks to prevent glitches
+  const safeCompletedComponents = Math.max(0, progress.completedComponents || 0)
+  const safeTotalComponents = Math.max(1, progress.totalComponents || 640)
+  const overallProgress = Math.min(100, Math.max(0, (safeCompletedComponents / safeTotalComponents) * 100))
   const phases = ['Core Infrastructure', 'Consensus', 'Smart Contracts', 'Network']
 
   return (
@@ -36,9 +39,11 @@ export default function ProgressBar({ progress }: Props) {
       <div className="grid grid-cols-4 gap-2">
         {phases.map((phase, index) => {
           const phaseNumber = index + 1
-          const isActive = progress.currentPhase === phaseNumber
-          const isCompleted = progress.currentPhase > phaseNumber
-          const phasePercent = isActive ? progress.phaseProgress : isCompleted ? 100 : 0
+          const currentPhase = Math.max(1, progress.currentPhase || 1)
+          const isActive = currentPhase === phaseNumber
+          const isCompleted = currentPhase > phaseNumber
+          const safePhaseProgress = Math.min(100, Math.max(0, progress.phaseProgress || 0))
+          const phasePercent = isActive ? safePhaseProgress : isCompleted ? 100 : 0
 
           return (
             <div key={phase} className="text-center">
@@ -77,19 +82,19 @@ export default function ProgressBar({ progress }: Props) {
         <div className="grid grid-cols-3 gap-3 mt-2">
           <div className="text-center">
             <div className="text-terminal-green text-sm font-bold">
-              {(progress.linesOfCode || 0).toLocaleString()}
+              {Math.max(0, progress.linesOfCode || 0).toLocaleString()}
             </div>
             <div className="text-terminal-green/60 text-[10px]">Lines of Code</div>
           </div>
           <div className="text-center">
             <div className="text-terminal-green text-sm font-bold">
-              {(progress.commits || 0).toLocaleString()}
+              {Math.max(0, progress.commits || 0).toLocaleString()}
             </div>
             <div className="text-terminal-green/60 text-[10px]">Commits</div>
           </div>
           <div className="text-center">
             <div className="text-terminal-green text-sm font-bold">
-              {(progress.testsRun || 0).toLocaleString()}
+              {Math.max(0, progress.testsRun || 0).toLocaleString()}
             </div>
             <div className="text-terminal-green/60 text-[10px]">Tests Run</div>
           </div>
