@@ -67,7 +67,7 @@ interface StoreState {
   updateUserWallet: (walletAddress: string, balance: number) => void
   updateUserMintedAmount: (amount: number) => void
   toggleMining: () => void
-  addStake: (amount: number, duration: number) => void
+  addStake: (amount: number, duration: number, dailyReturn?: number) => void
   setProgress: (progress: any) => void
   addLogs: (logs: any[]) => void
   setStats: (stats: any) => void
@@ -130,7 +130,7 @@ export const useStore = create<StoreState>()(
         toggleMining: () => set((state) => ({
           user: state.user ? { ...state.user, isMining: !state.user.isMining } : null
         })),
-        addStake: (amount, duration) => set((state) => ({
+        addStake: (amount, duration, dailyReturn) => set((state) => ({
           user: state.user ? { 
             ...state.user, 
             stakes: [
@@ -140,7 +140,7 @@ export const useStore = create<StoreState>()(
                 amount,
                 startDate: new Date(),
                 duration,
-                dailyReturn: amount * 0.01
+                dailyReturn: dailyReturn ?? amount * 0.005 // Default to 0.5% if not provided
               }
             ]
           } : null

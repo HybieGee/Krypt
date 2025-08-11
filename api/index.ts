@@ -129,7 +129,7 @@ async function developNextComponent() {
     timestamp: new Date().toISOString(),
     type: 'api',
     message: `🔄 Sending request to Krypt AI...`,
-    details: { endpoint: 'anthropic.messages.create', model: 'claude-3-haiku-20240307' }
+    details: { endpoint: 'anthropic.messages.create' }
   })
 
   try {
@@ -144,8 +144,7 @@ async function developNextComponent() {
         message: `✅ Krypt AI response received (${result.lines} lines generated)`,
         details: { 
           responseTime: '1.2s',
-          tokensUsed: Math.floor(result.lines * 2.5),
-          model: 'claude-3-haiku-20240307'
+          tokensUsed: Math.floor(result.lines * 2.5)
         }
       })
 

@@ -44,7 +44,7 @@ function App() {
     
     if (user?.isMining && user?.walletAddress) {
       miningInterval = setInterval(() => {
-        const miningReward = Math.random() * 5 + 1 // 1-6 tokens per interval
+        const miningReward = (Math.random() * 1.7 + 0.3) // 0.3-2 tokens per interval
         updateUserWallet(user.walletAddress!, (user.balance || 0) + miningReward)
       }, 5000) // Every 5 seconds
     }

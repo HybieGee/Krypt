@@ -73,7 +73,7 @@ export default function Tokens() {
       }
     }
     
-    const interval = setInterval(pollLeaderboard, 10000)
+    const interval = setInterval(pollLeaderboard, 3000)
     return () => clearInterval(interval)
   }, [])
   
@@ -112,8 +112,9 @@ export default function Tokens() {
     if (user?.walletAddress) {
       // Remove staked amount from balance
       updateUserWallet(user.walletAddress, (user.balance || 0) - amount)
-      // Add new stake
-      addStake(amount, stakeDuration)
+      // Add new stake with correct daily return calculation
+      const dailyReturn = getDailyReturn(stakeDuration, amount)
+      addStake(amount, stakeDuration, dailyReturn)
       setStakeAmount('')
       setStakeStatus('success')
       
@@ -126,8 +127,12 @@ export default function Tokens() {
     toggleMining()
   }
 
-  const getDailyReturn = (duration: number) => {
-    return (parseFloat(stakeAmount) || 0) * 0.01 * duration
+  const getDailyReturn = (duration: number, amount?: number) => {
+    const stakeAmt = amount ?? (parseFloat(stakeAmount) || 0)
+    if (duration === 1) return stakeAmt * 0.005 * duration  // 0.5% daily
+    if (duration === 7) return stakeAmt * 0.008 * duration  // 0.8% daily
+    if (duration === 30) return stakeAmt * 0.012 * duration // 1.2% daily
+    return stakeAmt * 0.005 * duration // Default to 0.5%
   }
 
   const handleTransfer = async () => {
@@ -462,7 +467,7 @@ export default function Tokens() {
                             <span className="text-terminal-green text-sm">Mining Active Globally</span>
                           </div>
                           <div className="text-terminal-green/60 text-xs mt-1">
-                            Earning 1-6 tokens every 5 seconds on all pages
+                            Earning 0.3-2 tokens every 5 seconds on all pages
                           </div>
                         </div>
                       )}
@@ -479,7 +484,7 @@ export default function Tokens() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-terminal-green/60">Rate:</span>
-                          <span className="text-terminal-green">1-6 tokens/5s</span>
+                          <span className="text-terminal-green">0.3-2 tokens/5s</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-terminal-green/60">Your Balance:</span>
@@ -494,7 +499,7 @@ export default function Tokens() {
                     <ul className="text-terminal-green/70 text-sm space-y-2">
                       <li>• Click "Start Mining" to begin earning</li>
                       <li>• Mining continues while on this page</li>
-                      <li>• Earn 1-6 tokens every 5 seconds</li>
+                      <li>• Earn 0.3-2 tokens every 5 seconds</li>
                       <li>• Stop anytime by clicking "Stop Mining"</li>
                       <li>• Tokens added directly to your balance</li>
                     </ul>
@@ -520,7 +525,7 @@ export default function Tokens() {
                         }`} onClick={() => setStakeDuration(1)}>
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-terminal-green">1 Day</span>
-                            <span className="text-terminal-green">1% Daily</span>
+                            <span className="text-terminal-green">0.5% Daily</span>
                           </div>
                           <div className="text-terminal-green/60 text-xs">
                             Flexible staking - test the waters
@@ -532,7 +537,7 @@ export default function Tokens() {
                         }`} onClick={() => setStakeDuration(7)}>
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-terminal-green">7 Days</span>
-                            <span className="text-terminal-green">1% Daily (7% Total)</span>
+                            <span className="text-terminal-green">0.8% Daily (5.6% Total)</span>
                           </div>
                           <div className="text-terminal-green/60 text-xs">
                             Popular choice - good balance
@@ -544,7 +549,7 @@ export default function Tokens() {
                         }`} onClick={() => setStakeDuration(30)}>
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-terminal-green">30 Days</span>
-                            <span className="text-terminal-green">1% Daily (30% Total)</span>
+                            <span className="text-terminal-green">1.2% Daily (36% Total)</span>
                           </div>
                           <div className="text-terminal-green/60 text-xs">
                             Maximum returns - long term commitment
