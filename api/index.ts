@@ -25,35 +25,6 @@ let progressLock = false
 // In-memory storage for users and balances
 let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
 
-// Track visitors using timestamp ranges to work across serverless instances
-// Each visitor ID contains a timestamp, we can count unique visitors by time ranges
-function countUniqueVisitors(visitorIds: string[]): number {
-  const uniqueTimestamps = new Set()
-  
-  visitorIds.forEach(id => {
-    // Extract timestamp from visitor ID format: visitor_TIMESTAMP_randomstring
-    const parts = id.split('_')
-    if (parts.length >= 2) {
-      const timestamp = parseInt(parts[1])
-      if (!isNaN(timestamp)) {
-        // Group by 10-minute windows to handle slight timing differences
-        const timeWindow = Math.floor(timestamp / (10 * 60 * 1000)) * (10 * 60 * 1000)
-        uniqueTimestamps.add(timeWindow)
-      }
-    }
-  })
-  
-  return uniqueTimestamps.size
-}
-
-// Global visitor tracking that works across instances
-if (!global.allVisitorIds) {
-  global.allVisitorIds = new Set()
-}
-
-declare global {
-  var allVisitorIds: Set<string>
-}
 
 // Blockchain components definition
 const blockchainComponents = [
@@ -370,18 +341,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.json(developmentLogs)
   }
 
-  // Stats endpoint
+  // Stats endpoint - visitor count now handled by early access endpoints
   if (url === '/api/stats') {
-    const visitorCount = countUniqueVisitors(Array.from(global.allVisitorIds))
-    
-    console.log('Stats request:', {
-      allVisitorIds: Array.from(global.allVisitorIds),
-      calculatedCount: visitorCount
-    })
-    
     const stats = {
-      total_users: { value: visitorCount, lastUpdated: new Date().toISOString() },
-      early_access_users: { value: visitorCount, lastUpdated: new Date().toISOString() },
+      total_users: { value: 0, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: 0, lastUpdated: new Date().toISOString() },
       total_lines_of_code: { value: currentProgress.linesOfCode, lastUpdated: new Date().toISOString() },
       total_commits: { value: currentProgress.commits, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: currentProgress.testsRun, lastUpdated: new Date().toISOString() },
@@ -418,31 +382,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  // Visitor registration - add to global collection
-  if (url === '/api/register-visitor' && method === 'POST') {
-    const { visitorId } = req.body || {}
-    
-    if (visitorId) {
-      global.allVisitorIds.add(visitorId)
-      const visitorCount = countUniqueVisitors(Array.from(global.allVisitorIds))
-      
-      console.log('VISITOR REGISTERED:', {
-        visitorId: visitorId.substring(0, 10),
-        totalUniqueIds: global.allVisitorIds.size,
-        calculatedCount: visitorCount
-      })
-      
-      return res.json({
-        success: true,
-        totalVisitors: visitorCount
-      })
-    }
-    
-    return res.json({
-      success: false,
-      totalVisitors: 0
-    })
-  }
 
   // Update user balance endpoint
   if (url === '/api/user/balance' && method === 'POST') {

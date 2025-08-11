@@ -16,7 +16,10 @@
       "Bash(rm:*)",
       "Bash(npm install:*)",
       "Bash(touch:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(vercel dev:*)"
     ],
     "deny": []
   }

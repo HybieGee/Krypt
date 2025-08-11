@@ -16,5 +16,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.35.3",
+    "isbot": "^5.1.29"
   }
 }

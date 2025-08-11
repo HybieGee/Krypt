@@ -23,6 +23,9 @@ vercel link
 
 3. **Set Environment Variables:**
    - In Vercel project settings, add your new API key
+   - Add Upstash Redis credentials for visitor tracking:
+     - `UPSTASH_REDIS_REST_URL`
+     - `UPSTASH_REDIS_REST_TOKEN`
    
 4. **Deploy:**
 ```bash
