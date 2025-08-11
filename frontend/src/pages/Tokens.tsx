@@ -24,48 +24,31 @@ export default function Tokens() {
     }
   }, [user, updateUserWallet])
 
-  // Sync user balance to backend and fetch leaderboard
+  // Sync user balance to backend when balance changes
   useEffect(() => {
     const apiService = ApiService.getInstance()
     
-    // Sync balance to backend when user balance changes
     if (user?.walletAddress && user?.balance !== undefined) {
       apiService.updateUserBalance(user.walletAddress, user.balance)
         .catch(console.error)
     }
-    
-    // Fetch leaderboard - always try to get fresh data
-    apiService.getLeaderboard()
-      .then(data => {
-        if (data && Array.isArray(data)) {
-          setLeaderboard(data)
-        }
-      })
-      .catch(console.error)
   }, [user?.balance, user?.walletAddress])
 
-  // Initial leaderboard fetch
+  // Single leaderboard management effect
   useEffect(() => {
     const apiService = ApiService.getInstance()
-    apiService.getLeaderboard()
-      .then(data => {
-        if (data && Array.isArray(data)) {
-          setLeaderboard(data)
-        }
-      })
-      .catch(console.error)
-  }, [])
-
-  // Poll leaderboard every 10 seconds
-  useEffect(() => {
-    const apiService = ApiService.getInstance()
+    let isActive = true // Prevent race conditions
     
-    const pollLeaderboard = async () => {
+    const fetchLeaderboard = async () => {
       try {
         const data = await apiService.getLeaderboard()
-        // Only update if we actually get data to prevent empty flashes
-        if (data && Array.isArray(data)) {
-          setLeaderboard(data)
+        if (isActive && data && Array.isArray(data) && data.length > 0) {
+          setLeaderboard(prevLeaderboard => {
+            // Only update if data has actually changed to prevent unnecessary re-renders
+            const dataString = JSON.stringify(data)
+            const prevString = JSON.stringify(prevLeaderboard)
+            return dataString !== prevString ? data : prevLeaderboard
+          })
         }
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error)
@@ -73,8 +56,16 @@ export default function Tokens() {
       }
     }
     
-    const interval = setInterval(pollLeaderboard, 3000)
-    return () => clearInterval(interval)
+    // Initial fetch
+    fetchLeaderboard()
+    
+    // Poll every 5 seconds (slightly slower to reduce server load)
+    const interval = setInterval(fetchLeaderboard, 5000)
+    
+    return () => {
+      isActive = false
+      clearInterval(interval)
+    }
   }, [])
   
   // Mining is now handled globally in App.tsx
@@ -140,6 +131,12 @@ export default function Tokens() {
     if (duration === 7) return 0.8  // 0.8% daily
     if (duration === 30) return 1.2 // 1.2% daily
     return 0.5 // Default to 0.5%
+  }
+
+  // Calculate correct daily rewards for existing stakes with new percentages
+  const getCorrectDailyReward = (stake: any) => {
+    const percentage = getDailyPercentage(stake.duration) / 100
+    return stake.amount * percentage
   }
 
   const handleTransfer = async () => {
@@ -271,8 +268,10 @@ export default function Tokens() {
             <h4 className="text-sm font-bold text-terminal-green mb-3">Top Holders</h4>
             <div className="space-y-1 text-xs">
               {leaderboard.length > 0 ? (
-                leaderboard.map((holder, index) => (
-                  <div key={index} className="flex items-center justify-between py-1">
+                leaderboard
+                  .filter(holder => holder && holder.address && typeof holder.balance === 'number' && holder.balance > 0)
+                  .map((holder, index) => (
+                  <div key={`${holder.address}-${holder.balance}`} className="flex items-center justify-between py-1">
                     <div className="flex items-center space-x-2">
                       <span className="text-terminal-green/60 w-4">#{index + 1}</span>
                       <span className="text-terminal-green font-mono text-[10px]">
@@ -593,7 +592,7 @@ export default function Tokens() {
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-terminal-green/70">Daily Rewards:</span>
-                                  <span className="text-terminal-green">{stake.dailyReturn.toFixed(2)} KRYPT</span>
+                                  <span className="text-terminal-green">{getCorrectDailyReward(stake).toFixed(2)} KRYPT</span>
                                 </div>
                               </div>
                             </div>
@@ -605,7 +604,7 @@ export default function Tokens() {
                             </div>
                             <div className="flex justify-between text-sm font-bold">
                               <span className="text-terminal-green/70">Total Daily Rewards:</span>
-                              <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + stake.dailyReturn, 0).toFixed(2)} KRYPT</span>
+                              <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + getCorrectDailyReward(stake), 0).toFixed(2)} KRYPT</span>
                             </div>
                           </div>
                         </div>
