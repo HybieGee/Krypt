@@ -45,29 +45,66 @@ export default function Tokens() {
         if (isActive && data && Array.isArray(data)) {
           
           setLeaderboard((prevLeaderboard: Array<{ address: string; balance: number }>) => {
-            // Process and filter valid data in one step
-            const validData = data
+            // Create fast lookup for new data
+            const newDataMap = new Map<string, number>()
+            data
               .filter((holder: any) => 
                 holder && 
                 holder.address && 
                 typeof holder.balance === 'number' && 
-                holder.balance > 0 // Only show users with positive balance
+                holder.balance >= 0
               )
-              .sort((a: any, b: any) => b.balance - a.balance) // Sort by balance descending
-              .slice(0, 10) // Top 10 users only
+              .forEach((holder: any) => {
+                newDataMap.set(holder.address, holder.balance)
+              })
             
-            // Fast comparison - if lengths differ, update immediately
-            if (validData.length !== prevLeaderboard.length) {
-              return validData
+            // If no valid new data, keep existing leaderboard
+            if (newDataMap.size === 0) {
+              return prevLeaderboard
             }
             
-            // Quick check if any position or balance changed
-            const hasChanges = validData.some((user: any, index: number) => {
+            // Fast bulk update: maintain existing users, update their balances
+            const updatedUsers: { address: string; balance: number }[] = []
+            
+            // Keep existing users and update their balances
+            prevLeaderboard.forEach((existingUser: { address: string; balance: number }) => {
+              const newBalance = newDataMap.get(existingUser.address)
+              if (newBalance !== undefined && newBalance > 0) {
+                updatedUsers.push({
+                  address: existingUser.address,
+                  balance: newBalance
+                })
+                newDataMap.delete(existingUser.address) // Remove processed user
+              } else if (newBalance === undefined) {
+                // Keep existing user if not in new data (API consistency issues)
+                updatedUsers.push(existingUser)
+              }
+              // Skip users with 0 balance (they get removed)
+            })
+            
+            // Add any new users not in previous leaderboard
+            newDataMap.forEach((balance: number, address: string) => {
+              if (balance > 0) {
+                updatedUsers.push({ address, balance })
+              }
+            })
+            
+            // Sort and get top 10
+            const finalData = updatedUsers
+              .sort((a: { address: string; balance: number }, b: { address: string; balance: number }) => b.balance - a.balance)
+              .slice(0, 10)
+            
+            // Quick change detection
+            if (finalData.length !== prevLeaderboard.length) {
+              return finalData
+            }
+            
+            const hasChanges = finalData.some((user: { address: string; balance: number }, index: number) => {
               const prevUser = prevLeaderboard[index]
               return !prevUser || user.address !== prevUser.address || user.balance !== prevUser.balance
             })
             
-            return hasChanges ? validData : prevLeaderboard
+            return hasChanges ? finalData : prevLeaderboard
           })
         }
       } catch (error) {
@@ -79,8 +116,8 @@ export default function Tokens() {
     // Initial fetch
     updateLeaderboard()
     
-    // Poll every 500ms for ultra-fast balance updates with optimized processing
-    const interval = setInterval(updateLeaderboard, 500)
+    // Poll every 1.5 seconds for fast updates with stability
+    const interval = setInterval(updateLeaderboard, 1500)
     
     return () => {
       isActive = false
