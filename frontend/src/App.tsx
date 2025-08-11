@@ -32,6 +32,8 @@ function App() {
       apiService.registerEarlyAccessUser(newVisitorId)
         .then(response => {
           console.log('Registration response:', response)
+          console.log('Early Access Users count:', response.totalEarlyAccessUsers)
+          console.log('Debug info:', response.debug)
         })
         .catch(error => {
           console.error('Registration error:', error)
@@ -63,8 +65,17 @@ function App() {
       }
     )
 
+    // Listen for immediate stats updates after early access registration
+    const handleEarlyAccessRegistered = (event: CustomEvent) => {
+      console.log('Immediate stats update after registration:', event.detail)
+      setStats(event.detail.stats)
+    }
+    
+    window.addEventListener('early-access-registered', handleEarlyAccessRegistered as EventListener)
+
     return () => {
       apiService.stopPolling()
+      window.removeEventListener('early-access-registered', handleEarlyAccessRegistered as EventListener)
     }
   }, [setConnectionStatus, setProgress, addLogs, setStats])
 

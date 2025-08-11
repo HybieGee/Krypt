@@ -122,7 +122,20 @@ class ApiService {
     if (!response.ok) {
       throw new Error(`Failed to register early access user: ${response.statusText}`)
     }
-    return response.json()
+    const result = await response.json()
+    
+    // Trigger immediate stats refresh after registration
+    try {
+      const stats = await this.getStats()
+      // Dispatch a custom event to trigger immediate UI update
+      window.dispatchEvent(new CustomEvent('early-access-registered', { 
+        detail: { stats, registrationResult: result }
+      }))
+    } catch (error) {
+      console.warn('Failed to refresh stats after registration:', error)
+    }
+    
+    return result
   }
 
   startPolling(
