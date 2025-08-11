@@ -114,8 +114,8 @@ async function handleVisit(request, env, corsHeaders) {
     const fingerprintKey = `fingerprint:${fingerprintHex}`
 
     const [existingVisitor, existingFingerprint] = await Promise.all([
-      env.KRYPT_DATA.get(visitorKey),
-      env.KRYPT_DATA.get(fingerprintKey)
+      env.EARLY_ACCESS.get(visitorKey),
+      env.EARLY_ACCESS.get(fingerprintKey)
     ])
 
     let count
@@ -123,8 +123,8 @@ async function handleVisit(request, env, corsHeaders) {
 
     if (!existingVisitor && !existingFingerprint) {
       await Promise.all([
-        env.KRYPT_DATA.put(visitorKey, now.toString()),
-        env.KRYPT_DATA.put(fingerprintKey, visitorId, { expirationTtl: 172800 })
+        env.EARLY_ACCESS.put(visitorKey, now.toString()),
+        env.EARLY_ACCESS.put(fingerprintKey, visitorId, { expirationTtl: 172800 })
       ])
       
       count = await incrementVisitorCount(env)
@@ -348,7 +348,7 @@ async function handleLeaderboard(env, corsHeaders) {
 
 // ===== HELPER FUNCTIONS =====
 
-// Visitor count with caching
+// Visitor count with caching (using EARLY_ACCESS namespace)
 async function getVisitorCount(env) {
   const now = Date.now()
   const cacheKey = 'visitor_count'
@@ -357,7 +357,7 @@ async function getVisitorCount(env) {
     return countCache
   }
   
-  const count = await env.KRYPT_DATA.get('total_visitors')
+  const count = await env.EARLY_ACCESS.get('total_count')
   const parsedCount = count ? parseInt(count, 10) : 0
   
   countCache = parsedCount
@@ -370,7 +370,7 @@ async function incrementVisitorCount(env) {
   const current = await getVisitorCount(env)
   const newCount = current + 1
   
-  await env.KRYPT_DATA.put('total_visitors', newCount.toString())
+  await env.EARLY_ACCESS.put('total_count', newCount.toString())
   
   countCache = newCount
   cacheTimestamps.visitor_count = Date.now()
