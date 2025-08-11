@@ -55,6 +55,27 @@ function App() {
         })
     } else {
       console.log('RETURNING VISITOR - ID exists:', visitorId)
+      // Even for returning visitors, let's call the API to see what count it returns
+      fetch('/api/register-visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visitorId })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('RETURNING VISITOR API RESPONSE:', data.totalVisitors)
+          // Update stats even for returning visitors
+          setStats({
+            total_users: { value: data.totalVisitors, lastUpdated: new Date().toISOString() },
+            early_access_users: { value: data.totalVisitors, lastUpdated: new Date().toISOString() },
+            total_lines_of_code: { value: 0, lastUpdated: new Date().toISOString() },
+            total_commits: { value: 0, lastUpdated: new Date().toISOString() },
+            total_tests_run: { value: 0, lastUpdated: new Date().toISOString() },
+            components_completed: { value: 0, lastUpdated: new Date().toISOString() },
+            current_phase: { value: 1, lastUpdated: new Date().toISOString() }
+          })
+        })
+        .catch(console.error)
     }
   }, [])
 
