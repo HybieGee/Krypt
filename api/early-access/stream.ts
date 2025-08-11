@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { redis } from '../../lib/redis'
+import { redis, isRedisAvailable } from '../../lib/redis'
+
+// In-memory fallback when Redis is not available
+let fallbackCount = 0
 
 // Note: SSE with Redis pub/sub is complex in serverless edge functions
 // We'll implement a simpler approach that works well with Vercel
@@ -17,15 +20,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Cache-Control')
 
   try {
-    // Send current count immediately
-    let count = await redis.get('early_access:count')
+    let currentCount = 0
     
-    if (count === null) {
-      count = await redis.scard('early_access:uids')
-      await redis.set('early_access:count', count.toString())
+    // Get initial count
+    if (isRedisAvailable() && redis) {
+      try {
+        let count = await redis.get('early_access:count')
+        
+        if (count === null) {
+          count = await redis.scard('early_access:uids')
+          await redis.set('early_access:count', count.toString())
+        }
+
+        currentCount = typeof count === 'string' ? parseInt(count) : count
+      } catch (error) {
+        console.error('Redis error in stream, using fallback:', error)
+        currentCount = fallbackCount
+      }
+    } else {
+      console.log('Redis not available, using fallback count for stream')
+      currentCount = fallbackCount
     }
 
-    const currentCount = typeof count === 'string' ? parseInt(count) : count
+    // Send current count immediately
     res.write(`data: ${JSON.stringify({ count: currentCount })}\n\n`)
 
     // For Vercel Edge Functions, we'll implement polling instead of pub/sub
@@ -34,17 +51,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     const pollInterval = setInterval(async () => {
       try {
-        let newCount = await redis.get('early_access:count')
+        let newCount = 0
         
-        if (newCount === null) {
-          newCount = await redis.scard('early_access:uids')
+        if (isRedisAvailable() && redis) {
+          try {
+            let count = await redis.get('early_access:count')
+            
+            if (count === null) {
+              count = await redis.scard('early_access:uids')
+            }
+            
+            newCount = typeof count === 'string' ? parseInt(count) : count
+          } catch (error) {
+            console.error('Redis error in stream polling:', error)
+            newCount = fallbackCount
+          }
+        } else {
+          newCount = fallbackCount
         }
         
-        const parsedCount = typeof newCount === 'string' ? parseInt(newCount) : newCount
-        
-        if (parsedCount !== lastCount) {
-          res.write(`data: ${JSON.stringify({ count: parsedCount })}\n\n`)
-          lastCount = parsedCount
+        if (newCount !== lastCount) {
+          res.write(`data: ${JSON.stringify({ count: newCount })}\n\n`)
+          lastCount = newCount
         }
       } catch (error) {
         console.error('SSE polling error:', error)

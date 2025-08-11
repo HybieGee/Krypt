@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { redis } from '../../lib/redis'
+import { redis, isRedisAvailable } from '../../lib/redis'
+
+// In-memory fallback when Redis is not available
+let fallbackCount = 0
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -16,20 +19,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Try to get cached count first
-    let count = await redis.get('early_access:count')
+    let count: number = 0
     
-    if (count === null) {
-      // Fallback to counting set members if cache is missing
-      count = await redis.scard('early_access:uids')
-      
-      // Update cache
-      await redis.set('early_access:count', count.toString())
+    if (isRedisAvailable() && redis) {
+      try {
+        // Try to get cached count first
+        let redisCount = await redis.get('early_access:count')
+        
+        if (redisCount === null) {
+          // Fallback to counting set members if cache is missing
+          redisCount = await redis.scard('early_access:uids')
+          
+          // Update cache
+          await redis.set('early_access:count', redisCount.toString())
+        }
+
+        count = typeof redisCount === 'string' ? parseInt(redisCount) : redisCount
+      } catch (error) {
+        console.error('Redis error, using fallback count:', error)
+        count = fallbackCount
+      }
+    } else {
+      console.log('Redis not available, using fallback count')
+      count = fallbackCount
     }
 
-    return res.json({ 
-      count: typeof count === 'string' ? parseInt(count) : count 
-    })
+    return res.json({ count })
     
   } catch (error) {
     console.error('Count retrieval error:', error)

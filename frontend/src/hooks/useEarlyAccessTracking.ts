@@ -13,12 +13,27 @@ export function useEarlyAccessTracking() {
     if (!visitRegisteredRef.current) {
       visitRegisteredRef.current = true
       
-      // Register visit
-      fetch('/api/early-access/visit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-        .then(response => response.json())
+      // Try the full Redis-based endpoint first, fallback to simple if it fails
+      const tryVisitEndpoint = async (endpoint: string) => {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        
+        return response.json()
+      }
+      
+      // First try the Redis-based endpoint
+      tryVisitEndpoint('/api/early-access/visit')
+        .catch(error => {
+          console.warn('Redis endpoint failed, trying simple endpoint:', error)
+          // Fallback to simple endpoint
+          return tryVisitEndpoint('/api/early-access/simple-visit')
+        })
         .then(data => {
           const newCount = data.count || 0
           setCount(newCount)
@@ -57,8 +72,19 @@ export function useEarlyAccessTracking() {
         // Fallback to polling if SSE fails
         if (!fallbackIntervalRef.current) {
           fallbackIntervalRef.current = setInterval(() => {
+            // Try count endpoint first, fallback to simple visit
             fetch('/api/early-access/count')
-              .then(response => response.json())
+              .then(response => {
+                if (!response.ok) throw new Error('Count endpoint failed')
+                return response.json()
+              })
+              .catch(error => {
+                console.warn('Count endpoint failed, using simple visit:', error)
+                return fetch('/api/early-access/simple-visit', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+                }).then(r => r.json())
+              })
               .then(data => {
                 const newCount = data.count || 0
                 if (newCount !== count) {
@@ -79,7 +105,17 @@ export function useEarlyAccessTracking() {
       // Immediate fallback to polling
       fallbackIntervalRef.current = setInterval(() => {
         fetch('/api/early-access/count')
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) throw new Error('Count endpoint failed')
+            return response.json()
+          })
+          .catch(error => {
+            console.warn('Count endpoint failed, using simple visit:', error)
+            return fetch('/api/early-access/simple-visit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(r => r.json())
+          })
           .then(data => {
             const newCount = data.count || 0
             if (newCount !== count) {
