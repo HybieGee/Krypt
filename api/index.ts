@@ -218,6 +218,12 @@ async function developNextComponent() {
 // Development state tracking
 let isDevelopmentStopped = !anthropic // Stop immediately if no API key
 
+// Start immediate development on startup, then continue every 3 minutes
+if (anthropic && currentProgress.componentsCompleted < 640) {
+  // Immediate first development
+  setTimeout(() => developNextComponent(), 1000) // Start after 1 second
+}
+
 // Background development - trigger component development when needed
 setInterval(async () => {
   if (currentProgress.componentsCompleted < 640) {
