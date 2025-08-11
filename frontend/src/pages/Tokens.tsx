@@ -14,8 +14,8 @@ export default function Tokens() {
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
   // Live leaderboard data with stable user management
-  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>([])
-  const [knownUsers, setKnownUsers] = useState<Set<string>>(new Set())
+  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])
+  const [, setKnownUsers] = useState<Set<string>>(new Set())
   
   // Auto-generate wallet if needed
   useEffect(() => {
@@ -45,12 +45,9 @@ export default function Tokens() {
         const data = await apiService.getLeaderboard()
         if (isActive && data && Array.isArray(data)) {
           
-          setLeaderboard(prevLeaderboard => {
-            // Create a map of current users for quick lookup
-            const currentUsers = new Map(prevLeaderboard.map(user => [user.address, user]))
-            
+          setLeaderboard((prevLeaderboard: Array<{ address: string; balance: number }>) => {
             // Process new data
-            const newValidData = data.filter(holder => 
+            const newValidData = data.filter((holder: any) => 
               holder && 
               holder.address && 
               typeof holder.balance === 'number' && 
@@ -58,18 +55,18 @@ export default function Tokens() {
             )
             
             // Update known users set
-            setKnownUsers(prev => {
+            setKnownUsers((prev: Set<string>) => {
               const newSet = new Set(prev)
-              newValidData.forEach(holder => newSet.add(holder.address))
+              newValidData.forEach((holder: any) => newSet.add(holder.address))
               return newSet
             })
             
             // Merge new data with existing users to maintain stability
-            const mergedUsers = new Map()
+            const mergedUsers = new Map<string, { address: string; balance: number }>()
             
             // Keep all existing users and update their balances
-            prevLeaderboard.forEach(existingUser => {
-              const newData = newValidData.find(newUser => newUser.address === existingUser.address)
+            prevLeaderboard.forEach((existingUser: { address: string; balance: number }) => {
+              const newData = newValidData.find((newUser: any) => newUser.address === existingUser.address)
               if (newData) {
                 // Update existing user with new balance
                 mergedUsers.set(existingUser.address, {
@@ -83,7 +80,7 @@ export default function Tokens() {
             })
             
             // Add any genuinely new users
-            newValidData.forEach(newUser => {
+            newValidData.forEach((newUser: any) => {
               if (!mergedUsers.has(newUser.address)) {
                 mergedUsers.set(newUser.address, newUser)
               }
@@ -91,13 +88,13 @@ export default function Tokens() {
             
             // Convert back to array and sort by balance
             const finalData = Array.from(mergedUsers.values())
-              .filter(user => user.balance > 0) // Only show users with positive balance
-              .sort((a, b) => b.balance - a.balance)
+              .filter((user: { address: string; balance: number }) => user.balance > 0) // Only show users with positive balance
+              .sort((a: { address: string; balance: number }, b: { address: string; balance: number }) => b.balance - a.balance)
               .slice(0, 10) // Top 10 users
             
             // Only update if the data has meaningfully changed
-            const currentString = JSON.stringify(finalData.map(u => ({ address: u.address, balance: u.balance })))
-            const prevString = JSON.stringify(prevLeaderboard.map(u => ({ address: u.address, balance: u.balance })))
+            const currentString = JSON.stringify(finalData.map((u: { address: string; balance: number }) => ({ address: u.address, balance: u.balance })))
+            const prevString = JSON.stringify(prevLeaderboard.map((u: { address: string; balance: number }) => ({ address: u.address, balance: u.balance })))
             
             return currentString !== prevString ? finalData : prevLeaderboard
           })
@@ -320,7 +317,7 @@ export default function Tokens() {
             <h4 className="text-sm font-bold text-terminal-green mb-3">Top Holders</h4>
             <div className="space-y-1 text-xs">
               {leaderboard.length > 0 ? (
-                leaderboard.map((holder, index) => (
+                leaderboard.map((holder: { address: string; balance: number }, index: number) => (
                   <div 
                     key={holder.address} 
                     className="flex items-center justify-between py-1 transition-all duration-300"
