@@ -56,3 +56,4 @@ real-api-responses/
 # Development data (safe to commit)
 mock-data/
 test-fixtures/
+.vercel

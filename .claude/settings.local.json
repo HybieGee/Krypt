@@ -13,7 +13,9 @@
       "Bash(copy .env.development .env)",
       "Bash(npm install)",
       "Bash(npm run build:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npm install:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

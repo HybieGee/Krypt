@@ -1,26 +1,33 @@
-# Krypt Terminal
+# 🚀 Krypt Terminal - AI-Powered Blockchain Development Platform
 
-AI-powered Web3 development platform with autonomous blockchain development capabilities.
+An advanced Web3 terminal where an AI agent ("Krypt") actively develops its own blockchain using Claude API while providing real-time chat support for users.
 
-## Quick Start
+## 🚨 IMPORTANT SECURITY NOTICE
 
-1. **Install dependencies:**
+**Your API key was exposed publicly and needs to be revoked immediately:**
+1. Go to https://console.anthropic.com/settings/keys
+2. Revoke the exposed API key
+3. Generate a new key for deployment
+
+## 🚀 Quick Deploy to Vercel
+
+1. **Setup Vercel:**
 ```bash
-npm run install:all
+npm i -g vercel
+vercel login
+vercel link
 ```
 
-2. **Setup environment:**
-```bash
-cp .env.development .env
-```
+2. **Add Database:**
+   - Go to Vercel Dashboard → Storage → Create Postgres Database
 
-3. **Start development servers:**
+3. **Set Environment Variables:**
+   - In Vercel project settings, add your new API key
+   
+4. **Deploy:**
 ```bash
-npm run dev
+vercel --prod
 ```
-
-Frontend: http://localhost:3000
-Backend: http://localhost:5000
 
 ## Project Structure
 
