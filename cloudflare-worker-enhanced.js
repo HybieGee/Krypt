@@ -245,6 +245,7 @@ async function handleMasterReset(request, env, corsHeaders) {
     }
 
     const resetProgress = getDefaultProgress()
+    resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
     
@@ -355,6 +356,7 @@ async function handleProgressReset(request, env, corsHeaders) {
     }
 
     const resetProgress = getDefaultProgress()
+    resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
     
