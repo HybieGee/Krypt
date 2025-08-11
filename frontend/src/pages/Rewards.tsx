@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 
 export default function Rewards() {
-  const { user, blockchainProgress, statistics } = useStore()
+  const { user, blockchainProgress } = useStore()
   const [activeTab, setActiveTab] = useState<'airdrops' | 'raffles'>('airdrops')
   const [raffleTickets, setRaffleTickets] = useState(0)
 
