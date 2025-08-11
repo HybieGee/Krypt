@@ -78,7 +78,7 @@ Generate only the code, no explanations.`
 }
 
 async function developNextComponent() {
-  if (isGeneratingComponent || currentProgress.componentsCompleted >= 640) {
+  if (isGeneratingComponent || currentProgress.componentsCompleted >= 640 || !anthropic) {
     return
   }
 
@@ -211,7 +211,7 @@ let isDevelopmentStopped = false
 
 // Background development - trigger component development when needed
 setInterval(async () => {
-  if (currentProgress.componentsCompleted < 640 && !isDevelopmentStopped) {
+  if (currentProgress.componentsCompleted < 640 && !isDevelopmentStopped && anthropic) {
     await developNextComponent()
   }
 }, 10000) // Develop a component every 10 seconds

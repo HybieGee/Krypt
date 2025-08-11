@@ -34,11 +34,27 @@ export default function Tokens() {
         .catch(console.error)
     }
     
-    // Fetch leaderboard
+    // Fetch leaderboard - always try to get fresh data
     apiService.getLeaderboard()
-      .then(setLeaderboard)
+      .then(data => {
+        if (data && Array.isArray(data)) {
+          setLeaderboard(data)
+        }
+      })
       .catch(console.error)
   }, [user?.balance, user?.walletAddress])
+
+  // Initial leaderboard fetch
+  useEffect(() => {
+    const apiService = ApiService.getInstance()
+    apiService.getLeaderboard()
+      .then(data => {
+        if (data && Array.isArray(data)) {
+          setLeaderboard(data)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   // Poll leaderboard every 10 seconds
   useEffect(() => {

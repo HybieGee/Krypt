@@ -17,14 +17,16 @@ export default function TerminalDisplay({ logs }: Props) {
   const [currentTyping, setCurrentTyping] = useState('')
   const [isUserScrolling, setIsUserScrolling] = useState(false)
 
-  // Auto-scroll only if user isn't manually scrolling
+  // Only auto-scroll if user is already at bottom
   useEffect(() => {
     if (terminalRef.current && !isUserScrolling) {
       const container = terminalRef.current
-      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10
       
       if (isAtBottom) {
-        container.scrollTop = container.scrollHeight
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight
+        }, 50)
       }
     }
   }, [logs, isUserScrolling])
@@ -33,14 +35,10 @@ export default function TerminalDisplay({ logs }: Props) {
   const handleScroll = () => {
     if (terminalRef.current) {
       const container = terminalRef.current
-      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10
       
+      // Set user scrolling flag
       setIsUserScrolling(!isAtBottom)
-      
-      // Reset to auto-scroll if user scrolls to bottom
-      if (isAtBottom && isUserScrolling) {
-        setIsUserScrolling(false)
-      }
     }
   }
 
@@ -175,13 +173,10 @@ export default function TerminalDisplay({ logs }: Props) {
         )}
 
         {/* AI typing simulation */}
-        {logs.length > 0 && (
+        {logs.length > 0 && !logs.some(log => log.type === 'warning' && log.message.includes('halted')) && (
           <div className="mt-4 space-y-1">
             <div className="text-terminal-green/60">
               <span className="text-terminal-green/60">$</span> krypt --develop --ai-mode
-            </div>
-            <div className="text-terminal-green/80">
-              🤖 Krypt is coding...
             </div>
             <div className="text-terminal-green flex items-center">
               <span className="text-terminal-green/60 mr-2">&gt;</span>
