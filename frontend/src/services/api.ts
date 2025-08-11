@@ -13,7 +13,7 @@ export interface ProgressData {
 export interface LogEntry {
   id: string
   timestamp: string
-  type: 'code' | 'commit' | 'test' | 'phase' | 'system' | 'github'
+  type: 'code' | 'commit' | 'test' | 'phase' | 'system' | 'github' | 'api' | 'warning'
   message: string
   details?: any
 }
