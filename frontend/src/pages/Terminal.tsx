@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import TerminalDisplay from '@/components/terminal/TerminalDisplay'
 import ChatInterface from '@/components/chat/ChatInterface'
 import ProgressBar from '@/components/terminal/ProgressBar'
@@ -10,8 +10,10 @@ export default function Terminal() {
   const [logFilter, setLogFilter] = useState<string>('all')
   const liveViewRef = useRef<HTMLDivElement>(null)
 
-  // Remove all auto-scrolling - let users scroll manually
-  // useEffect removed to stop auto-scrolling behavior
+  // Force scroll to top on component mount only
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, []) // Empty dependency array = only run once on mount
 
   // Filter logs based on selected filter
   const filteredLogs = terminalLogs.filter(log => {
