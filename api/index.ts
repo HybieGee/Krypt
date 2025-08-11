@@ -78,8 +78,29 @@ Generate only the code, no explanations.`
 }
 
 async function developNextComponent() {
-  if (isGeneratingComponent || currentProgress.componentsCompleted >= 640 || !anthropic) {
+  if (isGeneratingComponent || currentProgress.componentsCompleted >= 640) {
     return
+  }
+
+  // Check API availability first - don't start anything without it
+  if (!anthropic) {
+    // Stop development if API key is not configured - only log once
+    if (!isDevelopmentStopped) {
+      isDevelopmentStopped = true
+      developmentLogs.unshift({
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        type: 'warning',
+        message: `⚠️ Krypt AI development halted - API key required`,
+        details: { note: 'Add API key environment variable to continue development' }
+      })
+    }
+    return
+  }
+
+  // Reset development stopped flag if API is available
+  if (isDevelopmentStopped && anthropic) {
+    isDevelopmentStopped = false
   }
 
   isGeneratingComponent = true
@@ -180,21 +201,6 @@ async function developNextComponent() {
         })
       }
 
-    } else {
-      // Stop development if API key is not configured - only log once
-      if (!isDevelopmentStopped) {
-        isDevelopmentStopped = true
-        developmentLogs.unshift({
-          id: Date.now().toString(),
-          timestamp: new Date().toISOString(),
-          type: 'warning',
-          message: `⚠️ Krypt AI development halted - API key required`,
-          details: { note: 'Add API key environment variable to continue development' }
-        })
-      }
-      
-      // Do not simulate or continue development without API key
-      return
     }
 
     // Keep only last 50 logs
@@ -207,11 +213,11 @@ async function developNextComponent() {
   }
 }
 // Development state tracking
-let isDevelopmentStopped = false
+let isDevelopmentStopped = !anthropic // Stop immediately if no API key
 
 // Background development - trigger component development when needed
 setInterval(async () => {
-  if (currentProgress.componentsCompleted < 640 && !isDevelopmentStopped && anthropic) {
+  if (currentProgress.componentsCompleted < 640) {
     await developNextComponent()
   }
 }, 10000) // Develop a component every 10 seconds

@@ -1,32 +1,29 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import TerminalDisplay from '@/components/terminal/TerminalDisplay'
 import ChatInterface from '@/components/chat/ChatInterface'
 import ProgressBar from '@/components/terminal/ProgressBar'
 import { useStore } from '@/store/useStore'
-import { getSocket } from '@/services/websocket'
 
 export default function Terminal() {
-  const { blockchainProgress, terminalLogs, addTerminalLog, updateBlockchainProgress } = useStore()
+  const { blockchainProgress, terminalLogs } = useStore()
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
+  const liveViewRef = useRef<HTMLDivElement>(null)
 
+  // Scroll to bottom of Live View when returning to Terminal page
   useEffect(() => {
-    const socket = getSocket()
-    if (!socket) return
-
-    socket.on('terminal:log', (log) => {
-      addTerminalLog(log)
-    })
-
-    socket.on('blockchain:progress', (progress) => {
-      updateBlockchainProgress(progress)
-    })
-
-    return () => {
-      socket.off('terminal:log')
-      socket.off('blockchain:progress')
+    if (activeTab === 'terminal' && liveViewRef.current) {
+      // Small delay to ensure the component is rendered
+      setTimeout(() => {
+        if (liveViewRef.current) {
+          const terminalElement = liveViewRef.current.querySelector('.h-96')
+          if (terminalElement) {
+            terminalElement.scrollTop = terminalElement.scrollHeight
+          }
+        }
+      }, 100)
     }
-  }, [addTerminalLog, updateBlockchainProgress])
+  }, [activeTab])
 
   // Filter logs based on selected filter
   const filteredLogs = terminalLogs.filter(log => {
@@ -66,7 +63,7 @@ export default function Terminal() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden" ref={liveViewRef}>
             {activeTab === 'terminal' ? (
               <TerminalDisplay logs={terminalLogs.slice(0, 20)} />
             ) : (

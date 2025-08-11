@@ -146,7 +146,17 @@ export const useStore = create<StoreState>()(
           } : null
         })),
         setProgress: (progress) => set((state) => ({
-          blockchainProgress: { ...state.blockchainProgress, ...progress }
+          blockchainProgress: { 
+            ...state.blockchainProgress, 
+            currentPhase: progress.currentPhase || state.blockchainProgress.currentPhase,
+            phaseProgress: progress.phaseProgress || state.blockchainProgress.phaseProgress,
+            totalComponents: progress.totalComponents || state.blockchainProgress.totalComponents,
+            completedComponents: progress.componentsCompleted || state.blockchainProgress.completedComponents,
+            linesOfCode: progress.linesOfCode || state.blockchainProgress.linesOfCode,
+            commits: progress.commits || state.blockchainProgress.commits,
+            testsRun: progress.testsRun || state.blockchainProgress.testsRun,
+            estimatedCompletion: state.blockchainProgress.estimatedCompletion
+          }
         })),
         addLogs: (logs) => set(() => ({
           terminalLogs: logs.map(log => ({
