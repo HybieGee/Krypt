@@ -14,8 +14,6 @@ function App() {
 
   // Simple visitor tracking - register unique visitor ID
   useEffect(() => {
-    const apiService = ApiService.getInstance()
-    
     let visitorId = localStorage.getItem('krypt_visitor_id')
     if (!visitorId) {
       // Generate unique visitor ID (UUID-like)
