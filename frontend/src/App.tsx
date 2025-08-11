@@ -6,26 +6,37 @@ import Documentation from './pages/Documentation'
 import Roadmap from './pages/Roadmap'
 import Tokens from './pages/Tokens'
 import { useStore } from './store/useStore'
-import { initializeWebSocket } from './services/websocket'
+import ApiService from './services/api'
 
 function App() {
-  const { setConnectionStatus, user, updateUserWallet } = useStore()
+  const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
 
   useEffect(() => {
-    const ws = initializeWebSocket()
+    const apiService = ApiService.getInstance()
     
-    ws.on('connect', () => {
-      setConnectionStatus('connected')
-    })
-
-    ws.on('disconnect', () => {
-      setConnectionStatus('disconnected')
-    })
+    // Set connected immediately since we're using HTTP polling
+    setConnectionStatus('connected')
+    
+    // Start polling for real-time updates
+    apiService.startPolling(
+      (progress) => setProgress(progress),
+      (logs) => addLogs(logs),
+      (stats) => setStats(stats),
+      (error) => {
+        console.error('API polling error:', error)
+        setConnectionStatus('disconnected')
+        
+        // Retry connection after 5 seconds
+        setTimeout(() => {
+          setConnectionStatus('connected')
+        }, 5000)
+      }
+    )
 
     return () => {
-      ws.disconnect()
+      apiService.stopPolling()
     }
-  }, [setConnectionStatus])
+  }, [setConnectionStatus, setProgress, addLogs, setStats])
 
   // Global mining effect - works on any page
   useEffect(() => {

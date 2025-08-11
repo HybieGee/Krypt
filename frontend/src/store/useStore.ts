@@ -65,6 +65,9 @@ interface StoreState {
   updateUserMintedAmount: (amount: number) => void
   toggleMining: () => void
   addStake: (amount: number, duration: number) => void
+  setProgress: (progress: any) => void
+  addLogs: (logs: any[]) => void
+  setStats: (stats: any) => void
 }
 
 export const useStore = create<StoreState>()(
@@ -138,6 +141,27 @@ export const useStore = create<StoreState>()(
               }
             ]
           } : null
+        })),
+        setProgress: (progress) => set((state) => ({
+          blockchainProgress: { ...state.blockchainProgress, ...progress }
+        })),
+        addLogs: (logs) => set((state) => ({
+          terminalLogs: logs.map(log => ({
+            id: log.id || Math.random().toString(36).substring(7),
+            timestamp: new Date(log.timestamp),
+            type: log.type,
+            message: log.message,
+            details: log.details
+          }))
+        })),
+        setStats: (stats) => set((state) => ({
+          statistics: {
+            totalUsers: stats.total_users?.value || 0,
+            earlyAccessUsers: stats.early_access_users?.value || 0,
+            linesOfCode: stats.total_lines_of_code?.value || 0,
+            githubCommits: stats.total_commits?.value || 0,
+            testsRun: stats.total_tests_run?.value || 0,
+          }
         })),
       }),
       {
