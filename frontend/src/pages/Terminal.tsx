@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import TerminalDisplay from '@/components/terminal/TerminalDisplay'
 import ChatInterface from '@/components/chat/ChatInterface'
 import ProgressBar from '@/components/terminal/ProgressBar'
