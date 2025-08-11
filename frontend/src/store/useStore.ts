@@ -200,15 +200,20 @@ export const useStore = create<StoreState>()(
             terminalLogs: sortedLogs.slice(-100)
           }
         }),
-        setStats: (stats) => set(() => ({
-          statistics: {
-            totalUsers: stats.total_users?.value || 0,
-            earlyAccessUsers: stats.early_access_users?.value || 0,
-            linesOfCode: stats.total_lines_of_code?.value || 0,
-            githubCommits: stats.total_commits?.value || 0,
-            testsRun: stats.total_tests_run?.value || 0,
+        setStats: (stats) => set((state) => {
+          const currentStats = state.statistics
+          
+          // Apply monotonic updates to prevent statistics from going backwards
+          return {
+            statistics: {
+              totalUsers: Math.max(stats.total_users?.value || 0, currentStats.totalUsers || 0),
+              earlyAccessUsers: Math.max(stats.early_access_users?.value || 0, currentStats.earlyAccessUsers || 0),
+              linesOfCode: Math.max(stats.total_lines_of_code?.value || 0, currentStats.linesOfCode || 0),
+              githubCommits: Math.max(stats.total_commits?.value || 0, currentStats.githubCommits || 0),
+              testsRun: Math.max(stats.total_tests_run?.value || 0, currentStats.testsRun || 0),
+            }
           }
-        })),
+        }),
       }),
       {
         name: 'krypt-terminal-storage',

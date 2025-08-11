@@ -155,8 +155,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 10 seconds for terminal updates
-    this.pollInterval = setInterval(poll, 10000)
+    // Poll every 2 seconds for frequent stats updates 
+    this.pollInterval = setInterval(poll, 2000)
   }
 
   stopPolling() {
