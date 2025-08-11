@@ -5,7 +5,7 @@ let socket: Socket | null = null
 export const initializeWebSocket = (): Socket => {
   if (!socket) {
     const wsUrl = import.meta.env.VITE_WS_URL || 
-      (import.meta.env.PROD ? 'https://krypt-terminal.vercel.app' : 'http://localhost:3001')
+      (import.meta.env.MODE === 'production' ? 'https://krypt-terminal.vercel.app' : 'http://localhost:3001')
     
     socket = io(wsUrl, {
       transports: ['websocket', 'polling'],
