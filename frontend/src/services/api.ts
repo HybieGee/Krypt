@@ -140,8 +140,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 5 seconds for live statistics
-    this.pollInterval = setInterval(poll, 5000)
+    // Poll every 2 seconds for faster statistics updates
+    this.pollInterval = setInterval(poll, 2000)
   }
 
   stopPolling() {

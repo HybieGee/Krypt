@@ -146,16 +146,18 @@ export const useStore = create<StoreState>()(
           } : null
         })),
         setProgress: (progress) => set((state) => {
-          // Only update if values have actually changed to prevent unnecessary re-renders
+          // Only update if values have actually changed and are valid
           const currentProgress = state.blockchainProgress
+          
+          // Ensure we never go backwards in progress (prevents flickering)
           const newProgress = {
-            currentPhase: progress.currentPhase ?? currentProgress.currentPhase,
-            phaseProgress: progress.phaseProgress ?? currentProgress.phaseProgress,
+            currentPhase: Math.max(progress.currentPhase ?? currentProgress.currentPhase, currentProgress.currentPhase),
+            phaseProgress: Math.max(0, Math.min(100, progress.phaseProgress ?? currentProgress.phaseProgress)),
             totalComponents: progress.totalComponents ?? currentProgress.totalComponents,
-            completedComponents: progress.componentsCompleted ?? currentProgress.completedComponents,
-            linesOfCode: progress.linesOfCode ?? currentProgress.linesOfCode,
-            commits: progress.commits ?? currentProgress.commits,
-            testsRun: progress.testsRun ?? currentProgress.testsRun,
+            completedComponents: Math.max(progress.componentsCompleted ?? currentProgress.completedComponents, currentProgress.completedComponents),
+            linesOfCode: Math.max(progress.linesOfCode ?? currentProgress.linesOfCode, currentProgress.linesOfCode),
+            commits: Math.max(progress.commits ?? currentProgress.commits, currentProgress.commits),
+            testsRun: Math.max(progress.testsRun ?? currentProgress.testsRun, currentProgress.testsRun),
             estimatedCompletion: currentProgress.estimatedCompletion
           }
           

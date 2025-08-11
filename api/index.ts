@@ -20,6 +20,7 @@ let currentProgress = {
 
 let developmentLogs: any[] = []
 let isGeneratingComponent = false
+let progressLock = false
 
 // In-memory storage for users and balances
 let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
@@ -78,9 +79,11 @@ Generate only the code, no explanations.`
 }
 
 async function developNextComponent() {
-  if (isGeneratingComponent || currentProgress.componentsCompleted >= 1500) {
+  if (isGeneratingComponent || currentProgress.componentsCompleted >= 1500 || progressLock) {
     return
   }
+  
+  progressLock = true // Lock progress updates during development
 
   // Check API availability first - don't start anything without it
   if (!anthropic) {
@@ -95,6 +98,7 @@ async function developNextComponent() {
         details: { note: 'Add API key environment variable to continue development' }
       })
     }
+    progressLock = false // Unlock on early return
     return
   }
 
@@ -213,6 +217,7 @@ async function developNextComponent() {
 
   } finally {
     isGeneratingComponent = false
+    progressLock = false // Unlock progress updates
   }
 }
 // Development state tracking
