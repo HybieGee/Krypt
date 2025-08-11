@@ -66,28 +66,23 @@ export default function Tokens() {
             // Fast bulk update: maintain existing users, update their balances
             const updatedUsers: { address: string; balance: number }[] = []
             
-            // Intelligent balance updates with glitch prevention
+            // Anti-glitch balance updates - only allow increases or maintain current
             prevLeaderboard.forEach((existingUser: { address: string; balance: number }) => {
               const newBalance = newDataMap.get(existingUser.address)
               if (newBalance !== undefined) {
-                // We have fresh data for this user - validate the change
+                // We have fresh data for this user
                 if (newBalance > 0) {
-                  // Only update if the new balance makes sense
-                  // Allow increases, small decreases, but prevent large backwards jumps that indicate stale data
-                  const balanceDiff = newBalance - existingUser.balance
-                  const allowUpdate = (
-                    balanceDiff >= 0 || // Always allow increases
-                    Math.abs(balanceDiff) < (existingUser.balance * 0.1) || // Allow small decreases (< 10%)
-                    newBalance > existingUser.balance * 0.9 // Don't allow drops > 10% unless gradual
-                  )
-                  
-                  if (allowUpdate) {
+                  // Allow increases (including small mining rewards) but block decreases/glitches
+                  if (newBalance >= existingUser.balance) {
+                    // Balance increased or stayed same - safe to update (includes mining rewards)
                     updatedUsers.push({
                       address: existingUser.address,
                       balance: newBalance
                     })
                   } else {
-                    // Suspicious balance change - keep existing balance
+                    // Balance decreased - keep existing balance to prevent glitching
+                    // This blocks small negative glitches (-0.1 to -5) that cause backwards jumps
+                    // Mining always increases balance, so decreases are always API artifacts
                     updatedUsers.push({
                       address: existingUser.address,
                       balance: existingUser.balance
