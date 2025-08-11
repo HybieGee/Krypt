@@ -87,7 +87,7 @@ export function useEarlyAccessTracking() {
               .catch(error => {
                 console.error('Polling error:', error)
               })
-          }, 10000) // Poll every 10 seconds as fallback
+          }, 2000) // Poll every 2 seconds as fallback
         }
       }
 
@@ -115,7 +115,7 @@ export function useEarlyAccessTracking() {
           .catch(error => {
             console.error('Polling error:', error)
           })
-      }, 10000) // Poll every 10 seconds
+      }, 2000) // Poll every 2 seconds
     }
 
     // Cleanup function
