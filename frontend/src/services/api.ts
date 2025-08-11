@@ -87,6 +87,29 @@ class ApiService {
     return response.json()
   }
 
+  async updateUserBalance(walletAddress: string, balance: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/user/balance`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress, balance })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update balance: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  async getLeaderboard(): Promise<Array<{ address: string; balance: number }>> {
+    const response = await fetch(`${API_BASE_URL}/leaderboard`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch leaderboard: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

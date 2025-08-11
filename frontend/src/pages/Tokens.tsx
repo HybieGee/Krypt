@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
+import ApiService from '@/services/api'
 
 export default function Tokens() {
   const { user, updateUserWallet, updateUserMintedAmount, toggleMining, addStake } = useStore()
@@ -12,8 +13,8 @@ export default function Tokens() {
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   
-  // Leaderboard will be populated with real data when available
-  const [leaderboard] = useState<Array<{ address: string; balance: number }>>([])
+  // Live leaderboard data
+  const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])
   
   // Auto-generate wallet if needed
   useEffect(() => {
@@ -22,6 +23,39 @@ export default function Tokens() {
       updateUserWallet(generatedAddress, 0)
     }
   }, [user, updateUserWallet])
+
+  // Sync user balance to backend and fetch leaderboard
+  useEffect(() => {
+    const apiService = ApiService.getInstance()
+    
+    // Sync balance to backend when user balance changes
+    if (user?.walletAddress && user?.balance !== undefined) {
+      apiService.updateUserBalance(user.walletAddress, user.balance)
+        .catch(console.error)
+    }
+    
+    // Fetch leaderboard
+    apiService.getLeaderboard()
+      .then(setLeaderboard)
+      .catch(console.error)
+  }, [user?.balance, user?.walletAddress])
+
+  // Poll leaderboard every 10 seconds
+  useEffect(() => {
+    const apiService = ApiService.getInstance()
+    
+    const pollLeaderboard = async () => {
+      try {
+        const data = await apiService.getLeaderboard()
+        setLeaderboard(data)
+      } catch (error) {
+        console.error('Failed to fetch leaderboard:', error)
+      }
+    }
+    
+    const interval = setInterval(pollLeaderboard, 10000)
+    return () => clearInterval(interval)
+  }, [])
   
   // Mining is now handled globally in App.tsx
 

@@ -158,7 +158,8 @@ export default function TerminalDisplay({ logs }: Props) {
             {log.details?.code && (
               <div className="ml-20 p-2 bg-terminal-gray/50 border-l-2 border-terminal-green/30">
                 <pre className="text-terminal-green/70 text-[10px]">
-                  {log.details.code}
+                  {log.details.code.split('\n').slice(0, 3).join('\n')}
+                  {log.details.code.split('\n').length > 3 && '\n... [truncated]'}
                 </pre>
               </div>
             )}

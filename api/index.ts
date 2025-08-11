@@ -21,6 +21,9 @@ let currentProgress = {
 let developmentLogs: any[] = []
 let isGeneratingComponent = false
 
+// In-memory storage for users and balances
+let users = new Map<string, { walletAddress: string, balance: number, lastUpdated: Date }>()
+
 // Blockchain components definition
 const blockchainComponents = [
   // Phase 1: Core Infrastructure (160 components)
@@ -178,83 +181,17 @@ async function developNextComponent() {
       }
 
     } else {
-      // Show API key warning but continue with simulation
+      // Stop development if API key is not configured
       developmentLogs.unshift({
         id: Date.now().toString(),
         timestamp: new Date().toISOString(),
         type: 'warning',
-        message: `⚠️ Krypt AI key not configured - using simulation mode`,
-        details: { note: 'Add ANTHROPIC_API_KEY environment variable for real AI development' }
+        message: `⚠️ Krypt AI development halted - API key required`,
+        details: { note: 'Add ANTHROPIC_API_KEY environment variable to continue real AI development' }
       })
-
-      // Simulate progress with mock code
-      const mockLines = Math.floor(Math.random() * 50) + 30
-      currentProgress.componentsCompleted++
-      currentProgress.linesOfCode += mockLines
-      currentProgress.percentComplete = (currentProgress.componentsCompleted / 640) * 100
       
-      // Generate mock code for demonstration
-      const mockCode = `// Simulated ${componentName}
-export class ${componentName.replace('_', '')} {
-  private readonly id: string;
-  private timestamp: number;
-
-  constructor(data: any) {
-    this.id = generateId();
-    this.timestamp = Date.now();
-    this.validateData(data);
-  }
-
-  private validateData(data: any): void {
-    if (!data || typeof data !== 'object') {
-      throw new ValidationError('Invalid data provided');
-    }
-  }
-
-  public async process(): Promise<boolean> {
-    try {
-      const result = await this.executeOperation();
-      return this.verifyResult(result);
-    } catch (error) {
-      console.error('Processing failed:', error);
-      return false;
-    }
-  }
-
-  private async executeOperation(): Promise<any> {
-    // Implementation details...
-    return { success: true, data: {} };
-  }
-}
-
-export default ${componentName.replace('_', '')};`
-      
-      developmentLogs.unshift({
-        id: (Date.now() + 1).toString(),
-        timestamp: new Date().toISOString(),
-        type: 'code',
-        message: `✓ Development completed (${mockLines} lines) - Demo Mode`,
-        details: { 
-          componentIndex: componentIndex + 1,
-          totalComponents: 640,
-          phase: Math.floor(componentIndex / 160) + 1,
-          code: mockCode,
-          simulated: true,
-          linesGenerated: mockLines
-        }
-      })
-
-      // Simulate tests every 20 components in simulation mode too
-      if (currentProgress.componentsCompleted % 20 === 0) {
-        currentProgress.testsRun += 10
-        developmentLogs.unshift({
-          id: (Date.now() + 3).toString(),
-          timestamp: new Date().toISOString(),
-          type: 'test',
-          message: `✅ Tests passed: 10/10 (Total: ${currentProgress.testsRun}) - Simulated`,
-          details: { testsRun: currentProgress.testsRun, simulated: true }
-        })
-      }
+      // Do not simulate or continue development without API key
+      return
     }
 
     // Keep only last 50 logs
@@ -414,6 +351,37 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         joinedAt: new Date().toISOString()
       }
     })
+  }
+
+  // Update user balance endpoint
+  if (url === '/api/user/balance' && method === 'POST') {
+    const { walletAddress, balance } = req.body || {}
+    
+    if (walletAddress && typeof balance === 'number') {
+      users.set(walletAddress, { 
+        walletAddress, 
+        balance, 
+        lastUpdated: new Date() 
+      })
+      
+      return res.json({ success: true, balance })
+    }
+    
+    return res.status(400).json({ error: 'Invalid wallet address or balance' })
+  }
+
+  // Get leaderboard endpoint
+  if (url === '/api/leaderboard') {
+    const topHolders = Array.from(users.values())
+      .filter(user => user.balance > 0)
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, 10)
+      .map(user => ({
+        address: user.walletAddress,
+        balance: user.balance
+      }))
+    
+    return res.json(topHolders)
   }
 
   // Default 404
