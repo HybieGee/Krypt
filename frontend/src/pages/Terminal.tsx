@@ -63,20 +63,82 @@ export default function Terminal() {
             {activeTab === 'terminal' ? (
               <TerminalDisplay logs={terminalLogs.slice(-20)} />
             ) : (
-              <div className="h-96 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+              <div className="h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {terminalLogs.map((log) => (
-                  <div key={log.id} className="text-xs">
-                    <span className="text-terminal-green/60">
-                      [{new Date(log.timestamp).toLocaleTimeString()}]
-                    </span>
-                    <span className={`ml-2 ${
+                  <div key={log.id} className="border-l-2 border-terminal-green/20 pl-3">
+                    {/* Log Header */}
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex items-center space-x-2 text-xs">
+                        <span className="text-terminal-green/60">
+                          [{new Date(log.timestamp).toLocaleTimeString()}]
+                        </span>
+                        <span className={`font-semibold ${
+                          log.type === 'commit' ? 'text-yellow-400' :
+                          log.type === 'phase' ? 'text-blue-400' :
+                          log.type === 'system' ? 'text-red-400' :
+                          log.type === 'api' ? 'text-cyan-400' :
+                          log.type === 'warning' ? 'text-orange-400' :
+                          'text-terminal-green'
+                        }`}>
+                          {log.type.toUpperCase()}
+                        </span>
+                      </div>
+                      {log.details?.componentIndex && (
+                        <span className="text-[10px] text-terminal-green/40">
+                          Component {log.details.componentIndex}/{log.details.totalComponents || 640}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Log Message */}
+                    <div className={`text-xs mb-2 ${
                       log.type === 'commit' ? 'text-yellow-400' :
                       log.type === 'phase' ? 'text-blue-400' :
                       log.type === 'system' ? 'text-red-400' :
+                      log.type === 'api' ? 'text-cyan-400' :
+                      log.type === 'warning' ? 'text-orange-400' :
                       'text-terminal-green'
                     }`}>
                       {log.message}
-                    </span>
+                    </div>
+
+                    {/* Code Section - Only for code logs */}
+                    {log.details?.code && (
+                      <div className="mt-2">
+                        <div className="text-[10px] text-terminal-green/60 mb-1 font-semibold">
+                          Generated Code ({log.details.code.split('\n').length} lines):
+                        </div>
+                        <div className="bg-black/50 border border-terminal-green/30 rounded p-2 max-h-32 overflow-y-auto custom-scrollbar">
+                          <pre className="text-[10px] text-terminal-green/80 font-mono leading-tight whitespace-pre-wrap">
+                            {log.details.code}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Additional Details */}
+                    {log.details && (
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-terminal-green/50">
+                        {log.details.phase && (
+                          <div>Phase: {log.details.phase}/4</div>
+                        )}
+                        {log.details.responseTime && (
+                          <div>Response: {log.details.responseTime}</div>
+                        )}
+                        {log.details.tokensUsed && (
+                          <div>Tokens: {log.details.tokensUsed}</div>
+                        )}
+                        {log.details.model && (
+                          <div>Model: {log.details.model}</div>
+                        )}
+                        {log.details.commits && (
+                          <div>Total Commits: {log.details.commits}</div>
+                        )}
+                        {log.details.testsRun && (
+                          <div>Tests Run: {log.details.testsRun}</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

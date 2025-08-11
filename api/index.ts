@@ -133,9 +133,11 @@ async function developNextComponent() {
         message: `✓ Developed ${componentName} (${result.lines} lines) - Krypt has completed`,
         details: { 
           componentIndex: componentIndex + 1,
+          totalComponents: 640,
           phase: currentProgress.currentPhase,
-          codePreview: result.code.substring(0, 200) + '...',
-          aiGenerated: true
+          code: result.code, // Full generated code
+          aiGenerated: true,
+          linesGenerated: result.lines
         }
       })
 
@@ -185,20 +187,60 @@ async function developNextComponent() {
         details: { note: 'Add ANTHROPIC_API_KEY environment variable for real AI development' }
       })
 
-      // Simulate progress
+      // Simulate progress with mock code
+      const mockLines = Math.floor(Math.random() * 50) + 30
       currentProgress.componentsCompleted++
-      currentProgress.linesOfCode += Math.floor(Math.random() * 50) + 30
+      currentProgress.linesOfCode += mockLines
       currentProgress.percentComplete = (currentProgress.componentsCompleted / 640) * 100
+      
+      // Generate mock code for demonstration
+      const mockCode = `// Simulated ${componentName}
+export class ${componentName.replace('_', '')} {
+  private readonly id: string;
+  private timestamp: number;
+
+  constructor(data: any) {
+    this.id = generateId();
+    this.timestamp = Date.now();
+    this.validateData(data);
+  }
+
+  private validateData(data: any): void {
+    if (!data || typeof data !== 'object') {
+      throw new ValidationError('Invalid data provided');
+    }
+  }
+
+  public async process(): Promise<boolean> {
+    try {
+      const result = await this.executeOperation();
+      return this.verifyResult(result);
+    } catch (error) {
+      console.error('Processing failed:', error);
+      return false;
+    }
+  }
+
+  private async executeOperation(): Promise<any> {
+    // Implementation details...
+    return { success: true, data: {} };
+  }
+}
+
+export default ${componentName.replace('_', '')};`
       
       developmentLogs.unshift({
         id: (Date.now() + 1).toString(),
         timestamp: new Date().toISOString(),
         type: 'code',
-        message: `✓ Simulated ${componentName} (${Math.floor(Math.random() * 50) + 30} lines)`,
+        message: `✓ Simulated ${componentName} (${mockLines} lines) - Demo Mode`,
         details: { 
           componentIndex: componentIndex + 1,
+          totalComponents: 640,
           phase: Math.floor(componentIndex / 160) + 1,
-          simulated: true
+          code: mockCode,
+          simulated: true,
+          linesGenerated: mockLines
         }
       })
     }
