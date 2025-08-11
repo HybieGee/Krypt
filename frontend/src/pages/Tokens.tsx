@@ -66,25 +66,41 @@ export default function Tokens() {
             // Fast bulk update: maintain existing users, update their balances
             const updatedUsers: { address: string; balance: number }[] = []
             
-            // Smart balance updates - only update with fresh data, never revert
+            // Intelligent balance updates with glitch prevention
             prevLeaderboard.forEach((existingUser: { address: string; balance: number }) => {
               const newBalance = newDataMap.get(existingUser.address)
               if (newBalance !== undefined) {
-                // We have fresh data for this user
+                // We have fresh data for this user - validate the change
                 if (newBalance > 0) {
-                  updatedUsers.push({
-                    address: existingUser.address,
-                    balance: newBalance
-                  })
-                }
+                  // Only update if the new balance makes sense
+                  // Allow increases, small decreases, but prevent large backwards jumps that indicate stale data
+                  const balanceDiff = newBalance - existingUser.balance
+                  const allowUpdate = (
+                    balanceDiff >= 0 || // Always allow increases
+                    Math.abs(balanceDiff) < (existingUser.balance * 0.1) || // Allow small decreases (< 10%)
+                    newBalance > existingUser.balance * 0.9 // Don't allow drops > 10% unless gradual
+                  )
+                  
+                  if (allowUpdate) {
+                    updatedUsers.push({
+                      address: existingUser.address,
+                      balance: newBalance
+                    })
+                  } else {
+                    // Suspicious balance change - keep existing balance
+                    updatedUsers.push({
+                      address: existingUser.address,
+                      balance: existingUser.balance
+                    })
+                  }
+                } 
                 newDataMap.delete(existingUser.address) // Remove processed user
               } else {
-                // No fresh data for this user - keep current balance to prevent glitching
-                // Only keep if they have a positive balance
+                // No fresh data for this user - always keep current balance
                 if (existingUser.balance > 0) {
                   updatedUsers.push({
                     address: existingUser.address,
-                    balance: existingUser.balance // Keep existing balance, don't revert
+                    balance: existingUser.balance
                   })
                 }
               }
