@@ -8,9 +8,6 @@
       "maxDuration": 30
     }
   },
-  "routes": [
-    { "src": "/[^.]+", "dest": "/", "status": 200 }
-  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -21,8 +18,8 @@
       "destination": "/api"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "source": "/:path*",
+      "destination": "/index.html"
     }
   ]
 }
