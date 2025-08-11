@@ -145,7 +145,7 @@ export const useStore = create<StoreState>()(
         setProgress: (progress) => set((state) => ({
           blockchainProgress: { ...state.blockchainProgress, ...progress }
         })),
-        addLogs: (logs) => set((state) => ({
+        addLogs: (logs) => set(() => ({
           terminalLogs: logs.map(log => ({
             id: log.id || Math.random().toString(36).substring(7),
             timestamp: new Date(log.timestamp),
@@ -154,7 +154,7 @@ export const useStore = create<StoreState>()(
             details: log.details
           }))
         })),
-        setStats: (stats) => set((state) => ({
+        setStats: (stats) => set(() => ({
           statistics: {
             totalUsers: stats.total_users?.value || 0,
             earlyAccessUsers: stats.early_access_users?.value || 0,
