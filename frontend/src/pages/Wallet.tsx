@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useStore } from '@/store/useStore'
 
 export default function Wallet() {
-  const { user, updateUserWallet } = useStore()
+  const { user } = useStore()
   const [transferAmount, setTransferAmount] = useState('')
   const [transferAddress, setTransferAddress] = useState('')
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
