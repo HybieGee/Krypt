@@ -30,7 +30,7 @@ export default function Documentation() {
                   <li>• No simulated users or fake visitors</li>
                   <li>• No mock development logs or progress</li>
                   <li>• Zero phantom wallet balances</li>
-                  <li>• All statistics update in <10 seconds globally</li>
+                  <li>• All statistics update in &lt;10 seconds globally</li>
                   <li>• Authentic user interactions only</li>
                 </ul>
               </div>
@@ -58,7 +58,7 @@ export default function Documentation() {
                   <li>• Cloudflare Workers (Edge Computing)</li>
                   <li>• Cloudflare KV (Global Database)</li>
                   <li>• Claude AI API Integration</li>
-                  <li>• <2s cache for instant updates</li>
+                  <li>• &lt;2s cache for instant updates</li>
                 </ul>
               </div>
               <div>
@@ -158,8 +158,8 @@ export default function Documentation() {
                 <div>
                   <div className="text-cyan-400 font-mono mb-2">Response Times</div>
                   <ul className="text-terminal-green/70 space-y-1">
-                    <li>• <10ms API response at edge locations</li>
-                    <li>• <2 second cache TTL for real-time updates</li>
+                    <li>• &lt;10ms API response at edge locations</li>
+                    <li>• &lt;2 second cache TTL for real-time updates</li>
                     <li>• Sub-10 second global data consistency</li>
                     <li>• 99.9% uptime SLA (Cloudflare)</li>
                   </ul>
@@ -260,7 +260,7 @@ export default function Documentation() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <div className="text-cyan-400 font-mono mb-1">Edge Computing</div>
-                  <div className="text-terminal-green/70">All data served from Cloudflare's global edge network with <2s cache TTL</div>
+                  <div className="text-terminal-green/70">All data served from Cloudflare's global edge network with &lt;2s cache TTL</div>
                 </div>
                 <div>
                   <div className="text-cyan-400 font-mono mb-1">Real User Detection</div>
