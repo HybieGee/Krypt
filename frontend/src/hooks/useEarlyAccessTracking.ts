@@ -28,7 +28,7 @@ export function useEarlyAccessTracking() {
       }
       
       // Use Cloudflare Worker endpoint
-      tryVisitEndpoint('https://kryptterminal.com/api/early-access/visit')
+      tryVisitEndpoint('/api/early-access/visit')
         .then(data => {
           const newCount = data.count || 0
           setCount(newCount)
@@ -42,7 +42,7 @@ export function useEarlyAccessTracking() {
 
     // Set up real-time updates via Server-Sent Events
     try {
-      const eventSource = new EventSource('https://kryptterminal.com/api/early-access/stream')
+      const eventSource = new EventSource('/api/early-access/stream')
       eventSourceRef.current = eventSource
 
       eventSource.onmessage = (event) => {
@@ -68,7 +68,7 @@ export function useEarlyAccessTracking() {
         if (!fallbackIntervalRef.current) {
           fallbackIntervalRef.current = setInterval(() => {
             // Use Cloudflare Worker count endpoint
-            fetch('https://kryptterminal.com/api/early-access/count')
+            fetch('/api/early-access/count')
               .then(response => {
                 if (!response.ok) throw new Error('Count endpoint failed')
                 return response.json()
@@ -96,7 +96,7 @@ export function useEarlyAccessTracking() {
       
       // Immediate fallback to polling
       fallbackIntervalRef.current = setInterval(() => {
-        fetch('https://kryptterminal.com/api/early-access/count')
+        fetch('/api/early-access/count')
           .then(response => {
             if (!response.ok) throw new Error('Count endpoint failed')
             return response.json()
