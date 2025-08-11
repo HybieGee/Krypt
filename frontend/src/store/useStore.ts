@@ -151,13 +151,13 @@ export const useStore = create<StoreState>()(
           
           // Ensure we never go backwards in progress (prevents flickering)
           const newProgress = {
-            currentPhase: Math.max(progress.currentPhase ?? currentProgress.currentPhase, currentProgress.currentPhase),
-            phaseProgress: Math.max(0, Math.min(100, progress.phaseProgress ?? currentProgress.phaseProgress)),
+            currentPhase: Math.max(progress.currentPhase ?? currentProgress.currentPhase ?? 1, currentProgress.currentPhase ?? 1),
+            phaseProgress: Math.max(0, Math.min(100, progress.phaseProgress ?? currentProgress.phaseProgress ?? 0)),
             totalComponents: progress.totalComponents ?? currentProgress.totalComponents,
-            completedComponents: Math.max(progress.componentsCompleted ?? currentProgress.completedComponents, currentProgress.completedComponents),
-            linesOfCode: Math.max(progress.linesOfCode ?? currentProgress.linesOfCode, currentProgress.linesOfCode),
-            commits: Math.max(progress.commits ?? currentProgress.commits, currentProgress.commits),
-            testsRun: Math.max(progress.testsRun ?? currentProgress.testsRun, currentProgress.testsRun),
+            completedComponents: Math.max(progress.componentsCompleted ?? currentProgress.completedComponents ?? 0, currentProgress.completedComponents ?? 0),
+            linesOfCode: Math.max(progress.linesOfCode ?? currentProgress.linesOfCode ?? 0, currentProgress.linesOfCode ?? 0),
+            commits: Math.max(progress.commits ?? currentProgress.commits ?? 0, currentProgress.commits ?? 0),
+            testsRun: Math.max(progress.testsRun ?? currentProgress.testsRun ?? 0, currentProgress.testsRun ?? 0),
             estimatedCompletion: currentProgress.estimatedCompletion
           }
           
