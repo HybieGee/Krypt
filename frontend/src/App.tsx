@@ -14,13 +14,18 @@ function App() {
 
   // Simple visitor tracking - register unique visitor ID
   useEffect(() => {
+    console.log('APP MOUNTED - checking visitor ID')
+    
     let visitorId = localStorage.getItem('krypt_visitor_id')
+    console.log('Current visitor ID:', visitorId)
+    
     if (!visitorId) {
       // Generate unique visitor ID (UUID-like)
       visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
       localStorage.setItem('krypt_visitor_id', visitorId)
       
-      console.log('New visitor, registering:', visitorId.substring(0, 12) + '...')
+      console.log('NEW VISITOR - Generated ID:', visitorId)
+      console.log('About to register visitor...')
       
       // Register visitor
       fetch('/api/register-visitor', {
@@ -28,11 +33,18 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ visitorId })
       })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Visitor registered, total:', data.totalVisitors)
+        .then(response => {
+          console.log('Registration response status:', response.status)
+          return response.json()
         })
-        .catch(console.error)
+        .then(data => {
+          console.log('VISITOR REGISTERED - Total count:', data.totalVisitors)
+        })
+        .catch(error => {
+          console.error('REGISTRATION FAILED:', error)
+        })
+    } else {
+      console.log('RETURNING VISITOR - ID exists:', visitorId)
     }
   }, [])
 
