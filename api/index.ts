@@ -359,6 +359,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     // Use the maximum between global counter and current set size for monotonic behavior
     const earlyAccessCount = Math.max(global.earlyAccessCount || 0, earlyAccessUsers.size)
     
+    // Debug logging for stats requests
+    console.log('Stats request:', {
+      globalCount: global.earlyAccessCount,
+      localCount: earlyAccessUsers.size,
+      finalCount: earlyAccessCount,
+      globalVisitorsSize: global.earlyAccessVisitors ? global.earlyAccessVisitors.size : 'undefined'
+    })
+    
     const stats = {
       total_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
       early_access_users: { value: earlyAccessCount, lastUpdated: new Date().toISOString() },
@@ -402,15 +410,43 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   if (url === '/api/early-access' && method === 'POST') {
     const { visitorId } = req.body || {}
     
-    if (visitorId && !global.earlyAccessVisitors.has(visitorId)) {
-      global.earlyAccessVisitors.add(visitorId)
-      global.earlyAccessCount = global.earlyAccessVisitors.size
-      earlyAccessUsers.add(visitorId) // Also update local set
+    // Debug logging
+    console.log('Early access registration attempt:', { 
+      visitorId, 
+      hasVisitorId: !!visitorId,
+      existsInGlobal: global.earlyAccessVisitors.has(visitorId),
+      existsInLocal: earlyAccessUsers.has(visitorId),
+      currentGlobalCount: global.earlyAccessCount,
+      currentLocalCount: earlyAccessUsers.size
+    })
+    
+    if (visitorId) {
+      const isNewGlobal = !global.earlyAccessVisitors.has(visitorId)
+      const isNewLocal = !earlyAccessUsers.has(visitorId)
+      
+      if (isNewGlobal || isNewLocal) {
+        global.earlyAccessVisitors.add(visitorId)
+        earlyAccessUsers.add(visitorId)
+        global.earlyAccessCount = Math.max(global.earlyAccessVisitors.size, earlyAccessUsers.size)
+        
+        console.log('New visitor registered:', {
+          visitorId,
+          newGlobalCount: global.earlyAccessCount,
+          newLocalCount: earlyAccessUsers.size
+        })
+      }
     }
     
+    const finalCount = Math.max(global.earlyAccessCount || 0, earlyAccessUsers.size)
     return res.json({
       success: true,
-      totalEarlyAccessUsers: Math.max(global.earlyAccessCount, earlyAccessUsers.size)
+      totalEarlyAccessUsers: finalCount,
+      debug: {
+        visitorId,
+        globalCount: global.earlyAccessCount,
+        localCount: earlyAccessUsers.size,
+        finalCount
+      }
     })
   }
 

@@ -18,14 +18,26 @@ function App() {
     
     // Check if this is a new unique visitor
     const visitorId = localStorage.getItem('krypt_visitor_id')
+    console.log('Visitor tracking check:', { visitorId, isNew: !visitorId })
+    
     if (!visitorId) {
       // Generate unique visitor ID
       const newVisitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(7)}`
       localStorage.setItem('krypt_visitor_id', newVisitorId)
       localStorage.setItem('krypt_first_visit', new Date().toISOString())
       
+      console.log('Registering new visitor:', newVisitorId)
+      
       // Register as new early access user
-      apiService.registerEarlyAccessUser(newVisitorId).catch(console.error)
+      apiService.registerEarlyAccessUser(newVisitorId)
+        .then(response => {
+          console.log('Registration response:', response)
+        })
+        .catch(error => {
+          console.error('Registration error:', error)
+        })
+    } else {
+      console.log('Returning visitor, not registering')
     }
   }, [])
 
