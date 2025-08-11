@@ -66,20 +66,28 @@ export default function Tokens() {
             // Fast bulk update: maintain existing users, update their balances
             const updatedUsers: { address: string; balance: number }[] = []
             
-            // Keep existing users and update their balances
+            // Smart balance updates - only update with fresh data, never revert
             prevLeaderboard.forEach((existingUser: { address: string; balance: number }) => {
               const newBalance = newDataMap.get(existingUser.address)
-              if (newBalance !== undefined && newBalance > 0) {
-                updatedUsers.push({
-                  address: existingUser.address,
-                  balance: newBalance
-                })
+              if (newBalance !== undefined) {
+                // We have fresh data for this user
+                if (newBalance > 0) {
+                  updatedUsers.push({
+                    address: existingUser.address,
+                    balance: newBalance
+                  })
+                }
                 newDataMap.delete(existingUser.address) // Remove processed user
-              } else if (newBalance === undefined) {
-                // Keep existing user if not in new data (API consistency issues)
-                updatedUsers.push(existingUser)
+              } else {
+                // No fresh data for this user - keep current balance to prevent glitching
+                // Only keep if they have a positive balance
+                if (existingUser.balance > 0) {
+                  updatedUsers.push({
+                    address: existingUser.address,
+                    balance: existingUser.balance // Keep existing balance, don't revert
+                  })
+                }
               }
-              // Skip users with 0 balance (they get removed)
             })
             
             // Add any new users not in previous leaderboard
