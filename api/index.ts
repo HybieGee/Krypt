@@ -4,7 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 // Global type declarations for serverless function persistence
 declare global {
   var earlyAccessCount: number
-  var earlyAccessVisitors: Set<string>
+  var uniqueWallets: Set<string>
 }
 
 // Initialize Claude AI if API key is available
@@ -37,7 +37,7 @@ let earlyAccessUsers = new Set<string>()
 
 // Simple persistence using global counter (survives warm starts but not cold starts)
 global.earlyAccessCount = global.earlyAccessCount || 0
-global.earlyAccessVisitors = global.earlyAccessVisitors || new Set<string>()
+global.uniqueWallets = global.uniqueWallets || new Set<string>()
 
 // Blockchain components definition
 const blockchainComponents = [
@@ -356,18 +356,19 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   // Stats endpoint
   if (url === '/api/stats') {
-    // Use the maximum between global counter and current set size for monotonic behavior
+    // Count Early Access Users based on unique wallet addresses created
+    const uniqueWallets = users.size
     const earlyAccessCount = Math.max(
       global.earlyAccessCount || 0, 
-      earlyAccessUsers.size
+      uniqueWallets
     )
     
     // Debug logging for stats requests
     console.log('Stats request:', {
+      uniqueWallets: uniqueWallets,
       globalCount: global.earlyAccessCount,
-      localCount: earlyAccessUsers.size,
       finalCount: earlyAccessCount,
-      globalVisitorsSize: global.earlyAccessVisitors ? global.earlyAccessVisitors.size : 'undefined'
+      walletsInMemory: Array.from(users.keys()).slice(0, 3) // Show first 3 wallet addresses for debugging
     })
     
     const stats = {
@@ -409,49 +410,21 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 
-  // Early access user registration endpoint
+  // Early access user registration endpoint (now tracks wallets instead)
   if (url === '/api/early-access' && method === 'POST') {
-    const { visitorId } = req.body || {}
+    // Return current wallet-based count
+    const walletCount = Math.max(global.earlyAccessCount || 0, users.size)
     
-    // Debug logging
-    console.log('Early access registration attempt:', { 
-      visitorId, 
-      hasVisitorId: !!visitorId,
-      existsInGlobal: global.earlyAccessVisitors.has(visitorId),
-      existsInLocal: earlyAccessUsers.has(visitorId),
-      currentGlobalCount: global.earlyAccessCount,
-      currentLocalCount: earlyAccessUsers.size
+    console.log('Early access count requested (wallet-based):', {
+      totalWallets: users.size,
+      globalCount: global.earlyAccessCount,
+      finalCount: walletCount
     })
     
-    if (visitorId) {
-      const isNewGlobal = !global.earlyAccessVisitors.has(visitorId)
-      const isNewLocal = !earlyAccessUsers.has(visitorId)
-      
-      if (isNewGlobal || isNewLocal) {
-        global.earlyAccessVisitors.add(visitorId)
-        earlyAccessUsers.add(visitorId)
-        // Increment the global counter
-        global.earlyAccessCount = global.earlyAccessCount + 1
-        
-        console.log('New visitor registered:', {
-          visitorId,
-          newGlobalCount: global.earlyAccessCount,
-          newLocalCount: earlyAccessUsers.size,
-          totalVisitors: global.earlyAccessVisitors.size
-        })
-      }
-    }
-    
-    const finalCount = Math.max(global.earlyAccessCount || 0, earlyAccessUsers.size)
     return res.json({
       success: true,
-      totalEarlyAccessUsers: finalCount,
-      debug: {
-        visitorId,
-        globalCount: global.earlyAccessCount,
-        localCount: earlyAccessUsers.size,
-        finalCount
-      }
+      totalEarlyAccessUsers: walletCount,
+      method: 'wallet-based-tracking'
     })
   }
 
@@ -460,13 +433,28 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const { walletAddress, balance } = req.body || {}
     
     if (walletAddress && typeof balance === 'number') {
+      const isNewWallet = !users.has(walletAddress)
+      
       users.set(walletAddress, { 
         walletAddress, 
         balance, 
         lastUpdated: new Date() 
       })
       
-      return res.json({ success: true, balance })
+      // Track unique wallets globally for persistence
+      if (isNewWallet) {
+        global.uniqueWallets.add(walletAddress)
+        global.earlyAccessCount = Math.max(global.uniqueWallets.size, users.size)
+        
+        console.log('New wallet registered:', {
+          walletAddress,
+          totalWallets: users.size,
+          globalWallets: global.uniqueWallets.size,
+          earlyAccessCount: global.earlyAccessCount
+        })
+      }
+      
+      return res.json({ success: true, balance, totalUsers: global.earlyAccessCount })
     }
     
     return res.status(400).json({ error: 'Invalid wallet address or balance' })

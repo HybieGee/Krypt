@@ -12,54 +12,8 @@ import ApiService from './services/api'
 function App() {
   const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
 
-  // Track unique visitors
-  useEffect(() => {
-    const apiService = ApiService.getInstance()
-    
-    // Check if this is a new unique visitor
-    const visitorId = localStorage.getItem('krypt_visitor_id')
-    const firstVisit = localStorage.getItem('krypt_first_visit')
-    
-    console.log('Visitor tracking check:', { 
-      visitorId, 
-      firstVisit,
-      isNew: !visitorId,
-      localStorageLength: localStorage.length,
-      allStorageKeys: Object.keys(localStorage),
-      isIncognito: 'test if incognito'
-    })
-    
-    // Test if we're actually in incognito/private mode
-    try {
-      localStorage.setItem('incognito_test', 'test')
-      localStorage.removeItem('incognito_test')
-      console.log('localStorage is working (not incognito or storage allowed)')
-    } catch (e) {
-      console.log('localStorage blocked (likely incognito)')
-    }
-    
-    if (!visitorId) {
-      // Generate unique visitor ID
-      const newVisitorId = `visitor_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      localStorage.setItem('krypt_visitor_id', newVisitorId)
-      localStorage.setItem('krypt_first_visit', new Date().toISOString())
-      
-      console.log('Registering new visitor:', newVisitorId)
-      
-      // Register as early access user
-      apiService.registerEarlyAccessUser(newVisitorId)
-        .then(response => {
-          console.log('Registration response:', response)
-          console.log('Early Access Users count:', response.totalEarlyAccessUsers)
-          console.log('Debug info:', response.debug)
-        })
-        .catch(error => {
-          console.error('Registration error:', error)
-        })
-    } else {
-      console.log('Returning visitor, not registering:', visitorId)
-    }
-  }, [])
+  // Early Access Users now tracked via wallet creation instead of visitor IDs
+  // No separate visitor tracking needed - count increases when wallets are created
 
   useEffect(() => {
     const apiService = ApiService.getInstance()
