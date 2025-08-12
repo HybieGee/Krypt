@@ -22,7 +22,8 @@
       "Bash(vercel dev:*)",
       "Bash(git log:*)",
       "Bash(git fetch:*)",
-      "Bash(npx wrangler deploy:*)"
+      "Bash(npx wrangler deploy:*)",
+      "Bash(wrangler deploy:*)"
     ],
     "deny": []
   }

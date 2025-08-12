@@ -485,6 +485,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
     // Reset development logs with initial entries
     const initialLogs = generateInitialLogs()
     await env.KRYPT_DATA.put('development_logs', JSON.stringify(initialLogs))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(initialLogs))
 
     // Get all visitor and fingerprint records
     const visitorList = await env.EARLY_ACCESS.list({ prefix: 'visitor:' })
@@ -525,17 +526,42 @@ async function handleClearVisitors(request, env, corsHeaders) {
     
     await Promise.all(deletePromises)
     
-    // Reset visitor count to 0
+    // Reset visitor count to 0 - CRITICAL!
     await env.EARLY_ACCESS.put('total_count', '0')
+    await env.EARLY_ACCESS.put('early_access_count', '0')
     
-    // Clear all caches
+    // Also clear any cached count data
+    try {
+      await env.EARLY_ACCESS.delete('cached_stats')
+      await env.EARLY_ACCESS.delete('visitor_cache')
+    } catch (e) {
+      console.log('Cache keys not found (expected for fresh reset)')
+    }
+    
+    // Clear all caches and force fresh data
     countCache = null
     progressCache = null
     logsCache = null
     leaderboardCache = null
+    statsCache = null
     Object.keys(cacheTimestamps).forEach(key => delete cacheTimestamps[key])
+    
+    // Force cache headers to ensure no browser/CDN caching
+    const noCacheHeaders = {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
 
-    console.log(`NUCLEAR RESET: Cleared ${visitorList.keys.length} visitor records, ${fingerprintList.keys.length} fingerprint records, ${userList.keys.length} user balances, ${milestoneList.keys.length} milestones, ${raffleList.keys.length} raffles, reset progress and logs`)
+    console.log(`NUCLEAR RESET DETAILS:`)
+    console.log(`- Visitors: ${visitorList.keys.length} (${visitorList.keys.map(k => k.name).join(', ')})`)
+    console.log(`- Fingerprints: ${fingerprintList.keys.length} (${fingerprintList.keys.map(k => k.name).join(', ')})`)
+    console.log(`- User balances: ${userList.keys.length} (${userList.keys.map(k => k.name).join(', ')})`)
+    console.log(`- Milestones: ${milestoneList.keys.length}`)
+    console.log(`- Raffles: ${raffleList.keys.length}`)
+    console.log(`- Progress and logs reset`)
     
     return new Response(JSON.stringify({ 
       success: true, 
@@ -550,7 +576,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
       newCount: 0,
       timestamp: new Date().toISOString()
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: noCacheHeaders
     })
   } catch (error) {
     console.error('Nuclear reset error:', error)
@@ -578,6 +604,7 @@ async function handleMasterReset(request, env, corsHeaders) {
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify([]))
     
     if (resetVisitors) {
       await env.EARLY_ACCESS.put('total_count', '0')
@@ -688,6 +715,7 @@ async function handleUpdateProgress(request, env, corsHeaders) {
       })
       
       await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
       logsCache = logs
       cacheTimestamps.logs = Date.now()
     }
@@ -723,6 +751,7 @@ async function handleProgressReset(request, env, corsHeaders) {
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify([]))
     
     progressCache = null
     logsCache = null
@@ -764,6 +793,7 @@ async function handleSyncLogs(request, env, corsHeaders) {
     // Replace all logs with the synced logs from Vercel API
     if (Array.isArray(logs)) {
       await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
       logsCache = logs
       cacheTimestamps.logs = Date.now()
       
@@ -810,6 +840,7 @@ async function handleAddLog(request, env, corsHeaders) {
     })
     
     await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
     logsCache = logs
     cacheTimestamps.logs = Date.now()
     
@@ -1064,14 +1095,32 @@ async function getLogs(env) {
   }
   
   try {
-    const logs = await env.KRYPT_DATA.get('development_logs')
+    // Try primary logs first
+    let logs = await env.KRYPT_DATA.get('development_logs')
+    
     if (logs) {
       const parsedLogs = JSON.parse(logs)
       // Keep only the last 50 logs to prevent excessive data
       const trimmedLogs = parsedLogs.slice(-50)
       logsCache = trimmedLogs
       cacheTimestamps[cacheKey] = now
+      
+      // Create backup of logs for persistence
+      await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(trimmedLogs))
+      
       return trimmedLogs
+    }
+    
+    // If primary logs don't exist, try backup
+    const backupLogs = await env.KRYPT_DATA.get('development_logs_backup')
+    if (backupLogs) {
+      const parsedBackup = JSON.parse(backupLogs)
+      // Restore from backup
+      await env.KRYPT_DATA.put('development_logs', JSON.stringify(parsedBackup))
+      logsCache = parsedBackup
+      cacheTimestamps[cacheKey] = now
+      console.log(`Restored ${parsedBackup.length} logs from backup`)
+      return parsedBackup
     }
   } catch (error) {
     console.error('Error fetching logs from KV:', error)
@@ -1080,6 +1129,7 @@ async function getLogs(env) {
   // Generate initial logs if none exist
   const initialLogs = generateInitialLogs()
   await env.KRYPT_DATA.put('development_logs', JSON.stringify(initialLogs))
+  await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(initialLogs))
   logsCache = initialLogs
   cacheTimestamps[cacheKey] = now
   
