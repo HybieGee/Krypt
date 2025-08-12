@@ -712,20 +712,6 @@ async function handleProgressReset(request, env, corsHeaders) {
   }
 }
 
-// ===== GET DEVELOPMENT LOGS =====
-async function handleGetLogs(env, corsHeaders) {
-  try {
-    const logs = await getLogs(env)
-    return new Response(JSON.stringify(logs), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  } catch (error) {
-    console.error('Logs error:', error)
-    return new Response(JSON.stringify([]), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  }
-}
 
 // ===== SYNC ALL LOGS FROM KRYPT =====
 async function handleSyncLogs(request, env, corsHeaders) {
