@@ -25,7 +25,8 @@
       "Bash(npx wrangler deploy:*)",
       "Bash(wrangler deploy:*)",
       "Bash(deploy-worker.bat)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

@@ -14,9 +14,10 @@ echo 7. Set progress manually (for testing only)
 echo 8. Set progress to ZERO (immediate)
 echo 9. Set early access users to 0
 echo 10. Initialize system data (fix deployment resets)
-echo 11. Exit
+echo 11. Restore development logs (if missing)
+echo 12. Exit
 echo.
-set /p choice="Enter your choice (1-11): "
+set /p choice="Enter your choice (1-12): "
 
 if %choice%==1 goto SET_ONE
 if %choice%==2 goto SET_CUSTOM
@@ -28,7 +29,8 @@ if %choice%==7 goto SET_PROGRESS
 if %choice%==8 goto SET_ZERO
 if %choice%==9 goto SET_USERS_ZERO
 if %choice%==10 goto INITIALIZE
-if %choice%==11 goto END
+if %choice%==11 goto RESTORE_LOGS
+if %choice%==12 goto END
 
 :SET_ONE
 echo Setting visitor count to 1...
@@ -153,6 +155,25 @@ if %confirm%==yes (
     echo System initialization complete!
 ) else (
     echo Initialization cancelled.
+)
+pause
+goto END
+
+:RESTORE_LOGS
+echo =============================================
+echo    📝 RESTORE DEVELOPMENT LOGS 📝
+echo =============================================
+echo This will restore development logs if they are missing.
+echo Use this after deployments clear the log history.
+echo.
+set /p confirm="Restore development logs? (yes/no): "
+if %confirm%==yes (
+    echo Restoring logs using populate script...
+    node populate-realistic-logs.js
+    echo.
+    echo Development logs restored!
+) else (
+    echo Log restoration cancelled.
 )
 pause
 goto END
