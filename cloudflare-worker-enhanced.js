@@ -492,16 +492,33 @@ async function handleClearVisitors(request, env, corsHeaders) {
       })
     }
 
-    // Reset development progress to minimum state (not 0)
-    const resetProgress = getDefaultProgress()
-    resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
+    // Reset development progress to absolute zero for nuclear reset
+    const resetProgress = {
+      currentPhase: 1,
+      componentsCompleted: 0,
+      totalComponents: BLOCKCHAIN_COMPONENTS,
+      percentComplete: 0,
+      phaseProgress: 0,
+      linesOfCode: 0,
+      commits: 0,
+      testsRun: 0,
+      lastUpdated: Date.now() // Set current time to prevent auto-increment
+    }
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))
     
-    // Reset development logs with initial entries
-    const initialLogs = generateInitialLogs()
-    await env.KRYPT_DATA.put('development_logs', JSON.stringify(initialLogs))
-    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(initialLogs))
+    // Reset development logs to empty for nuclear reset (absolute fresh start)
+    const nuclearResetLogs = [
+      {
+        id: 'nuclear-reset',
+        timestamp: new Date().toISOString(),
+        type: 'system',
+        message: '☢️ NUCLEAR RESET EXECUTED - Starting from absolute zero',
+        details: { resetType: 'complete', componentsCompleted: 0 }
+      }
+    ]
+    await env.KRYPT_DATA.put('development_logs', JSON.stringify(nuclearResetLogs))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(nuclearResetLogs))
 
     // Get all visitor and fingerprint records
     const visitorList = await env.EARLY_ACCESS.list({ prefix: 'visitor:' })
@@ -577,7 +594,8 @@ async function handleClearVisitors(request, env, corsHeaders) {
     console.log(`- User balances: ${userList.keys.length} (${userList.keys.map(k => k.name).join(', ')})`)
     console.log(`- Milestones: ${milestoneList.keys.length}`)
     console.log(`- Raffles: ${raffleList.keys.length}`)
-    console.log(`- Progress and logs reset`)
+    console.log(`- Progress reset to ZERO components (absolute fresh start)`)
+    console.log(`- Logs reset with nuclear reset marker`)
     
     return new Response(JSON.stringify({ 
       success: true, 
