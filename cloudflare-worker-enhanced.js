@@ -1457,6 +1457,37 @@ function isBot(userAgent) {
   return botPatterns.some(pattern => pattern.test(userAgent))
 }
 
+// ===== GET STATS DATA =====
+async function getStatsData(env) {
+  try {
+    const [visitorCount, progress] = await Promise.all([
+      getVisitorCount(env),
+      getProgress(env)
+    ])
+
+    return {
+      total_users: { value: visitorCount, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: visitorCount, lastUpdated: new Date().toISOString() },
+      total_lines_of_code: { value: progress.linesOfCode || 0, lastUpdated: new Date().toISOString() },
+      total_commits: { value: progress.commits || 0, lastUpdated: new Date().toISOString() },
+      total_tests_run: { value: progress.testsRun || 0, lastUpdated: new Date().toISOString() },
+      components_completed: { value: progress.componentsCompleted || 0, lastUpdated: new Date().toISOString() },
+      current_phase: { value: progress.currentPhase || 1, lastUpdated: new Date().toISOString() }
+    }
+  } catch (error) {
+    console.error('Error getting stats data:', error)
+    return {
+      total_users: { value: 0, lastUpdated: new Date().toISOString() },
+      early_access_users: { value: 0, lastUpdated: new Date().toISOString() },
+      total_lines_of_code: { value: 0, lastUpdated: new Date().toISOString() },
+      total_commits: { value: 0, lastUpdated: new Date().toISOString() },
+      total_tests_run: { value: 0, lastUpdated: new Date().toISOString() },
+      components_completed: { value: 0, lastUpdated: new Date().toISOString() },
+      current_phase: { value: 1, lastUpdated: new Date().toISOString() }
+    }
+  }
+}
+
 // ===== MILESTONE SYSTEM =====
 async function handleUserMilestones(request, env, corsHeaders) {
   try {
@@ -1471,7 +1502,7 @@ async function handleUserMilestones(request, env, corsHeaders) {
     }
 
     // Get current early access user count
-    const stats = await getStats(env)
+    const stats = await getStatsData(env)
     const earlyAccessUsers = stats.early_access_users?.value || 0
 
     // Define milestone targets and rewards
