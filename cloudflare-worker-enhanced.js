@@ -160,7 +160,13 @@ async function handleSetProgress(request, env, corsHeaders) {
     progress.linesOfCode = progress.componentsCompleted * 78
     progress.commits = progress.componentsCompleted
     progress.testsRun = Math.floor(progress.componentsCompleted * 0.5)
-    progress.lastUpdated = Date.now()
+    
+    // If setting to 0, pause auto-increment for 5 minutes to maintain zero state
+    if (componentsCompleted === 0) {
+      progress.lastUpdated = Date.now() + 300000 // Pause for 5 minutes
+    } else {
+      progress.lastUpdated = Date.now()
+    }
     
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
     await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress))
