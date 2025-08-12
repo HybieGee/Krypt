@@ -10,14 +10,19 @@ interface TerminalLog {
 
 interface Props {
   logs: TerminalLog[]
+  shouldScrollToBottom?: boolean // New prop to trigger auto-scroll
 }
 
-export default function TerminalDisplay({ logs }: Props) {
+export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: Props) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [currentTyping, setCurrentTyping] = useState('')
 
-  // Removed auto-scrolling to fix forced scrolling issue
-  // Users can now scroll manually without interference
+  // Auto-scroll to bottom when shouldScrollToBottom prop changes or new logs arrive
+  useEffect(() => {
+    if (shouldScrollToBottom && terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+    }
+  }, [shouldScrollToBottom, logs.length]) // Trigger on prop change or new logs
 
   // Smooth typing animation system
   useEffect(() => {

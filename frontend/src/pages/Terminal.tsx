@@ -8,6 +8,7 @@ export default function Terminal() {
   const { blockchainProgress, terminalLogs } = useStore()
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(false)
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
@@ -15,6 +16,17 @@ export default function Terminal() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, []) // Empty dependency array = only run once on mount
+
+  // Auto-scroll logs view to bottom when switching to logs tab
+  useEffect(() => {
+    if (activeTab === 'logs' && shouldAutoScroll && logsViewRef.current) {
+      setTimeout(() => {
+        if (logsViewRef.current) {
+          logsViewRef.current.scrollTop = logsViewRef.current.scrollHeight
+        }
+      }, 50) // Small delay to ensure DOM has updated
+    }
+  }, [activeTab, shouldAutoScroll])
 
   // Filter logs based on selected filter
   const filteredLogs = terminalLogs.filter(log => {
@@ -47,7 +59,11 @@ export default function Terminal() {
             <div className="flex items-center space-x-3">
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setActiveTab('terminal')}
+                  onClick={() => {
+                    setActiveTab('terminal')
+                    setShouldAutoScroll(true)
+                    setTimeout(() => setShouldAutoScroll(false), 100)
+                  }}
                   className={`px-3 py-1 text-sm transition-colors ${
                     activeTab === 'terminal'
                       ? 'text-terminal-green border-b border-terminal-green'
@@ -57,7 +73,11 @@ export default function Terminal() {
                   Live View
                 </button>
                 <button
-                  onClick={() => setActiveTab('logs')}
+                  onClick={() => {
+                    setActiveTab('logs')
+                    setShouldAutoScroll(true)
+                    setTimeout(() => setShouldAutoScroll(false), 100)
+                  }}
                   className={`px-3 py-1 text-sm transition-colors ${
                     activeTab === 'logs'
                       ? 'text-terminal-green border-b border-terminal-green'
@@ -91,7 +111,10 @@ export default function Terminal() {
 
           <div className="flex-1 overflow-hidden" ref={liveViewRef}>
             {activeTab === 'terminal' ? (
-              <TerminalDisplay logs={terminalLogs.slice(-20)} />
+              <TerminalDisplay 
+                logs={terminalLogs.slice(-20)} 
+                shouldScrollToBottom={shouldAutoScroll}
+              />
             ) : (
               <>
                 {/* Log Filter */}
