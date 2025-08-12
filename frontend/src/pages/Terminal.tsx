@@ -114,7 +114,7 @@ export default function Terminal() {
           <div className="flex-1 overflow-hidden" ref={liveViewRef}>
             {activeTab === 'terminal' ? (
               <TerminalDisplay 
-                logs={terminalLogs.slice(-20)} 
+                logs={terminalLogs.slice(-50)} 
                 shouldScrollToBottom={shouldAutoScroll}
               />
             ) : (

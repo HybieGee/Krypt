@@ -191,7 +191,7 @@ class ApiService {
       try {
         const [progress, logs, stats] = await Promise.all([
           this.getProgress(),
-          this.getLogs(20), // Get last 20 logs
+          this.getLogs(100), // Get last 100 logs for better coverage
           this.getStats()
         ])
         

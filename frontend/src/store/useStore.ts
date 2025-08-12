@@ -101,7 +101,7 @@ export const useStore = create<StoreState>()(
         setUser: (user) => set({ user }),
         setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
         addTerminalLog: (log) => set((state) => ({
-          terminalLogs: [...state.terminalLogs.slice(-999), log],
+          terminalLogs: [...state.terminalLogs.slice(-9999), log],
         })),
         addChatMessage: (message) => set((state) => ({
           chatMessages: [...state.chatMessages, message],
@@ -211,9 +211,11 @@ export const useStore = create<StoreState>()(
           // Sort by timestamp to ensure proper chronological order
           const sortedLogs = allLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
           
-          // Keep all logs for lifelong history
+          // Keep last 10,000 logs for extensive development history
+          const limitedLogs = sortedLogs.slice(-10000)
+          
           return {
-            terminalLogs: sortedLogs
+            terminalLogs: limitedLogs
           }
         }),
         setStats: (stats) => set((state) => {

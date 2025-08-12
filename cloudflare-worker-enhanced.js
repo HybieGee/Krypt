@@ -1360,8 +1360,8 @@ async function getLogs(env) {
     
     if (logs) {
       const parsedLogs = JSON.parse(logs)
-      // Keep more logs for realistic history (last 200)
-      const trimmedLogs = parsedLogs.slice(-200)
+      // Keep extensive logs for full development history (last 10,000)
+      const trimmedLogs = parsedLogs.slice(-10000)
       logsCache = trimmedLogs
       cacheTimestamps[cacheKey] = now
       
