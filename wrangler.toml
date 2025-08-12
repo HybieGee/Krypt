@@ -1,0 +1,26 @@
+name = "krypt-terminal-autonomous"
+main = "cloudflare-worker-autonomous.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "KRYPT_DATA"
+id = "YOUR_KRYPT_DATA_NAMESPACE_ID"
+
+[[kv_namespaces]]
+binding = "EARLY_ACCESS"
+id = "YOUR_EARLY_ACCESS_NAMESPACE_ID"
+
+# Cron Triggers - Run every minute to check if 15 seconds have passed
+[triggers]
+crons = ["* * * * *"]
+
+# Environment variables (optional)
+[vars]
+DEVELOPMENT_MODE = "production"
+COMPONENTS_TOTAL = "4500"
+
+# Routes (optional - if using custom domain)
+# routes = [
+#   { pattern = "kryptterminal.com/api/*", zone_name = "kryptterminal.com" }
+# ]
