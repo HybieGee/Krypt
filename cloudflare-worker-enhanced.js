@@ -246,9 +246,9 @@ async function triggerDevelopment(env) {
   try {
     const progress = await getProgress(env)
     
-    // CRITICAL: Validate progress before incrementing
-    if (!progress || progress.componentsCompleted <= 0) {
-      console.error('❌ CRITICAL: Invalid progress state, not incrementing from', progress?.componentsCompleted)
+    // CRITICAL: Validate progress exists
+    if (!progress || progress.componentsCompleted < 0) {
+      console.error('❌ CRITICAL: Invalid progress state', progress?.componentsCompleted)
       return { success: false, reason: 'Invalid progress state' }
     }
     
@@ -754,22 +754,12 @@ async function handleMasterReset(request, env, corsHeaders) {
   }
 }
 
-// ===== GET PROGRESS WITH DEVELOPMENT TRIGGER =====
+// ===== GET PROGRESS (READ ONLY - NO AUTO-INCREMENT) =====
 async function handleGetProgress(env, jsonHeaders) {
   try {
-    // Trigger development if enough time has passed
+    // JUST RETURN PROGRESS - NO AUTO-INCREMENT!
+    // Progress should ONLY increment when development actually happens
     const progress = await getProgress(env)
-    const timeSinceUpdate = Date.now() - progress.lastUpdated
-    
-    // Only increment if we have valid progress data
-    if (progress.componentsCompleted > 0 && timeSinceUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
-      await triggerDevelopment(env)
-      // Get updated progress
-      const updatedProgress = await getProgress(env)
-      return new Response(JSON.stringify(updatedProgress), {
-        headers: jsonHeaders
-      })
-    }
     
     return new Response(JSON.stringify(progress), {
       headers: jsonHeaders

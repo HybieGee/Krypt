@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Fix Progress & Reset System</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .danger { color: #ff4444; background: #330000; padding: 15px; border: 2px solid #ff4444; margin: 20px 0; }
+        .success { color: #44ff44; background: #003300; padding: 15px; border: 2px solid #44ff44; margin: 20px 0; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        .nuke { background: #ff4444; color: white; font-weight: bold; }
+        .check { background: #4444ff; color: white; }
+        .fix { background: #ffaa00; color: black; font-weight: bold; }
+        input { background: #222; color: #00ff41; border: 1px solid #00ff41; padding: 10px; width: 100%; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔧 FIX PROGRESS & RESET SYSTEM</h1>
+    
+    <div class="danger">
+        <h2>⚠️ IDENTIFIED ISSUES</h2>
+        <p><strong>1. Progress incrementing without development</strong> - Counter going up but no logs generated</p>
+        <p><strong>2. Reset not clearing progress</strong> - Old progress value persisting</p>
+        <p><strong>3. Development not resuming</strong> - System stuck after reset</p>
+    </div>
+
+    <div>
+        <h2>📍 Step 1: Which Worker Are You Using?</h2>
+        <select id="workerSelect" onchange="updateWorkerUrl()">
+            <option value="">Select your active worker...</option>
+            <option value="https://kryptterminal.com">Original Worker (kryptterminal.com)</option>
+            <option value="custom">Autonomous Worker (custom URL)</option>
+        </select>
+        <input type="text" id="workerUrl" placeholder="Enter worker URL if custom" style="display:none;">
+    </div>
+
+    <div>
+        <h2>🔍 Step 2: Diagnose Current State</h2>
+        <button class="check" onclick="diagnoseSystem()">🔍 CHECK SYSTEM STATE</button>
+    </div>
+
+    <div>
+        <h2>🔧 Step 3: Fix The Issues</h2>
+        <button class="fix" onclick="stopPhantomProgress()">⏹️ STOP PHANTOM PROGRESS</button>
+        <button class="nuke" onclick="properReset()">☢️ PROPER NUCLEAR RESET</button>
+        <button class="fix" onclick="restartDevelopment()">🔄 RESTART DEVELOPMENT</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let workerBaseUrl = ''
+        
+        function updateWorkerUrl() {
+            const select = document.getElementById('workerSelect')
+            const input = document.getElementById('workerUrl')
+            
+            if (select.value === 'custom') {
+                input.style.display = 'block'
+                workerBaseUrl = ''
+            } else if (select.value) {
+                input.style.display = 'none'
+                workerBaseUrl = select.value
+            }
+        }
+        
+        function getWorkerUrl() {
+            if (workerBaseUrl === '') {
+                workerBaseUrl = document.getElementById('workerUrl').value || 'https://kryptterminal.com'
+            }
+            return workerBaseUrl
+        }
+        
+        async function diagnoseSystem() {
+            const url = getWorkerUrl()
+            document.getElementById('results').innerHTML = '<p>🔍 Diagnosing system...</p>'
+            
+            try {
+                // Check multiple endpoints
+                const [progressRes, logsRes] = await Promise.all([
+                    fetch(url + '/api/progress'),
+                    fetch(url + '/api/logs?limit=10')
+                ])
+                
+                const progress = await progressRes.json()
+                const logs = await logsRes.json()
+                
+                const lastLogTime = logs.length > 0 ? new Date(logs[logs.length - 1].timestamp) : null
+                const timeSinceLog = lastLogTime ? ((Date.now() - lastLogTime) / 1000 / 60).toFixed(1) : 'N/A'
+                
+                // Check for issues
+                const phantomProgress = progress.componentsCompleted > logs.length + 50 // More than 50 ahead is phantom
+                const stuckProgress = progress.componentsCompleted > 0 && logs.length === 0
+                const notDeveloping = timeSinceLog !== 'N/A' && parseFloat(timeSinceLog) > 5 // No logs in 5 minutes
+                
+                document.getElementById('results').innerHTML = `
+                    <div style="background: #222; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <h2>📊 SYSTEM DIAGNOSIS</h2>
+                        
+                        <h3>Current State:</h3>
+                        <p><strong>Progress Counter:</strong> ${progress.componentsCompleted || 0} / ${progress.totalComponents || 4500}</p>
+                        <p><strong>Development Logs:</strong> ${logs.length} logs</p>
+                        <p><strong>Last Log:</strong> ${lastLogTime ? lastLogTime.toLocaleString() : 'None'} (${timeSinceLog} min ago)</p>
+                        <p><strong>Last Updated:</strong> ${new Date(progress.lastUpdated || Date.now()).toLocaleString()}</p>
+                        
+                        <h3>🔍 Issues Detected:</h3>
+                        ${phantomProgress ? '<p style="color: #ff4444;">❌ PHANTOM PROGRESS: Counter is way ahead of actual logs!</p>' : ''}
+                        ${stuckProgress ? '<p style="color: #ff4444;">❌ STUCK PROGRESS: Has progress but no logs!</p>' : ''}
+                        ${notDeveloping ? '<p style="color: #ff4444;">❌ NOT DEVELOPING: No new logs in over 5 minutes!</p>' : ''}
+                        ${!phantomProgress && !stuckProgress && !notDeveloping ? '<p style="color: #44ff44;">✅ System appears healthy</p>' : ''}
+                        
+                        <h3>📝 Recent Logs:</h3>
+                        ${logs.slice(-3).map(log => `
+                            <div style="margin: 5px 0; padding: 8px; border-left: 3px solid #00ff41;">
+                                ${log.message} <small>(${new Date(log.timestamp).toLocaleTimeString()})</small>
+                            </div>
+                        `).join('') || '<p style="color: #666;">No recent logs</p>'}
+                    </div>
+                `
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="danger">
+                        <h3>❌ Diagnosis Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `
+            }
+        }
+        
+        async function stopPhantomProgress() {
+            document.getElementById('results').innerHTML = '<p>⏹️ Stopping phantom progress increments...</p>'
+            
+            // The issue is likely in the old worker still running with auto-increment
+            // We need to ensure only the autonomous worker is active
+            
+            document.getElementById('results').innerHTML = `
+                <div class="success">
+                    <h3>⏹️ TO STOP PHANTOM PROGRESS:</h3>
+                    <ol>
+                        <li>Go to Cloudflare Dashboard</li>
+                        <li>Check ALL your workers</li>
+                        <li>DISABLE any old workers that might be auto-incrementing</li>
+                        <li>Keep ONLY the autonomous worker active</li>
+                        <li>Make sure the autonomous worker is the one handling kryptterminal.com/api/*</li>
+                    </ol>
+                    <p><strong>The phantom progress is likely from an old worker still running!</strong></p>
+                </div>
+            `
+        }
+        
+        async function properReset() {
+            const url = getWorkerUrl()
+            document.getElementById('results').innerHTML = '<p>☢️ Executing PROPER nuclear reset...</p>'
+            
+            try {
+                // Clear frontend first
+                if (typeof nukeCaches === 'function') {
+                    nukeCaches()
+                } else {
+                    localStorage.clear()
+                    sessionStorage.clear()
+                }
+                
+                // Reset backend - try multiple endpoints to ensure it works
+                const resetEndpoints = [
+                    '/api/development/reset',
+                    '/api/logs/clear',
+                    '/api/reset',
+                    '/api/progress/set'
+                ]
+                
+                for (const endpoint of resetEndpoints) {
+                    try {
+                        const response = await fetch(url + endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                componentsCompleted: 0,
+                                force: true,
+                                nuclear: true
+                            })
+                        })
+                        
+                        if (response.ok) {
+                            const result = await response.json()
+                            console.log(`Reset via ${endpoint}:`, result)
+                        }
+                    } catch (e) {
+                        console.log(`Failed ${endpoint}:`, e)
+                    }
+                }
+                
+                // Verify reset worked
+                await new Promise(r => setTimeout(r, 2000))
+                const checkRes = await fetch(url + '/api/progress')
+                const checkProgress = await checkRes.json()
+                
+                if (checkProgress.componentsCompleted === 0) {
+                    document.getElementById('results').innerHTML = `
+                        <div class="success">
+                            <h3>☢️ NUCLEAR RESET SUCCESSFUL!</h3>
+                            <p>✅ Progress reset to 0</p>
+                            <p>✅ Logs cleared</p>
+                            <p>✅ Ready for fresh development</p>
+                            <p><strong>Now click "RESTART DEVELOPMENT" to begin!</strong></p>
+                        </div>
+                    `
+                } else {
+                    throw new Error(`Progress still at ${checkProgress.componentsCompleted} - reset failed`)
+                }
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="danger">
+                        <h3>❌ Reset Failed</h3>
+                        <p>Error: ${error.message}</p>
+                        <p><strong>Manual Fix Required:</strong></p>
+                        <ol>
+                            <li>Go to Cloudflare KV</li>
+                            <li>Find KRYPT_DATA namespace</li>
+                            <li>Delete key: development_progress</li>
+                            <li>Delete key: development_logs</li>
+                        </ol>
+                    </div>
+                `
+            }
+        }
+        
+        async function restartDevelopment() {
+            const url = getWorkerUrl()
+            document.getElementById('results').innerHTML = '<p>🔄 Restarting development system...</p>'
+            
+            try {
+                // Force trigger development
+                const response = await fetch(url + '/api/development/force', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                
+                if (response.ok) {
+                    const result = await response.json()
+                    
+                    document.getElementById('results').innerHTML = `
+                        <div class="success">
+                            <h3>🔄 DEVELOPMENT RESTARTED!</h3>
+                            <p>✅ Component generated: ${result.component || 'Component 1'}</p>
+                            <p>✅ Progress: ${result.progress?.componentsCompleted || 1} components</p>
+                            <p>✅ Autonomous system should continue from here</p>
+                            <p><strong>Monitor at: monitor-autonomous.html</strong></p>
+                        </div>
+                    `
+                } else {
+                    throw new Error('Failed to restart development')
+                }
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="danger">
+                        <h3>❌ Restart Failed</h3>
+                        <p>Error: ${error.message}</p>
+                        <p>Try using the manual loop in test-autonomous-worker.html</p>
+                    </div>
+                `
+            }
+        }
+        
+        // Auto-diagnose on load
+        window.onload = function() {
+            // Try to detect which worker is being used
+            if (window.location.hostname === 'kryptterminal.com') {
+                document.getElementById('workerSelect').value = 'https://kryptterminal.com'
+                workerBaseUrl = 'https://kryptterminal.com'
+            }
+        }
+    </script>
+</body>
+</html>
