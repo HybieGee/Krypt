@@ -6,7 +6,8 @@ export default function Tokenomics() {
   const [activeSection, setActiveSection] = useState('overview')
 
   const tokenDistribution = [
-    { label: 'Community Pool', amount: 970000000, percentage: 97, color: 'bg-terminal-green' },
+    { label: 'Community Pool', amount: 920000000, percentage: 92, color: 'bg-terminal-green' },
+    { label: 'Community Rewards', amount: 50000000, percentage: 5, color: 'bg-purple-400' },
     { label: 'Development Fund', amount: 30000000, percentage: 3, color: 'bg-red-400' }
   ]
 
@@ -107,57 +108,91 @@ export default function Tokenomics() {
         )}
 
         {activeSection === 'distribution' && (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-8">
-              <h2 className="text-2xl font-bold text-terminal-green mb-6 text-center">Token Distribution</h2>
+              <h2 className="text-2xl font-bold text-terminal-green mb-8 text-center">Token Distribution</h2>
               
-              {/* Pie Chart Visualization */}
-              <div className="flex flex-col lg:flex-row items-center gap-8">
-                <div className="w-80 h-80 relative">
-                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                    {tokenDistribution.map((segment, index) => {
-                      const previousPercentages = tokenDistribution.slice(0, index).reduce((sum, s) => sum + s.percentage, 0)
-                      const circumference = 2 * Math.PI * 30
-                      const strokeDasharray = (segment.percentage / 100) * circumference
-                      const strokeDashoffset = circumference - (previousPercentages / 100) * circumference
-                      
-                      return (
-                        <circle
-                          key={segment.label}
-                          cx="50"
-                          cy="50"
-                          r="30"
-                          fill="transparent"
-                          stroke={segment.color.replace('bg-', '')}
-                          strokeWidth="8"
-                          strokeDasharray={`${strokeDasharray} ${circumference}`}
-                          strokeDashoffset={-strokeDashoffset}
-                          className="transition-all duration-300 hover:stroke-width-10"
-                        />
-                      )
-                    })}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-terminal-green">1B</div>
-                      <div className="text-sm text-gray-400">Total Supply</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 space-y-4">
-                  {tokenDistribution.map((segment) => (
-                    <div key={segment.label} className="flex items-center justify-between p-4 bg-black/50 rounded">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded ${segment.color}`}></div>
-                        <span className="font-medium">{segment.label}</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                {/* Visual Bar Chart */}
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold text-center mb-6">Distribution Breakdown</h3>
+                  {tokenDistribution.map((segment, index) => (
+                    <div key={segment.label} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-4 h-4 rounded ${segment.color}`}></div>
+                          <span className="font-medium text-white">{segment.label}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-terminal-green">{segment.percentage}%</div>
+                          <div className="text-xs text-gray-400">{segment.amount.toLocaleString()} tokens</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold">{segment.amount.toLocaleString()}</div>
-                        <div className="text-sm text-gray-400">{segment.percentage}%</div>
+                      <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                        <div 
+                          className={`h-full ${segment.color} transition-all duration-1000 ease-out`}
+                          style={{ width: `${segment.percentage}%` }}
+                        ></div>
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Circular Progress Chart */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="relative w-80 h-80">
+                    <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
+                      {tokenDistribution.map((segment, index) => {
+                        const previousPercentages = tokenDistribution.slice(0, index).reduce((sum, s) => sum + s.percentage, 0)
+                        const circumference = 2 * Math.PI * 80
+                        const strokeDasharray = (segment.percentage / 100) * circumference
+                        const strokeDashoffset = circumference - (previousPercentages / 100) * circumference
+                        
+                        // Color mapping
+                        const colorMap = {
+                          'bg-terminal-green': '#00ff41',
+                          'bg-purple-400': '#c084fc', 
+                          'bg-red-400': '#f87171'
+                        }
+                        
+                        return (
+                          <circle
+                            key={segment.label}
+                            cx="100"
+                            cy="100"
+                            r="80"
+                            fill="transparent"
+                            stroke={colorMap[segment.color] || '#00ff41'}
+                            strokeWidth="20"
+                            strokeDasharray={`${strokeDasharray} ${circumference}`}
+                            strokeDashoffset={-strokeDashoffset}
+                            className="transition-all duration-300 hover:opacity-80"
+                          />
+                        )
+                      })}
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-terminal-green">1B</div>
+                        <div className="text-sm text-gray-400">Total Supply</div>
+                        <div className="text-xs text-gray-500 mt-1">KRYPT Memecoin</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 bg-black/50 p-4 rounded-lg">
+                    <h4 className="text-terminal-green font-semibold mb-2">Quick Stats</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-400">Community:</span>
+                        <span className="text-white ml-2">97%</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Development:</span>
+                        <span className="text-white ml-2">3%</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -167,58 +202,69 @@ export default function Tokenomics() {
         {activeSection === 'utility' && (
           <div className="max-w-4xl mx-auto">
             <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-8">
-              <h2 className="text-2xl font-bold text-terminal-green mb-6">Token Utility</h2>
+              <h2 className="text-2xl font-bold text-terminal-green mb-6">KRYPT Memecoin Utility</h2>
+              
+              <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-4 mb-6">
+                <p className="text-yellow-400 text-sm">
+                  <strong>Important:</strong> The KRYPT memecoin is different from the site rewards tokens. 
+                  Site tokens are earned through platform activities, while KRYPT memecoin supports the 
+                  broader ecosystem development.
+                </p>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Governance</h3>
+                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Community Governance</h3>
                   <p className="text-gray-300 mb-4">
-                    Token holders vote on critical decisions affecting the AI's development direction, 
-                    consensus mechanisms, and protocol upgrades.
+                    KRYPT memecoin holders participate in high-level decisions affecting the AI's 
+                    development direction and project roadmap.
                   </p>
                   <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Protocol parameter adjustments</li>
-                    <li>• AI training data selection</li>
-                    <li>• Development milestone priorities</li>
+                    <li>• Major development milestone priorities</li>
+                    <li>• Community initiative proposals</li>
+                    <li>• Strategic partnership decisions</li>
                   </ul>
                 </div>
 
                 <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Community Rewards</h3>
+                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Community Rewards Pool</h3>
                   <p className="text-gray-300 mb-4">
-                    Participate in the Krypt ecosystem and earn rewards through various community 
-                    activities and achievements.
+                    5% of tokens are reserved for rewarding active community members and contributors 
+                    to the Krypt ecosystem.
                   </p>
                   <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Development milestone bonuses</li>
+                    <li>• Development milestone celebrations</li>
                     <li>• Community event participation</li>
-                    <li>• Bug reporting and feedback</li>
+                    <li>• Bug reporting and valuable feedback</li>
+                    <li>• Content creation and promotion</li>
                   </ul>
                 </div>
 
                 <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">AI Interaction</h3>
+                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Future Blockchain Benefits</h3>
                   <p className="text-gray-300 mb-4">
-                    Use tokens to interact with Krypt AI, request custom development features, 
-                    and access premium analytics.
+                    Once the Krypt AI blockchain launches, memecoin holders receive priority access 
+                    and potential benefits in the new ecosystem.
                   </p>
                   <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Custom smart contract generation</li>
-                    <li>• Priority development requests</li>
-                    <li>• Advanced blockchain analytics</li>
-                  </ul>
-                </div>
-
-                <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Future Blockchain Utility</h3>
-                  <p className="text-gray-300 mb-4">
-                    Once the Krypt AI blockchain is deployed, KRYPT memecoin holders will receive 
-                    utility in the new blockchain ecosystem.
-                  </p>
-                  <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Potential airdrop for blockchain tokens</li>
+                    <li>• Potential airdrop eligibility</li>
                     <li>• Early access to blockchain features</li>
-                    <li>• Priority in ecosystem participation</li>
+                    <li>• Priority in validator/node programs</li>
+                    <li>• Exclusive ecosystem participation</li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
+                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Ecosystem Support</h3>
+                  <p className="text-gray-300 mb-4">
+                    Holding KRYPT memecoin demonstrates long-term support for the project and 
+                    helps ensure sustainable development funding.
+                  </p>
+                  <ul className="text-sm text-gray-400 space-y-1">
+                    <li>• Support autonomous AI development</li>
+                    <li>• Enable infrastructure scaling</li>
+                    <li>• Fund security audits and testing</li>
+                    <li>• Drive innovation in blockchain AI</li>
                   </ul>
                 </div>
               </div>
