@@ -65,10 +65,13 @@ echo =============================================
 echo    ⚠️  NUCLEAR RESET WARNING ⚠️ 
 echo =============================================
 echo This will reset EVERYTHING:
-echo - Development progress (back to 0)
+echo - Development progress (back to 100 min)
 echo - Development logs (all cleared)
 echo - Visitor count (back to 0)
 echo - ALL visitor records (everyone becomes new)
+echo - ALL wallet balances (completely wiped)
+echo - ALL milestone progress (reset)
+echo - ALL raffle entries (cleared)
 echo.
 echo This is the ULTIMATE reset for testing!
 set /p confirm="Are you ABSOLUTELY sure? (yes/no): "

@@ -493,6 +493,10 @@ async function handleClearVisitors(request, env, corsHeaders) {
     // Get all user balance records (for duplicate cleanup)
     const userList = await env.KRYPT_DATA.list({ prefix: 'user:' })
     
+    // Get all milestone and raffle records
+    const milestoneList = await env.KRYPT_DATA.list({ prefix: 'milestone:' })
+    const raffleList = await env.KRYPT_DATA.list({ prefix: 'raffle:' })
+    
     // Delete all visitor records
     const deletePromises = []
     
@@ -509,6 +513,16 @@ async function handleClearVisitors(request, env, corsHeaders) {
       deletePromises.push(env.KRYPT_DATA.delete(key.name))
     }
     
+    // Delete all milestone records
+    for (const key of milestoneList.keys) {
+      deletePromises.push(env.KRYPT_DATA.delete(key.name))
+    }
+    
+    // Delete all raffle records
+    for (const key of raffleList.keys) {
+      deletePromises.push(env.KRYPT_DATA.delete(key.name))
+    }
+    
     await Promise.all(deletePromises)
     
     // Reset visitor count to 0
@@ -521,14 +535,16 @@ async function handleClearVisitors(request, env, corsHeaders) {
     leaderboardCache = null
     Object.keys(cacheTimestamps).forEach(key => delete cacheTimestamps[key])
 
-    console.log(`NUCLEAR RESET: Cleared ${visitorList.keys.length} visitor records, ${fingerprintList.keys.length} fingerprint records, ${userList.keys.length} user balances, reset progress and logs`)
+    console.log(`NUCLEAR RESET: Cleared ${visitorList.keys.length} visitor records, ${fingerprintList.keys.length} fingerprint records, ${userList.keys.length} user balances, ${milestoneList.keys.length} milestones, ${raffleList.keys.length} raffles, reset progress and logs`)
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Nuclear reset completed - EVERYTHING cleared including user balances',
+      message: 'Nuclear reset completed - EVERYTHING cleared including user balances, milestones, and raffles',
       visitorsCleared: visitorList.keys.length,
       fingerprintsCleared: fingerprintList.keys.length,
       userBalancesCleared: userList.keys.length,
+      milestonesCleared: milestoneList.keys.length,
+      rafflesCleared: raffleList.keys.length,
       progressReset: true,
       logsReset: true,
       newCount: 0,
