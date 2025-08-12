@@ -93,7 +93,7 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Terminal />} />
-          <Route path="tokens" element={<Tokens />} />
+          <Route path="wallet" element={<Tokens />} />
           <Route path="rewards" element={<Rewards />} />
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="docs" element={<Documentation />} />

@@ -105,6 +105,19 @@ export default {
       return handleSetProgress(request, env, corsHeaders)
     }
 
+    // Milestone Routes
+    if (url.pathname === '/api/user/milestones' && request.method === 'GET') {
+      return handleUserMilestones(request, env, corsHeaders)
+    }
+    
+    // Raffle Routes
+    if (url.pathname === '/api/user/raffle-entries' && request.method === 'GET') {
+      return handleRaffleEntries(request, env, corsHeaders)
+    }
+    if (url.pathname === '/api/raffle/enter' && request.method === 'POST') {
+      return handleEnterRaffle(request, env, corsHeaders)
+    }
+
     // Health check
     if (url.pathname === '/api/health') {
       return new Response(JSON.stringify({
@@ -1012,4 +1025,154 @@ function isBot(userAgent) {
   ]
   
   return botPatterns.some(pattern => pattern.test(userAgent))
+}
+
+// ===== MILESTONE SYSTEM =====
+async function handleUserMilestones(request, env, corsHeaders) {
+  try {
+    const url = new URL(request.url)
+    const walletAddress = url.searchParams.get('walletAddress')
+    
+    if (!walletAddress) {
+      return new Response(JSON.stringify({ error: 'Wallet address required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Get current early access user count
+    const stats = await getStats(env)
+    const earlyAccessUsers = stats.early_access_users?.value || 0
+
+    // Define milestone targets and rewards
+    const milestones = [
+      { id: 1, target: 25, reward: 250 },
+      { id: 2, target: 125, reward: 350 },
+      { id: 3, target: 500, reward: 500 },
+      { id: 4, target: 1500, reward: 1000 },
+      { id: 5, target: 5000, reward: 2000 }
+    ]
+
+    // Check which milestones have been reached and if user has received rewards
+    const userMilestones = []
+    for (const milestone of milestones) {
+      const milestoneKey = `milestone:${milestone.id}:${walletAddress.toLowerCase()}`
+      const hasReceived = await env.KRYPT_DATA.get(milestoneKey)
+      
+      // If milestone is reached and user hasn't received reward, auto-distribute
+      if (earlyAccessUsers >= milestone.target && !hasReceived) {
+        // Give reward to user
+        const userData = await env.KRYPT_DATA.get(`user:${walletAddress.toLowerCase()}`)
+        if (userData) {
+          const user = JSON.parse(userData)
+          user.balance = (user.balance || 0) + milestone.reward
+          user.lastUpdated = new Date().toISOString()
+          
+          await env.KRYPT_DATA.put(`user:${walletAddress.toLowerCase()}`, JSON.stringify(user))
+          await env.KRYPT_DATA.put(milestoneKey, JSON.stringify({
+            received: true,
+            timestamp: new Date().toISOString(),
+            reward: milestone.reward
+          }))
+        }
+      }
+
+      userMilestones.push({
+        id: milestone.id,
+        target: milestone.target,
+        reward: milestone.reward,
+        reached: earlyAccessUsers >= milestone.target,
+        received: !!hasReceived,
+        currentUsers: earlyAccessUsers
+      })
+    }
+
+    return new Response(JSON.stringify(userMilestones), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Milestone error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to fetch milestones' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== RAFFLE SYSTEM =====
+async function handleRaffleEntries(request, env, corsHeaders) {
+  try {
+    const url = new URL(request.url)
+    const walletAddress = url.searchParams.get('walletAddress')
+    
+    if (!walletAddress) {
+      return new Response(JSON.stringify({ error: 'Wallet address required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Get user's raffle entries
+    const entriesKey = `raffle_entries:${walletAddress.toLowerCase()}`
+    const entries = await env.KRYPT_DATA.get(entriesKey)
+    const parsedEntries = entries ? JSON.parse(entries) : []
+
+    return new Response(JSON.stringify(parsedEntries), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Raffle entries error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to fetch raffle entries' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+async function handleEnterRaffle(request, env, corsHeaders) {
+  try {
+    const { walletAddress, raffleType, ticketCost } = await request.json()
+    
+    if (!walletAddress || !raffleType || !ticketCost) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    const normalizedAddress = walletAddress.toLowerCase()
+    
+    // Get user's current raffle entries
+    const entriesKey = `raffle_entries:${normalizedAddress}`
+    const entries = await env.KRYPT_DATA.get(entriesKey)
+    const parsedEntries = entries ? JSON.parse(entries) : []
+
+    // Add new entry
+    const newEntry = {
+      id: Math.random().toString(36).substring(7),
+      raffleType,
+      ticketCost,
+      timestamp: new Date().toISOString(),
+      walletAddress: normalizedAddress
+    }
+
+    parsedEntries.push(newEntry)
+
+    // Save updated entries
+    await env.KRYPT_DATA.put(entriesKey, JSON.stringify(parsedEntries))
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      entry: newEntry,
+      totalEntries: parsedEntries.length 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Enter raffle error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to enter raffle' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
 }

@@ -138,6 +138,37 @@ class ApiService {
     return result
   }
 
+  async getUserMilestones(walletAddress: string): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/user/milestones?walletAddress=${walletAddress}`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user milestones: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  async getRaffleEntries(walletAddress: string): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/user/raffle-entries?walletAddress=${walletAddress}`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch raffle entries: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  async enterRaffle(walletAddress: string, raffleType: string, ticketCost: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/raffle/enter`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress, raffleType, ticketCost })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to enter raffle: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

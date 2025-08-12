@@ -37,9 +37,9 @@ export default function Header() {
                 Terminal
               </Link>
               <Link
-                to="/tokens"
+                to="/wallet"
                 className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
-                  location.pathname === '/tokens' 
+                  location.pathname === '/wallet' 
                     ? 'text-terminal-bg bg-terminal-green' 
                     : 'text-terminal-green hover:bg-terminal-green/10'
                 }`}
