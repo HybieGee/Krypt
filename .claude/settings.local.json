@@ -26,7 +26,8 @@
       "Bash(wrangler deploy:*)",
       "Bash(deploy-worker.bat)",
       "Bash(cmd /c:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }

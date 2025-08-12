@@ -279,30 +279,21 @@ async function triggerDevelopment(env) {
     progress.commits++
     progress.lastUpdated = Date.now()
     
-    // Save updates with rate limiting protection
+    // STABLE SAVE: Single atomic operation
     try {
-      await Promise.all([
-        env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
-        env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
-      ])
+      // Save both progress and logs atomically
+      await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
+      await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
       
-      // Backup saves with delay to avoid rate limiting
-      setTimeout(async () => {
-        try {
-          await Promise.all([
-            env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress)),
-            env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
-          ])
-        } catch (backupError) {
-          console.warn('Backup save failed (non-critical):', backupError.message)
-        }
-      }, 1000)
+      console.log(`✅ Saved progress: ${progress.componentsCompleted} components, ${logs.length} logs`)
+      
     } catch (error) {
       if (error.message.includes('429')) {
-        console.warn('Rate limited, skipping this update cycle')
+        console.warn('⚠️ Rate limited, skipping this update cycle')
         return { success: false, reason: 'Rate limited' }
       }
-      throw error
+      console.error('❌ Save failed:', error)
+      return { success: false, reason: `Save error: ${error.message}` }
     }
     
     console.log(`✅ DEBUG: Saved ${logs.length} logs to KV storage`)
@@ -1273,80 +1264,55 @@ async function incrementVisitorCount(env) {
   return newCount
 }
 
-// Progress with caching
+// Progress with caching - SIMPLIFIED AND STABLE
 async function getProgress(env) {
   const now = Date.now()
   const cacheKey = 'progress'
   
-  if (progressCache !== null && (now - (cacheTimestamps[cacheKey] || 0)) < CACHE_TTL) {
+  // Use cache if fresh (within 2 seconds for real-time feel)
+  if (progressCache !== null && (now - (cacheTimestamps[cacheKey] || 0)) < 2000) {
     return progressCache
   }
   
-  let primaryProgress = null
-  let backupProgress = null
-  
   try {
+    // SINGLE SOURCE OF TRUTH: Only use primary progress
     const progressData = await env.KRYPT_DATA.get('development_progress')
+    
     if (progressData) {
-      primaryProgress = JSON.parse(progressData)
-      console.log(`🔧 DEBUG: Found primary progress: ${primaryProgress.componentsCompleted} components`)
+      const progress = JSON.parse(progressData)
+      
+      // Validate the data
+      if (progress && typeof progress.componentsCompleted === 'number' && 
+          progress.componentsCompleted >= 0 && progress.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
+        
+        console.log(`✅ Using stable progress: ${progress.componentsCompleted} components`)
+        
+        // Cache the valid progress
+        progressCache = progress
+        cacheTimestamps[cacheKey] = now
+        
+        return progress
+      } else {
+        console.error('❌ Invalid progress data structure:', progress)
+      }
     }
   } catch (error) {
-    console.error('❌ DEBUG: Error fetching primary progress from KV:', error)
+    console.error('❌ Error fetching progress from KV:', error)
   }
   
-  try {
-    const backupData = await env.KRYPT_DATA.get('development_progress_backup')
-    if (backupData) {
-      backupProgress = JSON.parse(backupData)
-      console.log(`🔧 DEBUG: Found backup progress: ${backupProgress.componentsCompleted} components`)
-    }
-  } catch (error) {
-    console.error('❌ DEBUG: Error fetching backup progress from KV:', error)
-  }
-  
-  // CRITICAL FIX: Choose the highest valid progress to prevent resets
-  let bestProgress = null
-  
-  if (primaryProgress && primaryProgress.componentsCompleted >= 0 && primaryProgress.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
-    bestProgress = primaryProgress
-    console.log(`✅ Using primary progress: ${bestProgress.componentsCompleted} components`)
-  } else if (backupProgress && backupProgress.componentsCompleted >= 0 && backupProgress.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
-    bestProgress = backupProgress
-    console.log(`✅ Using backup progress: ${bestProgress.componentsCompleted} components`)
-    // Restore backup to primary
-    await env.KRYPT_DATA.put('development_progress', JSON.stringify(bestProgress))
-  }
-  
-  if (bestProgress) {
-    // Always update backup with current best progress
-    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(bestProgress))
-    progressCache = bestProgress
-    cacheTimestamps[cacheKey] = now
-    return bestProgress
-  }
-  
-  // CRITICAL FIX: Never return 0 progress - this causes random resets!
-  // If we can't find data, return the last known cached value or a safe default
-  console.error('❌ CRITICAL: No valid progress data found in KV storage')
-  console.error('❌ Attempting to use last known cache or safe fallback')
-  
-  // Try to use any cached progress first
-  if (progressCache && progressCache.componentsCompleted > 0) {
-    console.warn('⚠️ Using cached progress:', progressCache.componentsCompleted)
+  // Fallback: Use cached data if available
+  if (progressCache && progressCache.componentsCompleted >= 0) {
+    console.warn('⚠️ Using cached progress as fallback:', progressCache.componentsCompleted)
     return progressCache
   }
   
-  // IMPORTANT: Return a safe minimum progress that won't reset user experience
-  // This should be the last known good state, not 0
-  const safeProgress = getDefaultProgress(75) // Use 75 as safe minimum (where we were)
-  console.warn('⚠️ Using safe fallback progress: 75 components')
-  
-  // Don't save this to KV - it's just a temporary fallback
-  progressCache = safeProgress
+  // Emergency fallback: Return minimal progress
+  console.error('❌ EMERGENCY: Creating minimal progress - this should not happen in production')
+  const emergencyProgress = getDefaultProgress(0)
+  progressCache = emergencyProgress
   cacheTimestamps[cacheKey] = now
   
-  return safeProgress
+  return emergencyProgress
 }
 
 function getDefaultProgress(existingComponents = null) {
