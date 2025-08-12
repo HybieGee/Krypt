@@ -6,6 +6,7 @@ let countCache = null
 let progressCache = null
 let logsCache = null
 let leaderboardCache = null
+let statsCache = null
 let cacheTimestamps = {}
 const CACHE_TTL = 2000 // 2 seconds for faster updates
 
