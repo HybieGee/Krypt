@@ -76,11 +76,11 @@ export default function Terminal() {
                   ↓ Bottom
                 </button>
                 <a
-                  href="https://github.com/HybieGee/Krypt"
+                  href="https://github.com/KryptAI/krypt-blockchain"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2 py-1 text-xs bg-terminal-green/10 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/20 transition-colors rounded flex items-center space-x-1"
-                  title="View code repository"
+                  className="px-3 py-1 text-xs bg-terminal-green/20 border border-terminal-green/50 text-terminal-green hover:bg-terminal-green/30 transition-colors rounded flex items-center space-x-1 font-medium"
+                  title="View Krypt AI blockchain code repository"
                 >
                   <span>📁</span>
                   <span>Code</span>
