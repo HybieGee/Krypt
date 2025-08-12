@@ -67,7 +67,7 @@ class ApiService {
   }
 
   async trackSession(sessionId: string, walletAddress?: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/session`, {
+    const response = await fetch(`${VERCEL_API_URL}/session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -113,7 +113,7 @@ class ApiService {
   }
 
   async registerEarlyAccessUser(visitorId: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/early-access`, {
+    const response = await fetch(`${CLOUDFLARE_API_URL}/early-access`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
