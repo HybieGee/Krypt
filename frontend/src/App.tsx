@@ -12,7 +12,18 @@ import ApiService from './services/api'
 import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
 
 function App() {
-  const { setConnectionStatus, user, updateUserWallet, createFreshUser, setProgress, addLogs, setStats } = useStore()
+  const { setConnectionStatus, user, updateUserWallet, createFreshUser, setProgress, addLogs, setStats, clearTerminalLogs } = useStore()
+  
+  // Make clear function available globally for console debugging
+  useEffect(() => {
+    (window as any).clearKryptLogs = clearTerminalLogs
+    (window as any).nukeCaches = () => {
+      clearTerminalLogs()
+      localStorage.clear()
+      sessionStorage.clear()
+      location.reload()
+    }
+  }, [clearTerminalLogs])
   
   // Initialize early access visitor tracking
   useEarlyAccessTracking()

@@ -266,16 +266,21 @@ export const useStore = create<StoreState>()(
             },
           }
         }),
-        clearTerminalLogs: () => set(() => ({
-          terminalLogs: []
-        })),
+        clearTerminalLogs: () => set(() => {
+          // Clear persisted state completely
+          localStorage.removeItem('krypt-terminal-storage')
+          
+          return {
+            terminalLogs: []
+          }
+        }),
       }),
       {
         name: 'krypt-terminal-storage',
         partialize: (state) => ({
           user: state.user,
           chatMessages: state.chatMessages,
-          terminalLogs: state.terminalLogs, // Persist logs to prevent reset on refresh
+          // DO NOT persist terminalLogs - they should always come fresh from API
         }),
       }
     )

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔥 NUCLEAR CACHE CLEAR - Launch Ready</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .danger { color: #ff4444; background: #330000; padding: 15px; border: 2px solid #ff4444; margin: 20px 0; }
+        .success { color: #44ff44; background: #003300; padding: 15px; border: 2px solid #44ff44; margin: 20px 0; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        .nuke { background: #ff4444; color: white; font-weight: bold; }
+        .check { background: #4444ff; color: white; }
+        .clear { background: #44ff44; color: black; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔥 NUCLEAR CACHE CLEAR - LAUNCH READY</h1>
+    
+    <div class="danger">
+        <h2>⚠️ LAUNCH BLOCKER DETECTED</h2>
+        <p><strong>Issue:</strong> Frontend showing 148 cached logs, API has only 8</p>
+        <p><strong>Cause:</strong> Zustand persistent state caching old logs in localStorage</p>
+        <p><strong>Solution:</strong> Nuclear clear of ALL frontend storage</p>
+    </div>
+    
+    <button class="check" onclick="diagnoseProblem()">🔍 DIAGNOSE PROBLEM</button>
+    <button class="nuke" onclick="nuclearClear()">🔥 NUCLEAR CLEAR (LAUNCH READY)</button>
+    <button class="clear" onclick="verifyClean()">✅ VERIFY CLEAN</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function diagnoseProblem() {
+            document.getElementById('results').innerHTML = '<p>🔍 Diagnosing cache issue...</p>'
+            
+            try {
+                // Check API
+                const apiResponse = await fetch('https://kryptterminal.com/api/logs?limit=200')
+                const apiLogs = await apiResponse.json()
+                
+                // Check localStorage (Zustand)
+                const zustandStorage = localStorage.getItem('krypt-terminal-storage')
+                let frontendLogs = []
+                let zustandFound = false
+                
+                if (zustandStorage) {
+                    try {
+                        const data = JSON.parse(zustandStorage)
+                        frontendLogs = data.state?.terminalLogs || []
+                        zustandFound = true
+                    } catch (e) {
+                        console.error('Error parsing Zustand storage:', e)
+                    }
+                }
+                
+                // Check all localStorage keys
+                let allStorageKeys = []
+                for (let i = 0; i < localStorage.length; i++) {
+                    allStorageKeys.push(localStorage.key(i))
+                }
+                
+                const isBlocked = frontendLogs.length > apiLogs.length
+                
+                document.getElementById('results').innerHTML = `
+                    <div style="background: #222; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <h2>🔍 CACHE DIAGNOSIS COMPLETE</h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                            <div style="background: #001122; padding: 15px; border-left: 4px solid #4444ff;">
+                                <h3>🌐 API STATUS</h3>
+                                <p><strong>Logs Count:</strong> ${apiLogs.length}</p>
+                                <p><strong>Status:</strong> ${apiLogs.length === 0 ? '✅ Clean' : '⚠️ Has Data'}</p>
+                            </div>
+                            
+                            <div style="background: #220011; padding: 15px; border-left: 4px solid #ff4444;">
+                                <h3>💾 FRONTEND CACHE</h3>
+                                <p><strong>Cached Logs:</strong> ${frontendLogs.length}</p>
+                                <p><strong>Zustand Store:</strong> ${zustandFound ? '❌ Found' : '✅ Clean'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="${isBlocked ? 'danger' : 'success'}">
+                            ${isBlocked ? `
+                                <h3>🚨 LAUNCH BLOCKER CONFIRMED</h3>
+                                <p><strong>Problem:</strong> Frontend has ${frontendLogs.length - apiLogs.length} more logs than API</p>
+                                <p><strong>Cause:</strong> Zustand persistent state in localStorage key 'krypt-terminal-storage'</p>
+                                <p><strong>Effect:</strong> Users see old cached logs instead of real blockchain development</p>
+                                <p><strong>Action Required:</strong> Nuclear clear to remove all cached data</p>
+                            ` : `
+                                <h3>✅ LAUNCH READY</h3>
+                                <p>Frontend and API are in sync - no cached logs blocking launch!</p>
+                            `}
+                        </div>
+                        
+                        <details>
+                            <summary>🔍 Technical Details</summary>
+                            <p><strong>All localStorage Keys:</strong> ${allStorageKeys.join(', ')}</p>
+                            <p><strong>Zustand Key Found:</strong> ${zustandFound ? 'YES - THIS IS THE PROBLEM' : 'NO'}</p>
+                            <p><strong>Frontend Log Sample:</strong> ${frontendLogs.length > 0 ? frontendLogs[0].message : 'None'}</p>
+                        </details>
+                    </div>
+                `
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="danger">
+                        <h3>❌ DIAGNOSIS FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `
+            }
+        }
+        
+        function nuclearClear() {
+            document.getElementById('results').innerHTML = '<p>🔥 EXECUTING NUCLEAR CLEAR...</p>'
+            
+            try {
+                let clearedItems = []
+                
+                // 1. Target the main culprit - Zustand persistent state
+                if (localStorage.getItem('krypt-terminal-storage')) {
+                    localStorage.removeItem('krypt-terminal-storage')
+                    clearedItems.push('✅ Zustand persistent state (krypt-terminal-storage)')
+                }
+                
+                // 2. Clear ALL localStorage to be absolutely sure
+                const allKeys = []
+                for (let i = 0; i < localStorage.length; i++) {
+                    allKeys.push(localStorage.key(i))
+                }
+                localStorage.clear()
+                clearedItems.push(`✅ All localStorage (${allKeys.length} keys): ${allKeys.join(', ')}`)
+                
+                // 3. Clear sessionStorage
+                const sessionKeys = []
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    sessionKeys.push(sessionStorage.key(i))
+                }
+                sessionStorage.clear()
+                if (sessionKeys.length > 0) {
+                    clearedItems.push(`✅ SessionStorage (${sessionKeys.length} keys)`)
+                }
+                
+                // 4. Clear cookies
+                const cookies = document.cookie.split(";")
+                cookies.forEach(function(cookie) {
+                    const eqPos = cookie.indexOf("=")
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim()
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/"
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname
+                })
+                if (cookies.length > 1) {
+                    clearedItems.push(`✅ Cookies (${cookies.length} cleared)`)
+                }
+                
+                // 5. Force clear any cached JavaScript variables
+                if (window.useStore) {
+                    try {
+                        window.useStore.getState().clearTerminalLogs()
+                        clearedItems.push('✅ Zustand store cleared via clearTerminalLogs()')
+                    } catch (e) {
+                        clearedItems.push('⚠️ Zustand store not accessible (normal if not on main site)')
+                    }
+                }
+                
+                document.getElementById('results').innerHTML = `
+                    <div class="success">
+                        <h2>🔥 NUCLEAR CLEAR COMPLETE</h2>
+                        <p><strong>ALL FRONTEND CACHES OBLITERATED!</strong></p>
+                        
+                        <h3>📋 Items Cleared:</h3>
+                        ${clearedItems.map(item => `<p>${item}</p>`).join('')}
+                        
+                        <div style="background: #004400; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                            <h3>🚀 LAUNCH SEQUENCE</h3>
+                            <p><strong>1.</strong> Navigate to kryptterminal.com</p>
+                            <p><strong>2.</strong> Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)</p>
+                            <p><strong>3.</strong> Check terminal - should show ONLY fresh API data</p>
+                            <p><strong>4.</strong> Verify no old logs from 7:33 PM - 9:02 PM range</p>
+                            <p><strong>5.</strong> LAUNCH READY! ✅</p>
+                        </div>
+                        
+                        <p style="color: #ffaa00;"><strong>⚠️ If logs still appear, the issue is in the backend API caching system</strong></p>
+                    </div>
+                `
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="danger">
+                        <h3>❌ NUCLEAR CLEAR FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                        <p><strong>Manual fallback:</strong> Hard refresh kryptterminal.com with Ctrl+Shift+R</p>
+                    </div>
+                `
+            }
+        }
+        
+        async function verifyClean() {
+            document.getElementById('results').innerHTML = '<p>✅ Verifying clean state...</p>'
+            
+            try {
+                // Check if caches are truly gone
+                const zustandCheck = localStorage.getItem('krypt-terminal-storage')
+                const localStorageCount = localStorage.length
+                const sessionStorageCount = sessionStorage.length
+                
+                // Check API vs what should now be empty frontend
+                const apiResponse = await fetch('https://kryptterminal.com/api/logs?limit=10')
+                const apiLogs = await apiResponse.json()
+                
+                const isClean = !zustandCheck && localStorageCount === 0
+                
+                document.getElementById('results').innerHTML = `
+                    <div class="${isClean ? 'success' : 'danger'}">
+                        <h2>✅ VERIFICATION COMPLETE</h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                            <div style="background: #001122; padding: 15px;">
+                                <h3>💾 Frontend State</h3>
+                                <p><strong>Zustand Store:</strong> ${zustandCheck ? '❌ Still exists' : '✅ Cleared'}</p>
+                                <p><strong>localStorage:</strong> ${localStorageCount} keys</p>
+                                <p><strong>sessionStorage:</strong> ${sessionStorageCount} keys</p>
+                            </div>
+                            
+                            <div style="background: #001122; padding: 15px;">
+                                <h3>🌐 API State</h3>
+                                <p><strong>API Logs:</strong> ${apiLogs.length}</p>
+                                <p><strong>Status:</strong> ${apiLogs.length === 0 ? '✅ Clean' : '⚠️ Has data'}</p>
+                            </div>
+                        </div>
+                        
+                        ${isClean ? `
+                            <div style="background: #004400; padding: 15px; border-radius: 5px;">
+                                <h3>🚀 LAUNCH STATUS: READY</h3>
+                                <p>✅ All frontend caches cleared</p>
+                                <p>✅ No Zustand persistent state</p>
+                                <p>✅ Terminal will show only fresh API data</p>
+                                <p><strong>Action:</strong> Hard refresh kryptterminal.com to see clean terminal</p>
+                            </div>
+                        ` : `
+                            <div class="danger">
+                                <h3>🚨 STILL BLOCKED</h3>
+                                <p>Some caches remain - run Nuclear Clear again or manually clear browser data</p>
+                            </div>
+                        `}
+                    </div>
+                `
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="danger">
+                        <h3>❌ VERIFICATION FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `
+            }
+        }
+        
+        // Auto-diagnose on load
+        window.onload = function() {
+            diagnoseProblem()
+        }
+    </script>
+</body>
+</html>
