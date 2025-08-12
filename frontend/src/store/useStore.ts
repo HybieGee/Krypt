@@ -73,6 +73,7 @@ interface StoreState {
   addLogs: (logs: any[]) => void
   setStats: (stats: any) => void
   resetAllData: () => void
+  clearTerminalLogs: () => void
 }
 
 export const useStore = create<StoreState>()(
@@ -265,6 +266,9 @@ export const useStore = create<StoreState>()(
             },
           }
         }),
+        clearTerminalLogs: () => set(() => ({
+          terminalLogs: []
+        })),
       }),
       {
         name: 'krypt-terminal-storage',

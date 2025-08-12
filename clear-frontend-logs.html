@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Frontend Logs Cache</title>
+</head>
+<body>
+    <h1>Clear Frontend Logs Cache</h1>
+    <p>This will clear cached terminal logs and force fresh data from API.</p>
+    
+    <button onclick="clearLogs()">Clear Terminal Logs Cache</button>
+    <button onclick="clearAllStorage()">Clear All Storage</button>
+    
+    <div id="result"></div>
+
+    <script>
+        function clearLogs() {
+            try {
+                // Clear localStorage
+                const stored = localStorage.getItem('krypt-terminal-storage');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    data.state.terminalLogs = [];
+                    localStorage.setItem('krypt-terminal-storage', JSON.stringify(data));
+                }
+                
+                document.getElementById('result').innerHTML = '✅ Terminal logs cache cleared!<br>Reload the page to see fresh logs.';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+        
+        function clearAllStorage() {
+            try {
+                localStorage.removeItem('krypt-terminal-storage');
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                document.getElementById('result').innerHTML = '✅ All storage cleared!<br>Reload the page for completely fresh start.';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+        
+        // Show current stored logs info
+        window.onload = function() {
+            try {
+                const stored = localStorage.getItem('krypt-terminal-storage');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    const logCount = data.state?.terminalLogs?.length || 0;
+                    document.getElementById('result').innerHTML = `Current cached logs: ${logCount}`;
+                } else {
+                    document.getElementById('result').innerHTML = 'No cached logs found.';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Error reading cache: ' + error.message;
+            }
+        };
+    </script>
+</body>
+</html>
