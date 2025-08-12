@@ -3,10 +3,10 @@ import { useStore } from '@/store/useStore'
 import ApiService from '@/services/api'
 
 export default function Rewards() {
-  const { user, blockchainProgress, statistics } = useStore()
+  const { user, statistics } = useStore()
   const [activeTab, setActiveTab] = useState<'milestones' | 'raffles'>('milestones')
   const [raffleTickets, setRaffleTickets] = useState(0)
-  const [userMilestones, setUserMilestones] = useState<any[]>([])
+  const [, setUserMilestones] = useState<any[]>([])
   const [raffleEntries, setRaffleEntries] = useState<any[]>([])
 
   // Early Access User Milestones with automatic distribution
