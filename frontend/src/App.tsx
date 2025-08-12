@@ -67,16 +67,7 @@ function App() {
     apiService.startPolling(
       (progress) => setProgress(progress),
       (logs) => addLogs(logs),
-      (stats) => setStats(stats),
-      (error) => {
-        console.error('API polling error:', error)
-        setConnectionStatus('disconnected')
-        
-        // Retry connection after 5 seconds
-        setTimeout(() => {
-          setConnectionStatus('connected')
-        }, 5000)
-      }
+      (stats) => setStats(stats)
     )
 
     // Listen for immediate stats updates after early access registration
