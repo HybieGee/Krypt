@@ -67,13 +67,25 @@ export default function Terminal() {
                   Development Logs ({terminalLogs.length})
                 </button>
               </div>
-              <button
-                onClick={activeTab === 'terminal' ? jumpToBottomLiveView : jumpToBottomLogs}
-                className="px-2 py-1 text-xs bg-terminal-green/10 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/20 transition-colors rounded"
-                title="Jump to bottom"
-              >
-                ↓ Bottom
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={activeTab === 'terminal' ? jumpToBottomLiveView : jumpToBottomLogs}
+                  className="px-2 py-1 text-xs bg-terminal-green/10 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/20 transition-colors rounded"
+                  title="Jump to bottom"
+                >
+                  ↓ Bottom
+                </button>
+                <a
+                  href="https://github.com/HybieGee/Krypt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2 py-1 text-xs bg-terminal-green/10 border border-terminal-green/30 text-terminal-green hover:bg-terminal-green/20 transition-colors rounded flex items-center space-x-1"
+                  title="View code repository"
+                >
+                  <span>📁</span>
+                  <span>Code</span>
+                </a>
+              </div>
             </div>
           </div>
 
