@@ -507,7 +507,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
       linesOfCode: 0,
       commits: 0,
       testsRun: 0,
-      lastUpdated: Date.now() + 30000 // Pause auto-increment for 30 seconds after nuclear reset
+      lastUpdated: Date.now() + 300000 // Pause auto-increment for 5 minutes after nuclear reset
     }
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))

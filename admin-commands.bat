@@ -11,9 +11,10 @@ echo 4. Reset progress only
 echo 5. NUCLEAR RESET (everything + visitor records)
 echo 6. Add test user balance
 echo 7. Set progress manually (for testing only)
-echo 8. Exit
+echo 8. Set progress to ZERO (immediate)
+echo 9. Exit
 echo.
-set /p choice="Enter your choice (1-8): "
+set /p choice="Enter your choice (1-9): "
 
 if %choice%==1 goto SET_ONE
 if %choice%==2 goto SET_CUSTOM
@@ -22,7 +23,8 @@ if %choice%==4 goto RESET_PROGRESS
 if %choice%==5 goto CLEAR_VISITORS
 if %choice%==6 goto ADD_BALANCE
 if %choice%==7 goto SET_PROGRESS
-if %choice%==8 goto END
+if %choice%==8 goto SET_ZERO
+if %choice%==9 goto END
 
 :SET_ONE
 echo Setting visitor count to 1...
@@ -102,6 +104,14 @@ set /p components="Enter number of components completed (0-4500): "
 echo Setting progress to %components% components (TEST MODE)...
 curl -X POST "https://kryptterminal.com/api/admin/set-progress" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"componentsCompleted\":%components%}"
 echo.
+pause
+goto END
+
+:SET_ZERO
+echo Setting progress to ZERO components (immediate reset)...
+curl -X POST "https://kryptterminal.com/api/admin/set-progress" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"componentsCompleted\":0}"
+echo.
+echo Progress set to 0!
 pause
 goto END
 
