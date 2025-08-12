@@ -13,9 +13,10 @@ echo 6. Add test user balance
 echo 7. Set progress manually (for testing only)
 echo 8. Set progress to ZERO (immediate)
 echo 9. Set early access users to 0
-echo 10. Exit
+echo 10. Initialize system data (fix deployment resets)
+echo 11. Exit
 echo.
-set /p choice="Enter your choice (1-10): "
+set /p choice="Enter your choice (1-11): "
 
 if %choice%==1 goto SET_ONE
 if %choice%==2 goto SET_CUSTOM
@@ -26,7 +27,8 @@ if %choice%==6 goto ADD_BALANCE
 if %choice%==7 goto SET_PROGRESS
 if %choice%==8 goto SET_ZERO
 if %choice%==9 goto SET_USERS_ZERO
-if %choice%==10 goto END
+if %choice%==10 goto INITIALIZE
+if %choice%==11 goto END
 
 :SET_ONE
 echo Setting visitor count to 1...
@@ -130,6 +132,28 @@ echo Setting early access users to 0...
 curl -X POST "https://kryptterminal.com/api/admin/set-count" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"count\":0}"
 echo.
 echo Early access users set to 0!
+pause
+goto END
+
+:INITIALIZE
+echo =============================================
+echo    🔧 SYSTEM INITIALIZATION 🔧
+echo =============================================
+echo This will initialize system data if missing.
+echo Use this to fix deployment resets!
+echo.
+echo This will ONLY create data if none exists.
+echo Existing progress/logs will be preserved.
+echo.
+set /p confirm="Initialize system data? (yes/no): "
+if %confirm%==yes (
+    echo Initializing system...
+    curl -X POST "https://kryptterminal.com/api/admin/initialize" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"forceReset\":false}"
+    echo.
+    echo System initialization complete!
+) else (
+    echo Initialization cancelled.
+)
 pause
 goto END
 

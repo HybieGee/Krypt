@@ -116,6 +116,11 @@ export default {
     if (url.pathname === '/api/admin/set-progress' && request.method === 'POST') {
       return handleSetProgress(request, env, corsHeaders)
     }
+    
+    // Initialize system data (one-time setup)
+    if (url.pathname === '/api/admin/initialize' && request.method === 'POST') {
+      return handleInitializeSystem(request, env, corsHeaders)
+    }
 
     // Milestone Routes
     if (url.pathname === '/api/user/milestones' && request.method === 'GET') {
@@ -1053,6 +1058,65 @@ async function handleLeaderboard(env, corsHeaders) {
   }
 }
 
+// ===== SYSTEM INITIALIZATION =====
+async function handleInitializeSystem(request, env, corsHeaders) {
+  try {
+    const { adminKey, forceReset = false } = await request.json()
+    
+    if (adminKey !== 'krypt_master_reset_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Only initialize if data doesn't exist OR force reset is requested
+    const existingProgress = await env.KRYPT_DATA.get('development_progress')
+    const existingLogs = await env.KRYPT_DATA.get('development_logs')
+    
+    let progressInitialized = false
+    let logsInitialized = false
+    
+    if (!existingProgress || forceReset) {
+      const initialProgress = getDefaultProgress(0)
+      await env.KRYPT_DATA.put('development_progress', JSON.stringify(initialProgress))
+      await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(initialProgress))
+      progressInitialized = true
+      console.log('✅ Progress data initialized')
+    }
+    
+    if (!existingLogs || forceReset) {
+      const initialLogs = generateInitialLogs()
+      await env.KRYPT_DATA.put('development_logs', JSON.stringify(initialLogs))
+      await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(initialLogs))
+      logsInitialized = true
+      console.log('✅ Logs data initialized')
+    }
+    
+    // Clear caches to force fresh data
+    progressCache = null
+    logsCache = null
+    Object.keys(cacheTimestamps).forEach(key => delete cacheTimestamps[key])
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'System initialization completed',
+      progressInitialized,
+      logsInitialized,
+      forceReset,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('System initialization error:', error)
+    return new Response(JSON.stringify({ error: 'Initialization failed' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
 // ===== HELPER FUNCTIONS =====
 
 // Visitor count with caching (using EARLY_ACCESS namespace)
@@ -1138,15 +1202,19 @@ async function getProgress(env) {
     return bestProgress
   }
   
-  // Only create fresh progress if no valid data exists
-  console.warn('⚠️ DEBUG: No valid progress found, creating fresh start from 0')
-  const defaultProgress = getDefaultProgress(0)
-  await env.KRYPT_DATA.put('development_progress', JSON.stringify(defaultProgress))
-  await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(defaultProgress))
-  progressCache = defaultProgress
+  // CRITICAL: Never auto-create progress data - this causes resets on deployment
+  // Only return null if truly no data exists, let the caller decide what to do
+  console.error('❌ CRITICAL: No valid progress data found in KV storage')
+  console.error('❌ This should not happen after system initialization')
+  console.error('❌ Returning minimal progress to prevent total failure')
+  
+  // Return minimal progress but don't save it to KV automatically
+  // This prevents overwriting real data that might exist
+  const emergencyProgress = getDefaultProgress(0)
+  progressCache = emergencyProgress
   cacheTimestamps[cacheKey] = now
   
-  return defaultProgress
+  return emergencyProgress
 }
 
 function getDefaultProgress(existingComponents = null) {
@@ -1210,14 +1278,18 @@ async function getLogs(env) {
     console.error('Error fetching logs from KV:', error)
   }
   
-  // Generate initial logs if none exist
-  const initialLogs = generateInitialLogs()
-  await env.KRYPT_DATA.put('development_logs', JSON.stringify(initialLogs))
-  await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(initialLogs))
-  logsCache = initialLogs
+  // CRITICAL: Never auto-create logs - this causes resets on deployment
+  // Return empty array if no logs exist, don't overwrite KV storage
+  console.error('❌ CRITICAL: No development logs found in KV storage')
+  console.error('❌ This should not happen after system initialization')
+  console.error('❌ Returning empty logs to prevent data loss')
+  
+  // Return empty logs but don't save them to KV automatically
+  const emptyLogs = []
+  logsCache = emptyLogs
   cacheTimestamps[cacheKey] = now
   
-  return initialLogs
+  return emptyLogs
 }
 
 // Generate some initial logs to show activity
