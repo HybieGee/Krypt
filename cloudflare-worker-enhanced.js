@@ -158,11 +158,14 @@ async function handleSetProgress(request, env, corsHeaders) {
 // ===== PROXY TO VERCEL FOR DEVELOPMENT =====
 async function handleProxyToVercel(path, corsHeaders, request = null) {
   try {
-    const url = `https://crypto-ai-ten.vercel.app/api${path.replace('/api', '')}`
+    const url = `https://crypto-ai-ten.vercel.app${path}`
+    console.log(`Proxying to: ${url}`)
+    
     const options = {
       method: request ? request.method : 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Origin': 'https://kryptterminal.com'
       }
     }
     
@@ -174,13 +177,18 @@ async function handleProxyToVercel(path, corsHeaders, request = null) {
     const response = await fetch(url, options)
     const data = await response.text()
     
+    console.log(`Proxy response status: ${response.status}`)
+    
     return new Response(data, {
       status: response.status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': response.headers.get('Content-Type') || 'application/json'
+      }
     })
   } catch (error) {
     console.error('Proxy error:', error)
-    return new Response(JSON.stringify({ error: 'Proxy failed' }), {
+    return new Response(JSON.stringify({ error: `Proxy failed: ${error.message}` }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
