@@ -66,6 +66,11 @@ export default {
     if (url.pathname === '/api/admin/clear-visitors' && request.method === 'POST') {
       return handleClearVisitors(request, env, corsHeaders)
     }
+    
+    // Nuclear reset check for frontend
+    if (url.pathname === '/api/nuclear-reset-check' && request.method === 'GET') {
+      return handleNuclearResetCheck(request, env, corsHeaders)
+    }
 
     // Development Logs Routes (internal handling)
     if (url.pathname === '/api/logs' && request.method === 'GET') {
@@ -597,6 +602,10 @@ async function handleClearVisitors(request, env, corsHeaders) {
     console.log(`- Progress reset to ZERO components (absolute fresh start)`)
     console.log(`- Logs reset with nuclear reset marker`)
     
+    // Store nuclear reset ID for frontend detection
+    const resetId = Date.now().toString()
+    await env.KRYPT_DATA.put('nuclear_reset_id', resetId)
+    
     return new Response(JSON.stringify({ 
       success: true, 
       message: 'Nuclear reset completed - EVERYTHING cleared including user balances, milestones, and raffles',
@@ -608,6 +617,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
       progressReset: true,
       logsReset: true,
       newCount: 0,
+      resetId: resetId,
       timestamp: new Date().toISOString()
     }), {
       headers: noCacheHeaders
@@ -1208,6 +1218,28 @@ function generateInitialLogs() {
       details: { commitCount: 1 }
     }
   ]
+}
+
+// ===== NUCLEAR RESET CHECK FOR FRONTEND =====
+async function handleNuclearResetCheck(request, env, corsHeaders) {
+  try {
+    const resetId = await env.KRYPT_DATA.get('nuclear_reset_id')
+    
+    return new Response(JSON.stringify({
+      shouldReset: true, // Always return true if we have a reset ID
+      resetId: resetId || '0'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Nuclear reset check error:', error)
+    return new Response(JSON.stringify({
+      shouldReset: false,
+      resetId: '0'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
 }
 
 // Bot detection

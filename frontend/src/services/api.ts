@@ -169,6 +169,14 @@ class ApiService {
     return response.json()
   }
 
+  async checkNuclearReset(): Promise<{ shouldReset: boolean, resetId: string }> {
+    const response = await fetch(`${API_BASE_URL}/nuclear-reset-check`)
+    if (!response.ok) {
+      throw new Error(`Failed to check nuclear reset: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

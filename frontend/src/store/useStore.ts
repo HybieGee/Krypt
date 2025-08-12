@@ -71,6 +71,7 @@ interface StoreState {
   setProgress: (progress: any) => void
   addLogs: (logs: any[]) => void
   setStats: (stats: any) => void
+  resetAllData: () => void
 }
 
 export const useStore = create<StoreState>()(
@@ -212,6 +213,32 @@ export const useStore = create<StoreState>()(
               githubCommits: Math.max(stats.total_commits?.value || 0, currentStats.githubCommits || 0),
               testsRun: Math.max(stats.total_tests_run?.value || 0, currentStats.testsRun || 0),
             }
+          }
+        }),
+        resetAllData: () => set(() => {
+          // Clear localStorage
+          localStorage.removeItem('krypt-terminal-storage')
+          
+          // Reset to initial state
+          return {
+            user: null,
+            connectionStatus: 'disconnected',
+            terminalLogs: [],
+            chatMessages: [],
+            blockchainProgress: {
+              currentPhase: 1,
+              phaseProgress: 0,
+              totalComponents: 4500,
+              completedComponents: 0,
+              estimatedCompletion: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            },
+            statistics: {
+              totalUsers: 0,
+              earlyAccessUsers: 0,
+              linesOfCode: 0,
+              githubCommits: 0,
+              testsRun: 0,
+            },
           }
         }),
       }),
