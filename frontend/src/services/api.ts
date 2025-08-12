@@ -181,7 +181,7 @@ class ApiService {
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,
     onStats: (stats: StatsData) => void,
-    onError: (error: Error) => void
+    onError?: (error: Error) => void
   ) {
     if (this.isPolling) return
 
