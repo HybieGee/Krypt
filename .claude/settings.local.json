@@ -23,7 +23,8 @@
       "Bash(git log:*)",
       "Bash(git fetch:*)",
       "Bash(npx wrangler deploy:*)",
-      "Bash(wrangler deploy:*)"
+      "Bash(wrangler deploy:*)",
+      "Bash(deploy-worker.bat)"
     ],
     "deny": []
   }

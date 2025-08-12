@@ -467,9 +467,24 @@ async function handleSetCount(request, env, corsHeaders) {
 // ===== NUCLEAR RESET - EVERYTHING =====
 async function handleClearVisitors(request, env, corsHeaders) {
   try {
-    const { adminKey } = await request.json()
+    console.log('NUCLEAR RESET: Starting nuclear reset process...')
+    
+    let requestData
+    try {
+      requestData = await request.json()
+    } catch (parseError) {
+      console.error('NUCLEAR RESET: Failed to parse request JSON:', parseError)
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    const { adminKey } = requestData
+    console.log('NUCLEAR RESET: Admin key received:', adminKey ? 'Yes' : 'No')
     
     if (adminKey !== 'krypt_master_reset_2024') {
+      console.log('NUCLEAR RESET: Unauthorized access attempt')
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -579,8 +594,14 @@ async function handleClearVisitors(request, env, corsHeaders) {
       headers: noCacheHeaders
     })
   } catch (error) {
-    console.error('Nuclear reset error:', error)
-    return new Response(JSON.stringify({ error: 'Nuclear reset failed' }), {
+    console.error('NUCLEAR RESET ERROR:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error message:', error.message)
+    return new Response(JSON.stringify({ 
+      error: 'Nuclear reset failed',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
