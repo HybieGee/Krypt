@@ -266,7 +266,7 @@ export default function Tokens() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as 'wallet' | 'mint' | 'mine' | 'stake')}
                 className={`px-6 py-2 rounded-md transition-all ${
                   activeTab === tab.id 
                     ? 'bg-terminal-green text-black font-semibold' 
