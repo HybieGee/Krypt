@@ -75,29 +75,18 @@ export default function Roadmap() {
                     ? 'bg-terminal-green text-black font-semibold' 
                     : 'text-gray-400 hover:text-white'
                 }`}
-          >
-            <div className={`text-lg font-bold mb-2 ${
-              phase.status === 'in-progress' 
-                ? 'text-amber-400 animate-pulse' 
-                : 'text-amber-300/60'
-            }`}>
-              {phase.title}
-            </div>
-            <div className={`text-xs ${
-              phase.status === 'in-progress' 
-                ? 'text-yellow-400' 
-                : 'text-amber-400/40'
-            }`}>
-              {phase.status === 'in-progress' ? 'IN PROGRESS' : 'UPCOMING'}
-            </div>
-          </button>
-        ))}
-      </div>
+              >
+                {phase.title}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="bg-slate-800 border border-orange-500/30 p-6 rounded-lg">
-        <h2 className="text-xl font-bold text-orange-400 mb-4">
-          {phases[activePhase].title} Details
-        </h2>
+        {/* Phase Details */}
+        <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-terminal-green mb-4">
+            {phases[activePhase].title} Details
+          </h2>
         
         <div className="space-y-3">
           {phases[activePhase].items.map((item, index) => (
@@ -155,6 +144,7 @@ export default function Roadmap() {
           <p className="text-sm text-terminal-green/70">
             Fully autonomous blockchain ecosystem powered by AI
           </p>
+        </div>
         </div>
       </div>
     </div>

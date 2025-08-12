@@ -43,10 +43,10 @@ export default function Documentation() {
               </div>
             </div>
           </div>
-        </section>
 
-        <section>
-          <h2 className="text-xl text-emerald-400 mb-3">🔒 Data Security & Verification</h2>
+          {/* Data Security Section */}
+          <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-6">
+            <h2 className="text-2xl font-bold text-terminal-green mb-4">🔒 Data Security & Verification</h2>
           <div className="bg-emerald-500/5 border border-emerald-400/30 p-4 rounded mb-6">
             <h4 className="text-emerald-400 font-semibold mb-3">Safe Storage Verification</h4>
             <div className="space-y-4">
@@ -384,7 +384,8 @@ export default function Documentation() {
               </div>
             </div>
           </div>
-        </section>
+          </div>
+        </div>
       </div>
     </div>
   )
