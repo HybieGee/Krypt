@@ -45,7 +45,7 @@ export default function Tokenomics() {
                   </button>
                   {getExplorerUrl() && (
                     <a
-                      href={getExplorerUrl()}
+                      href={getExplorerUrl() || ''}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-400 hover:text-terminal-green transition-colors"
