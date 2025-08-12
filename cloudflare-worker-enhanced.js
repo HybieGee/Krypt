@@ -4,8 +4,25 @@
 // No in-memory caches - always read from KV for persistence across deployments
 const CACHE_TTL = 2000 // 2 seconds for faster updates
 
+// Keep cache variables as null to prevent errors but don't use them for persistence
+let progressCache = null
+let logsCache = null
+let cacheTimestamps = {}
+
 // Development configuration
 const BLOCKCHAIN_COMPONENTS = 4500
+
+// Global headers for consistency
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+const jsonHeaders = {
+  ...corsHeaders,
+  'Content-Type': 'application/json; charset=utf-8'
+}
 
 // No mock data - use real user balances only
 
@@ -13,18 +30,6 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
     
-    // CORS headers for all responses
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
-    
-    // JSON headers with proper UTF-8 charset
-    const jsonHeaders = {
-      ...corsHeaders,
-      'Content-Type': 'application/json; charset=utf-8'
-    }
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders })
