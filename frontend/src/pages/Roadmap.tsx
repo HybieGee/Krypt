@@ -20,7 +20,7 @@ export default function Roadmap() {
         { text: 'Advanced wallet analysis features', completed: false },
         { text: 'Trading bot integration', completed: false },
         { text: 'Mobile app development', completed: false },
-        { text: 'Partnership announcements', completed: false },
+        { text: 'Extensive AI Integration update', completed: false },
         { text: 'First airdrop distribution', completed: false },
       ],
     },
