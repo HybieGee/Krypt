@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Test Autonomous Worker</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .section { background: #111; padding: 20px; margin: 20px 0; border: 1px solid #00ff41; border-radius: 10px; }
+        button { padding: 15px 30px; margin: 10px; background: #00ff41; color: #000; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #00aa41; }
+        .result { background: #001122; padding: 15px; margin: 10px 0; border-left: 3px solid #00ff41; }
+        .error { border-left-color: #ff4444; color: #ff4444; }
+        .success { border-left-color: #00ff41; color: #00ff41; }
+        input { background: #222; color: #00ff41; border: 1px solid #00ff41; padding: 10px; width: 100%; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔧 TEST AUTONOMOUS WORKER</h1>
+    
+    <div class="section">
+        <h2>📍 Step 1: Enter Your Worker URL</h2>
+        <p>Find this in Cloudflare Dashboard → Your Worker → "Visit" button (copy that URL)</p>
+        <input type="text" id="workerUrl" placeholder="https://krypt-autonomous.YOUR-SUBDOMAIN.workers.dev" value="">
+        <button onclick="saveUrl()">💾 Save URL</button>
+    </div>
+
+    <div class="section">
+        <h2>🔍 Step 2: Test Basic Endpoints</h2>
+        <button onclick="testHealth()">Test /api/health</button>
+        <button onclick="testProgress()">Test /api/progress</button>
+        <button onclick="testLogs()">Test /api/logs</button>
+        <button onclick="testStatus()">Test /api/development/status</button>
+    </div>
+
+    <div class="section">
+        <h2>⚡ Step 3: Manual Development Trigger</h2>
+        <p>Since cron isn't working, let's manually trigger development:</p>
+        <button onclick="forceDevelopment()">🔨 Force Generate Component</button>
+        <button onclick="startManualLoop()">🔄 Start Manual 15-sec Loop</button>
+        <button onclick="stopManualLoop()">⏹️ Stop Manual Loop</button>
+    </div>
+
+    <div class="section">
+        <h2>🔧 Step 4: Debug Cron Setup</h2>
+        <h3>Check these in Cloudflare Dashboard:</h3>
+        <ol>
+            <li>Go to Workers & Pages → krypt-autonomous</li>
+            <li>Click "Triggers" tab</li>
+            <li>Under "Cron Triggers" you should see: <code>* * * * *</code></li>
+            <li>If not there, click "Add Cron Trigger" and enter: <code>* * * * *</code></li>
+            <li>Make sure it says "Enabled" not "Disabled"</li>
+        </ol>
+        <button onclick="testScheduledHandler()">Test Scheduled Handler</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let manualInterval = null
+        let workerBaseUrl = localStorage.getItem('workerUrl') || ''
+        
+        // Load saved URL on page load
+        window.onload = function() {
+            document.getElementById('workerUrl').value = workerBaseUrl
+            if (workerBaseUrl) {
+                addResult('✅ Using saved worker URL: ' + workerBaseUrl, 'success')
+            }
+        }
+        
+        function saveUrl() {
+            workerBaseUrl = document.getElementById('workerUrl').value
+            if (!workerBaseUrl) {
+                addResult('❌ Please enter your worker URL first!', 'error')
+                return
+            }
+            localStorage.setItem('workerUrl', workerBaseUrl)
+            addResult('✅ Worker URL saved!', 'success')
+        }
+        
+        function getWorkerUrl() {
+            const url = document.getElementById('workerUrl').value
+            if (!url) {
+                addResult('❌ Please enter your worker URL first!', 'error')
+                return null
+            }
+            return url
+        }
+        
+        async function testHealth() {
+            const url = getWorkerUrl()
+            if (!url) return
+            
+            try {
+                addResult('🔍 Testing /api/health...', 'success')
+                const response = await fetch(url + '/api/health')
+                const data = await response.json()
+                addResult('✅ Health Check Response: ' + JSON.stringify(data, null, 2), 'success')
+            } catch (error) {
+                addResult('❌ Health Check Failed: ' + error.message, 'error')
+            }
+        }
+        
+        async function testProgress() {
+            const url = getWorkerUrl()
+            if (!url) return
+            
+            try {
+                addResult('🔍 Testing /api/progress...', 'success')
+                const response = await fetch(url + '/api/progress')
+                const data = await response.json()
+                addResult(`✅ Progress: ${data.componentsCompleted || 0}/${data.totalComponents || 4500} components`, 'success')
+                addResult('Full response: ' + JSON.stringify(data, null, 2), 'success')
+            } catch (error) {
+                addResult('❌ Progress Check Failed: ' + error.message, 'error')
+            }
+        }
+        
+        async function testLogs() {
+            const url = getWorkerUrl()
+            if (!url) return
+            
+            try {
+                addResult('🔍 Testing /api/logs...', 'success')
+                const response = await fetch(url + '/api/logs')
+                const data = await response.json()
+                addResult(`✅ Found ${data.length} logs`, 'success')
+                if (data.length > 0) {
+                    addResult('Latest log: ' + JSON.stringify(data[data.length - 1], null, 2), 'success')
+                }
+            } catch (error) {
+                addResult('❌ Logs Check Failed: ' + error.message, 'error')
+            }
+        }
+        
+        async function testStatus() {
+            const url = getWorkerUrl()
+            if (!url) return
+            
+            try {
+                addResult('🔍 Testing /api/development/status...', 'success')
+                const response = await fetch(url + '/api/development/status')
+                const data = await response.json()
+                addResult('✅ Status: ' + JSON.stringify(data, null, 2), 'success')
+            } catch (error) {
+                addResult('❌ Status Check Failed: ' + error.message, 'error')
+            }
+        }
+        
+        async function forceDevelopment() {
+            const url = getWorkerUrl()
+            if (!url) return
+            
+            try {
+                addResult('⚡ Forcing component generation...', 'success')
+                const response = await fetch(url + '/api/development/force', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                const data = await response.json()
+                
+                if (data.success) {
+                    addResult(`✅ Generated: ${data.component || 'Component'}`, 'success')
+                    addResult('Progress: ' + JSON.stringify(data.progress, null, 2), 'success')
+                } else {
+                    addResult(`⚠️ ${data.message || 'Generation failed'}`, 'error')
+                }
+            } catch (error) {
+                addResult('❌ Force Development Failed: ' + error.message, 'error')
+            }
+        }
+        
+        function startManualLoop() {
+            if (manualInterval) {
+                addResult('⚠️ Loop already running!', 'error')
+                return
+            }
+            
+            addResult('🔄 Starting manual 15-second loop...', 'success')
+            
+            // Run immediately
+            forceDevelopment()
+            
+            // Then run every 15 seconds
+            manualInterval = setInterval(() => {
+                addResult('🔄 Auto-triggering development...', 'success')
+                forceDevelopment()
+            }, 15000)
+            
+            addResult('✅ Manual loop started! Will generate a component every 15 seconds.', 'success')
+        }
+        
+        function stopManualLoop() {
+            if (manualInterval) {
+                clearInterval(manualInterval)
+                manualInterval = null
+                addResult('⏹️ Manual loop stopped', 'success')
+            } else {
+                addResult('⚠️ No loop running', 'error')
+            }
+        }
+        
+        async function testScheduledHandler() {
+            addResult('🔍 Testing if scheduled handler exists...', 'success')
+            addResult('Note: The scheduled handler only works with real cron triggers, not direct calls', 'success')
+            addResult('Check Cloudflare Dashboard → Workers → krypt-autonomous → Logs', 'success')
+            addResult('You should see "⏰ Scheduled trigger activated" messages every minute if cron is working', 'success')
+        }
+        
+        function addResult(message, type = 'success') {
+            const results = document.getElementById('results')
+            const div = document.createElement('div')
+            div.className = 'result ' + type
+            div.textContent = message
+            if (message.includes('{')) {
+                div.innerHTML = '<pre>' + message + '</pre>'
+            }
+            results.insertBefore(div, results.firstChild)
+            
+            // Keep only last 20 results
+            while (results.children.length > 20) {
+                results.removeChild(results.lastChild)
+            }
+        }
+    </script>
+</body>
+</html>
