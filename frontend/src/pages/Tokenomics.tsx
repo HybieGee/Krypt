@@ -6,10 +6,7 @@ export default function Tokenomics() {
   const [activeSection, setActiveSection] = useState('overview')
 
   const tokenDistribution = [
-    { label: 'Community Pool', amount: 400000000, percentage: 40, color: 'bg-terminal-green' },
-    { label: 'Liquidity Pool', amount: 300000000, percentage: 30, color: 'bg-blue-400' },
-    { label: 'Staking Rewards', amount: 200000000, percentage: 20, color: 'bg-purple-400' },
-    { label: 'Marketing & Partnerships', amount: 70000000, percentage: 7, color: 'bg-yellow-400' },
+    { label: 'Community Pool', amount: 970000000, percentage: 97, color: 'bg-terminal-green' },
     { label: 'Development Fund', amount: 30000000, percentage: 3, color: 'bg-red-400' }
   ]
 
@@ -19,10 +16,10 @@ export default function Tokenomics() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-terminal-green mb-4">
-            KRYPT Tokenomics
+            KRYPT Memecoin Tokenomics
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Fueling the future of autonomous blockchain development through innovative AI technology
+            Supporting the development of the world's first AI-built blockchain through community participation
           </p>
         </div>
 
@@ -187,15 +184,15 @@ export default function Tokenomics() {
                 </div>
 
                 <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Staking Rewards</h3>
+                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Community Rewards</h3>
                   <p className="text-gray-300 mb-4">
-                    Stake KRYPT tokens to secure the network and earn rewards from AI development 
-                    milestones and transaction fees.
+                    Participate in the Krypt ecosystem and earn rewards through various community 
+                    activities and achievements.
                   </p>
                   <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Earn from development milestones</li>
-                    <li>• Transaction fee distributions</li>
-                    <li>• Early access to new features</li>
+                    <li>• Development milestone bonuses</li>
+                    <li>• Community event participation</li>
+                    <li>• Bug reporting and feedback</li>
                   </ul>
                 </div>
 
@@ -213,15 +210,15 @@ export default function Tokenomics() {
                 </div>
 
                 <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Transaction Fees</h3>
+                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Future Blockchain Utility</h3>
                   <p className="text-gray-300 mb-4">
-                    KRYPT tokens serve as the native currency for all blockchain operations, 
-                    from simple transfers to complex smart contract executions.
+                    Once the Krypt AI blockchain is deployed, KRYPT memecoin holders will receive 
+                    utility in the new blockchain ecosystem.
                   </p>
                   <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Gas fees for transactions</li>
-                    <li>• Smart contract deployment</li>
-                    <li>• Cross-chain bridge operations</li>
+                    <li>• Potential airdrop for blockchain tokens</li>
+                    <li>• Early access to blockchain features</li>
+                    <li>• Priority in ecosystem participation</li>
                   </ul>
                 </div>
               </div>
@@ -244,6 +241,12 @@ export default function Tokenomics() {
                   operational sustainability. This fund ensures the AI can overcome any financial 
                   roadblocks during the blockchain development and deployment phases.
                 </p>
+                <div className="bg-terminal-green/10 border border-terminal-green/30 rounded p-4 mb-4">
+                  <p className="text-terminal-green text-sm">
+                    <strong>Note:</strong> Marketing activities (DEX advertising, community growth, partnerships) 
+                    are funded separately out of pocket and do not require token allocations.
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
