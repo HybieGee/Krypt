@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore'
 
 export default function Tokenomics() {
-  const { blockchainProgress, statistics } = useStore()
+  const { blockchainProgress } = useStore()
   const [activeSection, setActiveSection] = useState('overview')
 
   const tokenDistribution = [
