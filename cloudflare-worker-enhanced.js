@@ -49,7 +49,7 @@ export default {
 
     // Development Progress Routes
     if (url.pathname === '/api/progress' && request.method === 'GET') {
-      return handleGetProgress(env, corsHeaders)
+      return handleGetProgress(env, jsonHeaders)
     }
     if (url.pathname === '/api/progress/update' && request.method === 'POST') {
       return handleUpdateProgress(request, env, corsHeaders)
@@ -80,7 +80,7 @@ export default {
 
     // Development Logs Routes (internal handling)
     if (url.pathname === '/api/logs' && request.method === 'GET') {
-      return handleGetLogs(env, corsHeaders)
+      return handleGetLogs(env, jsonHeaders)
     }
     if (url.pathname === '/api/logs/add' && request.method === 'POST') {
       return handleAddLog(request, env, corsHeaders)
@@ -105,7 +105,7 @@ export default {
 
     // Statistics Routes
     if (url.pathname === '/api/stats' && request.method === 'GET') {
-      return handleStats(env, corsHeaders)
+      return handleStats(env, jsonHeaders)
     }
 
     // User Balance Routes
@@ -212,7 +212,7 @@ async function handleSetProgress(request, env, corsHeaders) {
 }
 
 // ===== DEVELOPMENT LOGS HANDLER =====
-async function handleGetLogs(env, corsHeaders) {
+async function handleGetLogs(env, jsonHeaders) {
   try {
     const logs = await getLogs(env)
     console.log(`🔧 DEBUG: handleGetLogs returning ${logs.length} logs`)
@@ -741,7 +741,7 @@ async function handleMasterReset(request, env, corsHeaders) {
 }
 
 // ===== GET PROGRESS WITH DEVELOPMENT TRIGGER =====
-async function handleGetProgress(env, corsHeaders) {
+async function handleGetProgress(env, jsonHeaders) {
   try {
     // Trigger development if enough time has passed
     const progress = await getProgress(env)
@@ -965,7 +965,7 @@ async function handleAddLog(request, env, corsHeaders) {
 }
 
 // ===== STATISTICS =====
-async function handleStats(env, corsHeaders) {
+async function handleStats(env, jsonHeaders) {
   try {
     const [visitorCount, progress] = await Promise.all([
       getVisitorCount(env),
