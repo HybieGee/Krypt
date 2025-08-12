@@ -14,10 +14,6 @@
       "destination": "/api"
     },
     {
-      "source": "/socket.io/(.*)",
-      "destination": "/api"
-    },
-    {
       "source": "/:path*",
       "destination": "/index.html"
     }

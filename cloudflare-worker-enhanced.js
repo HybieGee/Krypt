@@ -66,15 +66,23 @@ export default {
       return handleClearVisitors(request, env, corsHeaders)
     }
 
-    // Development Logs Routes (fallback to Vercel)
+    // Development Logs Routes (internal handling)
     if (url.pathname === '/api/logs' && request.method === 'GET') {
-      return handleProxyToVercel(url.pathname + url.search, corsHeaders)
+      return handleGetLogs(env, corsHeaders)
     }
     if (url.pathname === '/api/typing' && request.method === 'GET') {
-      return handleProxyToVercel(url.pathname + url.search, corsHeaders)
+      return handleTyping(env, corsHeaders)
     }
     if (url.pathname === '/api/session' && request.method === 'POST') {
-      return handleProxyToVercel(url.pathname, corsHeaders, request)
+      return handleSession(request, corsHeaders)
+    }
+    
+    // Development trigger (for testing)
+    if (url.pathname === '/api/develop' && request.method === 'POST') {
+      const result = await triggerDevelopment(env)
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     // Statistics Routes
@@ -155,41 +163,155 @@ async function handleSetProgress(request, env, corsHeaders) {
   }
 }
 
-// ===== PROXY TO VERCEL FOR DEVELOPMENT =====
-async function handleProxyToVercel(path, corsHeaders, request = null) {
+// ===== DEVELOPMENT LOGS HANDLER =====
+async function handleGetLogs(env, corsHeaders) {
   try {
-    const url = `https://crypto-ai-ten.vercel.app${path}`
-    console.log(`Proxying to: ${url}`)
-    
-    const options = {
-      method: request ? request.method : 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Origin': 'https://kryptterminal.com'
-      }
-    }
-    
-    if (request && (request.method === 'POST' || request.method === 'PUT')) {
-      const body = await request.text()
-      options.body = body
-    }
-    
-    const response = await fetch(url, options)
-    const data = await response.text()
-    
-    console.log(`Proxy response status: ${response.status}`)
-    
-    return new Response(data, {
-      status: response.status,
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': response.headers.get('Content-Type') || 'application/json'
-      }
+    const logs = await getLogs(env)
+    return new Response(JSON.stringify(logs), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
-    console.error('Proxy error:', error)
-    return new Response(JSON.stringify({ error: `Proxy failed: ${error.message}` }), {
-      status: 500,
+    console.error('Logs error:', error)
+    return new Response(JSON.stringify([]), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== DEVELOPMENT ENGINE =====
+async function triggerDevelopment(env) {
+  try {
+    const progress = await getProgress(env)
+    
+    // Don't trigger if already at max or recently updated (< 10 seconds ago)
+    if (progress.componentsCompleted >= BLOCKCHAIN_COMPONENTS) {
+      return { success: false, reason: 'Development complete' }
+    }
+    
+    const timeSinceUpdate = Date.now() - progress.lastUpdated
+    if (timeSinceUpdate < 10000) {
+      return { success: false, reason: 'Recent update, waiting...' }
+    }
+
+    // Generate new component
+    const componentIndex = progress.componentsCompleted
+    const componentName = getComponentName(componentIndex)
+    const logs = await getLogs(env)
+    
+    // Add development log
+    const newLog = {
+      id: `component-${componentIndex}-dev`,
+      timestamp: new Date().toISOString(),
+      type: 'code',
+      message: `✅ ${componentName} developed (${78 + Math.floor(Math.random() * 40)} lines)`,
+      details: { 
+        componentName: componentName,
+        phase: Math.floor(componentIndex / 1125) + 1,
+        snippet: generateCodeSnippet(componentName)
+      }
+    }
+    
+    logs.push(newLog)
+    
+    // Update progress
+    progress.componentsCompleted++
+    progress.linesOfCode += 78 + Math.floor(Math.random() * 40)
+    progress.percentComplete = (progress.componentsCompleted / BLOCKCHAIN_COMPONENTS) * 100
+    progress.currentPhase = Math.floor(progress.componentsCompleted / 1125) + 1
+    progress.phaseProgress = ((progress.componentsCompleted % 1125) / 1125) * 100
+    progress.commits++
+    progress.lastUpdated = Date.now()
+    
+    // Keep only last 50 logs
+    if (logs.length > 50) {
+      logs.splice(0, logs.length - 50)
+    }
+    
+    // Save updates
+    await Promise.all([
+      env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
+      env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+    ])
+    
+    // Clear caches
+    progressCache = progress
+    logsCache = logs
+    cacheTimestamps.progress = Date.now()
+    cacheTimestamps.logs = Date.now()
+    
+    console.log(`Development triggered: Component ${componentIndex + 1} (${componentName})`)
+    
+    return { success: true, component: componentName, progress: progress }
+  } catch (error) {
+    console.error('Development trigger error:', error)
+    return { success: false, reason: error.message }
+  }
+}
+
+function getComponentName(index) {
+  const components = [
+    'BlockStructure', 'TransactionPool', 'CryptographicHash', 'MerkleTree', 'BlockValidator',
+    'TransactionValidator', 'DigitalSignature', 'PublicKeyInfrastructure', 'ConsensusRules',
+    'NetworkProtocol', 'PeerDiscovery', 'MessagePropagation', 'DataStructures', 'StorageEngine',
+    'ChainValidation', 'GenesisBlock', 'BlockchainCore', 'SmartContract', 'VirtualMachine',
+    'StateManager', 'AccountModel', 'GasSystem', 'TransactionFee', 'MiningReward'
+  ]
+  return components[index % components.length] + `_${index + 1}`
+}
+
+function generateCodeSnippet(componentName) {
+  const snippets = [
+    `export class ${componentName} {\n  constructor(data: any) {\n    this.validate(data)\n  }\n...`,
+    `interface ${componentName}Config {\n  readonly hash: string\n  validate(): boolean\n}\n...`,
+    `async function create${componentName}(\n  params: CreateParams\n): Promise<${componentName}> {\n...`,
+    `export default class ${componentName} {\n  private readonly _data: BlockData\n  \n  public verify(): boolean {\n...`
+  ]
+  return snippets[Math.floor(Math.random() * snippets.length)]
+}
+
+// ===== TYPING SIMULATION =====
+async function handleTyping(env, corsHeaders) {
+  const progress = await getProgress(env)
+  
+  // Simple typing simulation
+  const typingSnippets = [
+    'export class BlockStructure {█',
+    'private merkleRoot: string;█',
+    'async validateTransaction(█',
+    'import { CryptoUtils }█',
+    'public readonly hash: string█'
+  ]
+  
+  const snippet = typingSnippets[Math.floor(Math.random() * typingSnippets.length)]
+  
+  return new Response(JSON.stringify({
+    text: snippet,
+    isActive: true,
+    currentComponent: progress.componentsCompleted,
+    phase: progress.currentPhase
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  })
+}
+
+// ===== SESSION HANDLER =====
+async function handleSession(request, corsHeaders) {
+  try {
+    const { sessionId, walletAddress } = await request.json()
+    
+    return new Response(JSON.stringify({
+      user: {
+        id: sessionId || 'temp-user',
+        walletAddress,
+        isEarlyAccess: true,
+        joinedAt: new Date().toISOString()
+      }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Invalid request' }), {
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
@@ -450,10 +572,23 @@ async function handleMasterReset(request, env, corsHeaders) {
   }
 }
 
-// ===== GET PROGRESS (NO AUTO-INCREMENT) =====
+// ===== GET PROGRESS WITH DEVELOPMENT TRIGGER =====
 async function handleGetProgress(env, corsHeaders) {
   try {
+    // Trigger development if enough time has passed
     const progress = await getProgress(env)
+    const timeSinceUpdate = Date.now() - progress.lastUpdated
+    
+    // Trigger development every 15 seconds
+    if (timeSinceUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
+      await triggerDevelopment(env)
+      // Get updated progress
+      const updatedProgress = await getProgress(env)
+      return new Response(JSON.stringify(updatedProgress), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
     return new Response(JSON.stringify(progress), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
