@@ -3,7 +3,7 @@ export default function Roadmap() {
     {
       title: 'Phase 1: Foundation',
       status: 'in-progress',
-      quarter: 'Q4 2024 - Q1 2025',
+      quarter: 'Q3 2025',
       items: [
         { text: 'Launch Krypt Terminal platform', completed: true },
         { text: 'Deploy initial AI capabilities', completed: true },
@@ -15,7 +15,7 @@ export default function Roadmap() {
     {
       title: 'Phase 2: Expansion',
       status: 'upcoming',
-      quarter: 'Q2 2025 - Q3 2025',
+      quarter: 'Q4 2025',
       items: [
         { text: 'Advanced wallet analysis features', completed: false },
         { text: 'Trading bot integration', completed: false },
@@ -27,7 +27,7 @@ export default function Roadmap() {
     {
       title: 'Phase 3: Innovation',
       status: 'upcoming',
-      quarter: 'Q4 2025 - Q1 2026',
+      quarter: 'Q1 2026',
       items: [
         { text: 'Blockchain testnet launch', completed: false },
         { text: 'Smart contract deployment', completed: false },
@@ -39,7 +39,7 @@ export default function Roadmap() {
     {
       title: 'Phase 4: Dominance',
       status: 'upcoming',
-      quarter: 'Q2 2026 - Q3 2026',
+      quarter: 'Q2 2026',
       items: [
         { text: 'Mainnet launch', completed: false },
         { text: 'Full ecosystem deployment', completed: false },
