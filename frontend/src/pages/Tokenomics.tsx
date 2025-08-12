@@ -116,7 +116,7 @@ export default function Tokenomics() {
                 {/* Visual Bar Chart */}
                 <div className="space-y-6">
                   <h3 className="text-xl font-semibold text-center mb-6">Distribution Breakdown</h3>
-                  {tokenDistribution.map((segment, index) => (
+                  {tokenDistribution.map((segment) => (
                     <div key={segment.label} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-3">
@@ -149,7 +149,7 @@ export default function Tokenomics() {
                         const strokeDashoffset = circumference - (previousPercentages / 100) * circumference
                         
                         // Color mapping
-                        const colorMap = {
+                        const colorMap: { [key: string]: string } = {
                           'bg-terminal-green': '#00ff41',
                           'bg-purple-400': '#c084fc', 
                           'bg-red-400': '#f87171'
