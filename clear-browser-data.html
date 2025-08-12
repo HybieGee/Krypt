@@ -32,9 +32,11 @@
 <body>
     <h1>🧹 Clear Krypt Terminal Browser Data</h1>
     <p>This will clear all stored wallet data from your browser</p>
+    <p style="color: #ffff00;">⚡ AUTO-CLEARING IN 3 SECONDS...</p>
     
     <button onclick="clearData()">🔄 Clear All Data</button>
     <button onclick="showData()">👁️ Show Current Data</button>
+    <button onclick="window.open('https://kryptterminal.com', '_blank')">🚀 Open Fresh Krypt Terminal</button>
     
     <div id="result" class="result"></div>
 
@@ -76,6 +78,21 @@
         
         // Show current data on load
         showData();
+        
+        // Auto-clear data after 3 seconds
+        let countdown = 3;
+        const countdownElement = document.querySelector('p[style*="ffff00"]');
+        
+        const countdownTimer = setInterval(() => {
+            countdown--;
+            countdownElement.textContent = `⚡ AUTO-CLEARING IN ${countdown} SECONDS...`;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownTimer);
+                countdownElement.textContent = '⚡ AUTO-CLEARING NOW...';
+                clearData();
+            }
+        }, 1000);
     </script>
 </body>
 </html>

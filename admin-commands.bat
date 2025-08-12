@@ -12,9 +12,10 @@ echo 5. NUCLEAR RESET (everything + visitor records)
 echo 6. Add test user balance
 echo 7. Set progress manually (for testing only)
 echo 8. Set progress to ZERO (immediate)
-echo 9. Exit
+echo 9. Set early access users to 0
+echo 10. Exit
 echo.
-set /p choice="Enter your choice (1-9): "
+set /p choice="Enter your choice (1-10): "
 
 if %choice%==1 goto SET_ONE
 if %choice%==2 goto SET_CUSTOM
@@ -24,7 +25,8 @@ if %choice%==5 goto CLEAR_VISITORS
 if %choice%==6 goto ADD_BALANCE
 if %choice%==7 goto SET_PROGRESS
 if %choice%==8 goto SET_ZERO
-if %choice%==9 goto END
+if %choice%==9 goto SET_USERS_ZERO
+if %choice%==10 goto END
 
 :SET_ONE
 echo Setting visitor count to 1...
@@ -82,6 +84,14 @@ if %confirm%==yes (
     curl -X POST "https://kryptterminal.com/api/admin/clear-visitors" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\"}"
     echo.
     echo NUCLEAR RESET COMPLETE! Everything is now fresh.
+    echo.
+    echo ===============================================
+    echo   FRESH WALLET SETUP REQUIRED
+    echo ===============================================
+    echo Run: fresh-start.bat
+    echo This will auto-clear your browser data and give you
+    echo a completely fresh wallet experience!
+    echo ===============================================
 ) else (
     echo Nuclear reset cancelled - wise choice!
 )
@@ -112,6 +122,14 @@ echo Setting progress to ZERO components (immediate reset)...
 curl -X POST "https://kryptterminal.com/api/admin/set-progress" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"componentsCompleted\":0}"
 echo.
 echo Progress set to 0!
+pause
+goto END
+
+:SET_USERS_ZERO
+echo Setting early access users to 0...
+curl -X POST "https://kryptterminal.com/api/admin/set-count" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"count\":0}"
+echo.
+echo Early access users set to 0!
 pause
 goto END
 
