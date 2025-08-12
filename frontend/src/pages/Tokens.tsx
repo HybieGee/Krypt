@@ -244,16 +244,16 @@ export default function Tokens() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="terminal-window">
-        <h1 className="text-2xl font-bold text-terminal-green mb-4">
-          KRYPT Token Operations
+      <div className="bg-slate-900 border border-indigo-500/30 p-6 rounded-lg shadow-lg">
+        <h1 className="text-2xl font-bold text-indigo-400 mb-4">
+          KRYPT Wallet Operations
         </h1>
-        <p className="text-terminal-green/80 mb-6">
+        <p className="text-indigo-300/80 mb-6">
           Mint, mine, and stake KRYPT tokens for free. Build your position before mainnet launch.
         </p>
         
-        <div className="bg-terminal-green/10 border border-terminal-green/30 p-4 rounded mb-6">
-          <div className="text-terminal-green/90 text-sm">
+        <div className="bg-indigo-500/10 border border-indigo-400/30 p-4 rounded mb-6">
+          <div className="text-indigo-300/90 text-sm">
             ✅ Free operations: No wallet connection required - wallet auto-generated for each user.
           </div>
         </div>
@@ -262,15 +262,15 @@ export default function Tokens() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Operations & Balance */}
         <div className="space-y-4">
-          <div className="terminal-window">
-            <h3 className="text-lg font-bold text-terminal-green mb-4">Operations</h3>
+          <div className="bg-slate-800 border border-blue-500/30 p-4 rounded-lg">
+            <h3 className="text-lg font-bold text-blue-400 mb-4">Operations</h3>
             <div className="space-y-2">
               <button
                 onClick={() => setActiveTab('wallet')}
                 className={`w-full text-left p-3 border transition-colors ${
                   activeTab === 'wallet'
-                    ? 'border-terminal-green bg-terminal-green/10 text-terminal-green'
-                    : 'border-terminal-green/30 hover:border-terminal-green/60 text-terminal-green/60'
+                    ? 'border-blue-400 bg-blue-500/10 text-blue-400'
+                    : 'border-blue-500/30 hover:border-blue-500/60 text-blue-300/60'
                 }`}
               >
                 💳 Wallet
@@ -279,8 +279,8 @@ export default function Tokens() {
                 onClick={() => setActiveTab('mint')}
                 className={`w-full text-left p-3 border transition-colors ${
                   activeTab === 'mint'
-                    ? 'border-terminal-green bg-terminal-green/10 text-terminal-green'
-                    : 'border-terminal-green/30 hover:border-terminal-green/60 text-terminal-green/60'
+                    ? 'border-blue-400 bg-blue-500/10 text-blue-400'
+                    : 'border-blue-500/30 hover:border-blue-500/60 text-blue-300/60'
                 }`}
               >
                 🪙 Mint Tokens
@@ -289,8 +289,8 @@ export default function Tokens() {
                 onClick={() => setActiveTab('mine')}
                 className={`w-full text-left p-3 border transition-colors ${
                   activeTab === 'mine'
-                    ? 'border-terminal-green bg-terminal-green/10 text-terminal-green'
-                    : 'border-terminal-green/30 hover:border-terminal-green/60 text-terminal-green/60'
+                    ? 'border-blue-400 bg-blue-500/10 text-blue-400'
+                    : 'border-blue-500/30 hover:border-blue-500/60 text-blue-300/60'
                 }`}
               >
                 ⛏️ Mine Tokens

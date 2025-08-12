@@ -1,7 +1,7 @@
 export default function Documentation() {
   return (
-    <div className="terminal-window max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-terminal-green mb-6">
+    <div className="bg-slate-900 border border-violet-500/30 p-8 rounded-lg shadow-lg max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold text-violet-400 mb-6">
         Krypt Terminal Documentation
       </h1>
 
@@ -39,45 +39,45 @@ export default function Documentation() {
         </section>
 
         <section>
-          <h2 className="text-xl text-terminal-green mb-3">🏗 Technical Architecture</h2>
-          <div className="bg-black/50 p-4 rounded border border-terminal-green/30 mb-6">
-            <h4 className="text-terminal-green font-semibold mb-3">Enterprise-Grade Infrastructure</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-cyan-400 font-mono mb-2">Frontend</div>
-                <ul className="text-terminal-green/70 space-y-1">
-                  <li>• React + TypeScript</li>
-                  <li>• Tailwind CSS</li>
-                  <li>• Deployed on Vercel</li>
-                  <li>• Real-time WebSocket connections</li>
-                </ul>
+          <h2 className="text-xl text-emerald-400 mb-3">🔒 Data Security & Verification</h2>
+          <div className="bg-emerald-500/5 border border-emerald-400/30 p-4 rounded mb-6">
+            <h4 className="text-emerald-400 font-semibold mb-3">Safe Storage Verification</h4>
+            <div className="space-y-4">
+              <div className="bg-slate-800/50 p-4 rounded border border-emerald-500/20">
+                <h5 className="text-emerald-300 font-semibold mb-2">📝 Verification Method</h5>
+                <p className="text-emerald-200/80 text-sm mb-3">
+                  All user data is stored securely with verification hashes. You can verify your data integrity at any time:
+                </p>
+                <div className="bg-black/50 p-3 rounded border border-emerald-500/30">
+                  <code className="text-emerald-300 text-xs font-mono">
+                    // Your wallet verification hash<br/>
+                    SHA256(walletAddress + balance + timestamp)<br/>
+                    → Ensures data hasn't been tampered with
+                  </code>
+                </div>
               </div>
-              <div>
-                <div className="text-cyan-400 font-mono mb-2">Backend</div>
-                <ul className="text-terminal-green/70 space-y-1">
-                  <li>• Cloudflare Workers (Edge Computing)</li>
-                  <li>• Cloudflare KV (Global Database)</li>
-                  <li>• Claude AI API Integration</li>
-                  <li>• &lt;2s cache for instant updates</li>
-                </ul>
-              </div>
-              <div>
-                <div className="text-cyan-400 font-mono mb-2">Domain & CDN</div>
-                <ul className="text-terminal-green/70 space-y-1">
-                  <li>• kryptterminal.com (Cloudflare DNS)</li>
-                  <li>• Global edge distribution</li>
-                  <li>• SSL/TLS encryption</li>
-                  <li>• DDoS protection</li>
-                </ul>
-              </div>
-              <div>
-                <div className="text-cyan-400 font-mono mb-2">Data Storage</div>
-                <ul className="text-terminal-green/70 space-y-1">
-                  <li>• EARLY_ACCESS namespace (visitors)</li>
-                  <li>• KRYPT_DATA namespace (progress)</li>
-                  <li>• Cookie-based visitor tracking</li>
-                  <li>• Real-time progress persistence</li>
-                </ul>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h5 className="text-emerald-400 font-semibold mb-2">🔐 What We Store</h5>
+                  <ul className="text-emerald-300/70 text-sm space-y-1">
+                    <li>• Auto-generated wallet addresses</li>
+                    <li>• Token balances (KRYPT only)</li>
+                    <li>• Mining activity status</li>
+                    <li>• Raffle entries and tickets</li>
+                    <li>• Milestone achievement records</li>
+                  </ul>
+                </div>
+                <div>
+                  <h5 className="text-emerald-400 font-semibold mb-2">🛡️ What We DON'T Store</h5>
+                  <ul className="text-emerald-300/70 text-sm space-y-1">
+                    <li>• No private keys or seed phrases</li>
+                    <li>• No personal information</li>
+                    <li>• No real cryptocurrency data</li>
+                    <li>• No email or contact details</li>
+                    <li>• No tracking beyond this platform</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

@@ -51,8 +51,8 @@ export default function Roadmap() {
   ]
 
   return (
-    <div className="terminal-window max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-terminal-green mb-6">
+    <div className="bg-slate-900 border border-amber-500/30 p-8 rounded-lg shadow-lg max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold text-amber-400 mb-6">
         Development Roadmap
       </h1>
 
@@ -63,21 +63,21 @@ export default function Roadmap() {
             onClick={() => setActivePhase(index)}
             className={`p-4 border rounded-lg transition-all ${
               activePhase === index
-                ? 'border-terminal-green bg-terminal-green/10'
-                : 'border-terminal-green/30 hover:border-terminal-green/60'
+                ? 'border-amber-400 bg-amber-500/10'
+                : 'border-amber-500/30 hover:border-amber-500/60'
             }`}
           >
             <div className={`text-lg font-bold mb-2 ${
               phase.status === 'in-progress' 
-                ? 'text-terminal-green animate-pulse' 
-                : 'text-terminal-green/60'
+                ? 'text-amber-400 animate-pulse' 
+                : 'text-amber-300/60'
             }`}>
               {phase.title}
             </div>
             <div className={`text-xs ${
               phase.status === 'in-progress' 
                 ? 'text-yellow-400' 
-                : 'text-terminal-green/40'
+                : 'text-amber-400/40'
             }`}>
               {phase.status === 'in-progress' ? 'IN PROGRESS' : 'UPCOMING'}
             </div>
@@ -85,8 +85,8 @@ export default function Roadmap() {
         ))}
       </div>
 
-      <div className="terminal-window">
-        <h2 className="text-xl font-bold text-terminal-green mb-4">
+      <div className="bg-slate-800 border border-orange-500/30 p-6 rounded-lg">
+        <h2 className="text-xl font-bold text-orange-400 mb-4">
           {phases[activePhase].title} Details
         </h2>
         
@@ -95,8 +95,8 @@ export default function Roadmap() {
             <div key={index} className="flex items-center space-x-3">
               <div className={`w-4 h-4 border-2 rounded ${
                 item.completed 
-                  ? 'border-terminal-green bg-terminal-green' 
-                  : 'border-terminal-green/50'
+                  ? 'border-orange-400 bg-orange-400' 
+                  : 'border-orange-500/50'
               }`}>
                 {item.completed && (
                   <svg className="w-full h-full text-terminal-bg" fill="currentColor" viewBox="0 0 20 20">
