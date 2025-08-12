@@ -209,6 +209,7 @@ async function handleSetProgress(request, env, corsHeaders) {
 async function handleGetLogs(env, corsHeaders) {
   try {
     const logs = await getLogs(env)
+    console.log(`🔧 DEBUG: handleGetLogs returning ${logs.length} logs`)
     return new Response(JSON.stringify(logs), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
@@ -267,6 +268,8 @@ async function triggerDevelopment(env) {
     
     logs.push(newLog)
     
+    console.log(`🔧 DEBUG: Adding log ${logs.length}, total logs now: ${logs.length}`)
+    
     // Update progress
     progress.componentsCompleted++
     progress.linesOfCode += 78 + Math.floor(Math.random() * 40)
@@ -280,8 +283,11 @@ async function triggerDevelopment(env) {
     await Promise.all([
       env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
       env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress)),
-      env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      env.KRYPT_DATA.put('development_logs', JSON.stringify(logs)),
+      env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
     ])
+    
+    console.log(`✅ DEBUG: Saved ${logs.length} logs to KV storage`)
     
     // Clear caches
     progressCache = progress
