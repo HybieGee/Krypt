@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore'
 
 export default function Tokenomics() {
-  const { progress, stats } = useStore()
+  const { blockchainProgress, statistics } = useStore()
   const [activeSection, setActiveSection] = useState('overview')
 
   const tokenDistribution = [
@@ -12,8 +12,6 @@ export default function Tokenomics() {
     { label: 'Marketing & Partnerships', amount: 70000000, percentage: 7, color: 'bg-yellow-400' },
     { label: 'Development Fund', amount: 30000000, percentage: 3, color: 'bg-red-400' }
   ]
-
-  const totalSupply = 1000000000 // 1B tokens
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -93,17 +91,17 @@ export default function Tokenomics() {
                 </div>
                 <div className="bg-black/50 p-4 rounded">
                   <h3 className="text-terminal-green font-semibold">Development Progress</h3>
-                  <p className="text-2xl font-bold">{progress?.componentsCompleted || 0}</p>
+                  <p className="text-2xl font-bold">{blockchainProgress?.completedComponents || 0}</p>
                   <p className="text-sm text-gray-400">Components Built</p>
                 </div>
                 <div className="bg-black/50 p-4 rounded">
                   <h3 className="text-terminal-green font-semibold">Current Phase</h3>
-                  <p className="text-2xl font-bold">{progress?.currentPhase || 1}</p>
+                  <p className="text-2xl font-bold">{blockchainProgress?.currentPhase || 1}</p>
                   <p className="text-sm text-gray-400">of 4 Phases</p>
                 </div>
                 <div className="bg-black/50 p-4 rounded">
                   <h3 className="text-terminal-green font-semibold">Lines of Code</h3>
-                  <p className="text-2xl font-bold">{progress?.linesOfCode?.toLocaleString() || 0}</p>
+                  <p className="text-2xl font-bold">{blockchainProgress?.linesOfCode?.toLocaleString() || 0}</p>
                   <p className="text-sm text-gray-400">AI Generated</p>
                 </div>
               </div>
