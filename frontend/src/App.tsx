@@ -42,26 +42,9 @@ function App() {
     // Set connected immediately since we're using HTTP polling
     setConnectionStatus('connected')
     
-    // Check for nuclear reset every 5 seconds
-    let lastResetId = localStorage.getItem('last-nuclear-reset-id') || ''
-    const checkNuclearReset = async () => {
-      try {
-        const resetCheck = await apiService.checkNuclearReset()
-        if (resetCheck.shouldReset && resetCheck.resetId !== lastResetId) {
-          console.log('Nuclear reset detected - clearing frontend data')
-          resetAllData()
-          localStorage.setItem('last-nuclear-reset-id', resetCheck.resetId)
-          // Force page reload to ensure clean state
-          window.location.reload()
-        }
-      } catch (error) {
-        console.log('Nuclear reset check failed (expected if endpoint not implemented)')
-      }
-    }
-    
-    // Check immediately and then every 5 seconds
-    checkNuclearReset()
-    const resetCheckInterval = setInterval(checkNuclearReset, 5000)
+    // Nuclear reset check disabled - endpoint not working properly
+    // TODO: Re-enable when nuclear-reset-check endpoint is fixed
+    const resetCheckInterval = null
     
     // Start polling for real-time updates
     apiService.startPolling(
@@ -89,7 +72,7 @@ function App() {
 
     return () => {
       apiService.stopPolling()
-      clearInterval(resetCheckInterval)
+      if (resetCheckInterval) clearInterval(resetCheckInterval)
       window.removeEventListener('early-access-registered', handleEarlyAccessRegistered as EventListener)
     }
   }, [setConnectionStatus, setProgress, addLogs, setStats])
