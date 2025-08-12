@@ -16,10 +16,6 @@ export default function Tokens() {
   // Live leaderboard data
   const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])  
   
-  // Wallet is now auto-created globally in App.tsx on first visit
-
-  // Balance sync now handled globally in App.tsx
-
   // Stable leaderboard management with user persistence
   useEffect(() => {
     const apiService = ApiService.getInstance()
@@ -136,8 +132,6 @@ export default function Tokens() {
       clearInterval(interval)
     }
   }, [])
-  
-  // Mining is now handled globally in App.tsx
 
   const handleMint = () => {
     const amount = parseInt(mintAmount) || 0
@@ -259,10 +253,10 @@ export default function Tokens() {
         <div className="flex justify-center mb-8">
           <div className="bg-terminal-gray/20 rounded-lg p-1 flex space-x-1">
             {[
-              { id: 'wallet', label: '💳 Wallet', icon: '💳' },
-              { id: 'mint', label: '🪙 Mint', icon: '🪙' },
-              { id: 'mine', label: '⛏️ Mine', icon: '⛏️' },
-              { id: 'stake', label: '🔒 Stake', icon: '🔒' }
+              { id: 'wallet', label: '💳 Wallet' },
+              { id: 'mint', label: '🪙 Mint' },
+              { id: 'mine', label: '⛏️ Mine' },
+              { id: 'stake', label: '🔒 Stake' }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -279,7 +273,7 @@ export default function Tokens() {
           </div>
         </div>
 
-        {/* Content Based on Active Tab */}
+        {/* Wallet Tab */}
         {activeTab === 'wallet' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Wallet Details */}
@@ -326,6 +320,49 @@ export default function Tokens() {
                     <p className="text-sm text-gray-400">Real-time Mining</p>
                   </div>
                 </div>
+
+                {/* Transfer Tokens */}
+                <div className="bg-black/50 p-4 rounded">
+                  <h3 className="text-terminal-green font-semibold mb-4">Transfer Tokens</h3>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={transferAddress}
+                      onChange={(e) => setTransferAddress(e.target.value)}
+                      placeholder="Recipient wallet address"
+                      className="w-full bg-gray-800 border border-terminal-green/30 p-3 rounded text-white placeholder-gray-500"
+                      disabled={transferStatus === 'loading'}
+                    />
+                    <input
+                      type="number"
+                      value={transferAmount}
+                      onChange={(e) => setTransferAmount(e.target.value)}
+                      placeholder="Amount to transfer"
+                      className="w-full bg-gray-800 border border-terminal-green/30 p-3 rounded text-white placeholder-gray-500"
+                      disabled={transferStatus === 'loading'}
+                      max={user?.balance || 0}
+                    />
+                    <button
+                      onClick={handleTransfer}
+                      disabled={!transferAmount || !transferAddress || transferStatus === 'loading'}
+                      className="w-full bg-terminal-green text-black py-3 rounded font-semibold hover:bg-terminal-green/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {transferStatus === 'loading' ? 'Processing...' : 'Transfer Tokens'}
+                    </button>
+
+                    {transferStatus === 'success' && (
+                      <div className="p-3 bg-terminal-green/10 border border-terminal-green/30 rounded text-terminal-green text-sm">
+                        ✓ Transfer successful!
+                      </div>
+                    )}
+
+                    {transferStatus === 'error' && (
+                      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
+                        ✗ Transfer failed. Please check your balance and try again.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -360,502 +397,316 @@ export default function Tokens() {
           </div>
         )}
 
-        {/* Remove old sidebar structure */}
-        <div className="hidden">{/* Old content will be replaced */}</div>
-        <div className="space-y-4">
-          <div className="bg-slate-800 border border-blue-500/30 p-4 rounded-lg">
-            <h3 className="text-lg font-bold text-blue-400 mb-4">Operations</h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => setActiveTab('wallet')}
-                className={`w-full text-left p-3 border transition-colors ${
-                  activeTab === 'wallet'
-                    ? 'border-blue-400 bg-blue-500/10 text-blue-400'
-                    : 'border-blue-500/30 hover:border-blue-500/60 text-blue-300/60'
-                }`}
-              >
-                💳 Wallet
-              </button>
-              <button
-                onClick={() => setActiveTab('mint')}
-                className={`w-full text-left p-3 border transition-colors ${
-                  activeTab === 'mint'
-                    ? 'border-blue-400 bg-blue-500/10 text-blue-400'
-                    : 'border-blue-500/30 hover:border-blue-500/60 text-blue-300/60'
-                }`}
-              >
-                🪙 Mint Tokens
-              </button>
-              <button
-                onClick={() => setActiveTab('mine')}
-                className={`w-full text-left p-3 border transition-colors ${
-                  activeTab === 'mine'
-                    ? 'border-blue-400 bg-blue-500/10 text-blue-400'
-                    : 'border-blue-500/30 hover:border-blue-500/60 text-blue-300/60'
-                }`}
-              >
-                ⛏️ Mine Tokens
-              </button>
-              <button
-                onClick={() => setActiveTab('stake')}
-                className={`w-full text-left p-3 border transition-colors ${
-                  activeTab === 'stake'
-                    ? 'border-terminal-green bg-terminal-green/10 text-terminal-green'
-                    : 'border-terminal-green/30 hover:border-terminal-green/60 text-terminal-green/60'
-                }`}
-              >
-                🔒 Stake Tokens
-              </button>
-            </div>
-          </div>
-
-          <div className="terminal-window">
-            <h4 className="text-sm font-bold text-terminal-green mb-3">Your Balance</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-terminal-green/60">Available:</span>
-                <span className="text-terminal-green">{(user?.balance || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-terminal-green/60">Staked:</span>
-                <span className="text-terminal-green">{(user?.stakes?.reduce((total, stake) => total + stake.amount, 0) || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-terminal-green/60">Minted:</span>
-                <span className="text-terminal-green">{user?.mintedAmount || 0}/1000</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-terminal-green/60">Mining:</span>
-                <span className={user?.isMining ? 'text-terminal-green animate-pulse' : 'text-terminal-green/60'}>
-                  {user?.isMining ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Leaderboard */}
-          <div className="terminal-window">
-            <h4 className="text-sm font-bold text-terminal-green mb-3">Top Holders</h4>
-            <div className="space-y-1 text-xs">
-              {leaderboard.length > 0 ? (
-                leaderboard.map((holder: { address: string; balance: number }, index: number) => (
-                  <div 
-                    key={holder.address} 
-                    className="flex items-center justify-between py-1 transition-all duration-300"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span className="text-terminal-green/60 w-4">#{index + 1}</span>
-                      <span className="text-terminal-green font-mono text-[10px]">
-                        {holder.address}
-                      </span>
-                    </div>
-                    <span className="text-terminal-green font-semibold">
-                      {holder.balance.toLocaleString()}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-terminal-green/60 text-center py-4">
-                  Leaderboard will appear when users start holding tokens
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="lg:col-span-2">
-          <div className="terminal-window h-full">
-            {activeTab === 'wallet' && (
-              <div>
-                <h2 className="text-xl font-bold text-terminal-green mb-4">KRYPT Wallet</h2>
-                <p className="text-terminal-green/70 mb-6 text-sm">
-                  Your secure wallet for KRYPT tokens. Auto-generated and stored securely in your browser.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="border border-terminal-green/30 p-4 rounded">
-                      <h3 className="text-lg font-bold text-terminal-green mb-4">Wallet Details</h3>
+        {/* Mint Tab */}
+        {activeTab === 'mint' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-8">
+              <h2 className="text-2xl font-bold text-terminal-green mb-6">Mint KRYPT Tokens (FREE)</h2>
+              <p className="text-gray-300 mb-8">
+                Mint up to 1000 KRYPT tokens for free. No payment required - just enter amount and mint!
+              </p>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="bg-black/50 p-6 rounded">
+                    <h3 className="text-terminal-green font-semibold mb-4">Mint Tokens</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-gray-400 text-sm mb-2">Amount to Mint</label>
+                        <input
+                          type="number"
+                          value={mintAmount}
+                          onChange={(e) => setMintAmount(e.target.value)}
+                          placeholder="Enter amount (max 1000 total)"
+                          className="w-full bg-gray-800 border border-terminal-green/30 p-3 rounded text-white placeholder-gray-500"
+                          max={1000 - (user?.mintedAmount || 0)}
+                        />
+                        <div className="text-terminal-green/60 text-xs mt-1">
+                          Remaining: {1000 - (user?.mintedAmount || 0)} tokens
+                        </div>
+                      </div>
                       
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-terminal-green/60 text-sm mb-2">Wallet Address</label>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex-1 bg-terminal-gray/50 border border-terminal-green/30 p-3 rounded font-mono text-sm text-terminal-green break-all">
-                              {user?.walletAddress || 'Generating...'}
-                            </div>
-                            <button
-                              onClick={copyAddress}
-                              className="terminal-button px-3 py-2 text-xs"
-                              disabled={!user?.walletAddress}
-                            >
-                              Copy
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-terminal-green/60 text-sm mb-2">Balance</label>
-                          <div className="bg-terminal-gray/50 border border-terminal-green/30 p-3 rounded">
-                            <span className="text-2xl font-bold text-terminal-green">
-                              {(user?.balance || 0).toLocaleString()}
-                            </span>
-                            <span className="text-terminal-green/60 ml-2">KRYPT</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="border border-terminal-green/30 p-4 rounded">
-                      <h3 className="text-lg font-bold text-terminal-green mb-4">Transfer Tokens</h3>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-terminal-green/60 text-sm mb-2">Recipient Address</label>
-                          <input
-                            type="text"
-                            value={transferAddress}
-                            onChange={(e) => setTransferAddress(e.target.value)}
-                            placeholder="0x..."
-                            className="terminal-input w-full"
-                            disabled={transferStatus === 'loading'}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-terminal-green/60 text-sm mb-2">Amount</label>
-                          <input
-                            type="number"
-                            value={transferAmount}
-                            onChange={(e) => setTransferAmount(e.target.value)}
-                            placeholder="0.00"
-                            className="terminal-input w-full"
-                            disabled={transferStatus === 'loading'}
-                            max={user?.balance || 0}
-                          />
-                        </div>
-
-                        <button
-                          onClick={handleTransfer}
-                          disabled={!transferAmount || !transferAddress || transferStatus === 'loading'}
-                          className="terminal-button w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {transferStatus === 'loading' ? 'Processing...' : 'Transfer Tokens'}
-                        </button>
-
-                        {transferStatus === 'success' && (
-                          <div className="p-3 bg-terminal-green/10 border border-terminal-green/30 rounded text-terminal-green text-sm">
-                            ✓ Transfer successful!
-                          </div>
-                        )}
-
-                        {transferStatus === 'error' && (
-                          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400 text-sm">
-                            ✗ Transfer failed. Please check your balance and try again.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="border border-terminal-green/30 p-4 rounded">
-                      <h3 className="text-lg font-bold text-terminal-green mb-4">Recent Transactions</h3>
-                      <div className="text-terminal-green/60 text-center py-4 text-sm">
-                        No transactions yet. Start by minting or mining tokens!
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'mint' && (
-              <div>
-                <h2 className="text-xl font-bold text-terminal-green mb-4">Mint KRYPT Tokens (FREE)</h2>
-                <p className="text-terminal-green/70 mb-6 text-sm">
-                  Mint up to 1000 KRYPT tokens for free. No payment required - just enter amount and mint!
-                </p>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-terminal-green/70 text-sm mb-2">Amount to Mint</label>
-                    <input
-                      type="number"
-                      value={mintAmount}
-                      onChange={(e) => setMintAmount(e.target.value)}
-                      placeholder="Enter amount (max 1000 total)"
-                      className="terminal-input w-full"
-                      max={1000 - (user?.mintedAmount || 0)}
-                    />
-                    <div className="text-terminal-green/60 text-xs mt-1">
-                      Remaining: {1000 - (user?.mintedAmount || 0)} tokens
-                    </div>
-                  </div>
-                  
-                  <button 
-                    onClick={handleMint}
-                    disabled={!mintAmount || (user?.mintedAmount || 0) >= 1000}
-                    className="terminal-button w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Mint Tokens (FREE)
-                  </button>
-
-                  <div className="bg-terminal-green/5 border border-terminal-green/30 p-4 rounded">
-                    <h4 className="text-terminal-green font-bold mb-2">Mint Information</h4>
-                    <ul className="text-terminal-green/70 text-sm space-y-1">
-                      <li>• Free minting for all users</li>
-                      <li>• Maximum 1000 tokens per wallet</li>
-                      <li>• Instant delivery to your wallet</li>
-                      <li>• Tokens will be migrated to mainnet</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'mine' && (
-              <div>
-                <h2 className="text-xl font-bold text-terminal-green mb-4">Mine KRYPT Tokens</h2>
-                <p className="text-terminal-green/70 mb-6 text-sm">
-                  Continuous mining while on this page. Toggle to start/stop earning rewards.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="border border-terminal-green/30 p-4 rounded">
-                      <h4 className="text-terminal-green font-bold mb-3">Mining Control</h4>
-                      <button
-                        onClick={handleToggleMining}
-                        className={`w-full py-4 px-6 border font-bold transition-all ${
-                          user?.isMining
-                            ? 'border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                            : 'border-terminal-green bg-terminal-green/10 text-terminal-green hover:bg-terminal-green/20'
-                        }`}
+                      <button 
+                        onClick={handleMint}
+                        disabled={!mintAmount || (user?.mintedAmount || 0) >= 1000}
+                        className="w-full bg-terminal-green text-black py-3 rounded font-semibold hover:bg-terminal-green/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {user?.isMining ? '🛑 Stop Mining' : '▶️ Start Mining'}
+                        Mint Tokens (FREE)
                       </button>
-                      
-                      {user?.isMining && (
-                        <div className="mt-4 p-3 bg-terminal-green/5 border border-terminal-green/30 rounded">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-terminal-green rounded-full animate-pulse" />
-                            <span className="text-terminal-green text-sm">Mining Active Globally</span>
-                          </div>
-                          <div className="text-terminal-green/60 text-xs mt-1">
-                            Earning 0.3-2 tokens every 5 seconds on all pages
-                          </div>
-                        </div>
-                      )}
                     </div>
-
-                    <div className="border border-terminal-green/30 p-4 rounded">
-                      <h4 className="text-terminal-green font-bold mb-3">Mining Stats</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-terminal-green/60">Status:</span>
-                          <span className={user?.isMining ? 'text-terminal-green' : 'text-terminal-green/60'}>
-                            {user?.isMining ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-terminal-green/60">Rate:</span>
-                          <span className="text-terminal-green">0.3-2 tokens/5s</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-terminal-green/60">Your Balance:</span>
-                          <span className="text-terminal-green">{(user?.balance || 0).toFixed(2)} KRYPT</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-terminal-green/30 p-4 rounded">
-                    <h4 className="text-terminal-green font-bold mb-3">How It Works</h4>
-                    <ul className="text-terminal-green/70 text-sm space-y-2">
-                      <li>• Click "Start Mining" to begin earning</li>
-                      <li>• Mining continues while on this page</li>
-                      <li>• Earn 0.3-2 tokens every 5 seconds</li>
-                      <li>• Stop anytime by clicking "Stop Mining"</li>
-                      <li>• Tokens added directly to your balance</li>
-                    </ul>
                   </div>
                 </div>
+
+                <div className="bg-black/50 p-6 rounded">
+                  <h3 className="text-terminal-green font-semibold mb-4">Mint Information</h3>
+                  <ul className="text-gray-300 space-y-2">
+                    <li>• <span className="text-terminal-green">Free minting</span> for all users</li>
+                    <li>• <span className="text-terminal-green">Maximum 1000 tokens</span> per wallet</li>
+                    <li>• <span className="text-terminal-green">Instant delivery</span> to your wallet</li>
+                    <li>• <span className="text-terminal-green">Tokens will be migrated</span> to mainnet</li>
+                    <li>• <span className="text-terminal-green">No gas fees</span> or hidden costs</li>
+                    <li>• <span className="text-terminal-green">Build your position</span> before launch</li>
+                  </ul>
+                </div>
               </div>
-            )}
+            </div>
+          </div>
+        )}
 
-            {activeTab === 'stake' && (
-              <div>
-                <h2 className="text-xl font-bold text-terminal-green mb-4">Stake KRYPT Tokens</h2>
-                <p className="text-terminal-green/70 mb-6 text-sm">
-                  Lock your tokens for fixed periods and earn daily returns. Choose your duration for different rewards.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <div className="border border-terminal-green/30 p-4 rounded mb-4">
-                      <h4 className="text-terminal-green font-bold mb-3">Staking Options (Daily Returns)</h4>
-                      <div className="space-y-3">
-                        <div className={`border p-3 rounded cursor-pointer transition-colors ${
-                          stakeDuration === 1 ? 'border-terminal-green bg-terminal-green/10' : 'border-terminal-green/30 hover:border-terminal-green/60'
-                        }`} onClick={() => setStakeDuration(1)}>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-terminal-green">1 Day</span>
-                            <span className="text-terminal-green">0.5% Daily</span>
-                          </div>
-                          <div className="text-terminal-green/60 text-xs">
-                            Flexible staking - test the waters
-                          </div>
+        {/* Mine Tab */}
+        {activeTab === 'mine' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-8">
+              <h2 className="text-2xl font-bold text-terminal-green mb-6">Mine KRYPT Tokens</h2>
+              <p className="text-gray-300 mb-8">
+                Continuous mining while on this page. Toggle to start/stop earning rewards.
+              </p>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="bg-black/50 p-6 rounded">
+                    <h3 className="text-terminal-green font-semibold mb-4">Mining Control</h3>
+                    <button
+                      onClick={handleToggleMining}
+                      className={`w-full py-6 px-6 border-2 font-bold text-lg rounded transition-all ${
+                        user?.isMining
+                          ? 'border-red-500 bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                          : 'border-terminal-green bg-terminal-green/10 text-terminal-green hover:bg-terminal-green/20'
+                      }`}
+                    >
+                      {user?.isMining ? '🛑 Stop Mining' : '▶️ Start Mining'}
+                    </button>
+                    
+                    {user?.isMining && (
+                      <div className="mt-4 p-4 bg-terminal-green/5 border border-terminal-green/30 rounded">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <div className="w-3 h-3 bg-terminal-green rounded-full animate-pulse" />
+                          <span className="text-terminal-green font-semibold">Mining Active Globally</span>
                         </div>
-                        
-                        <div className={`border p-3 rounded cursor-pointer transition-colors ${
-                          stakeDuration === 7 ? 'border-terminal-green bg-terminal-green/10' : 'border-terminal-green/30 hover:border-terminal-green/60'
-                        }`} onClick={() => setStakeDuration(7)}>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-terminal-green">7 Days</span>
-                            <span className="text-terminal-green">0.8% Daily (5.6% Total)</span>
-                          </div>
-                          <div className="text-terminal-green/60 text-xs">
-                            Popular choice - good balance
-                          </div>
-                        </div>
-                        
-                        <div className={`border p-3 rounded cursor-pointer transition-colors ${
-                          stakeDuration === 30 ? 'border-terminal-green bg-terminal-green/10' : 'border-terminal-green/30 hover:border-terminal-green/60'
-                        }`} onClick={() => setStakeDuration(30)}>
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-terminal-green">30 Days</span>
-                            <span className="text-terminal-green">1.2% Daily (36% Total)</span>
-                          </div>
-                          <div className="text-terminal-green/60 text-xs">
-                            Maximum returns - long term commitment
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Active Staking Display - moved below staking options */}
-                    {user?.stakes && user.stakes.length > 0 && (
-                      <div className="border border-terminal-green p-4 rounded bg-terminal-green/5">
-                        <h4 className="text-terminal-green font-bold mb-3">🔒 Active Staking</h4>
-                        <div className="space-y-3">
-                          {user.stakes.map((stake, index) => (
-                            <div key={stake.id} className="border border-terminal-green/30 p-3 rounded bg-terminal-green/5">
-                              <div className="flex justify-between items-center mb-2">
-                                <span className="text-terminal-green font-semibold">Stake #{index + 1}</span>
-                                <span className="text-terminal-green/60 text-xs">
-                                  {new Date(stake.startDate).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <div className="space-y-1 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-terminal-green/70">Amount:</span>
-                                  <span className="text-terminal-green font-bold">{stake.amount.toLocaleString()} KRYPT</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-terminal-green/70">Duration:</span>
-                                  <span className="text-terminal-green">{stake.duration} day{stake.duration > 1 ? 's' : ''}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-terminal-green/70">Daily Rate:</span>
-                                  <span className="text-terminal-green">{getDailyPercentage(stake.duration)}% daily</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-terminal-green/70">Daily Rewards:</span>
-                                  <span className="text-terminal-green">{getCorrectDailyReward(stake).toFixed(2)} KRYPT</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          <div className="border-t border-terminal-green/30 pt-3 mt-3">
-                            <div className="flex justify-between text-sm font-bold">
-                              <span className="text-terminal-green/70">Total Staked:</span>
-                              <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + stake.amount, 0).toLocaleString()} KRYPT</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-bold">
-                              <span className="text-terminal-green/70">Total Daily Rewards:</span>
-                              <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + getCorrectDailyReward(stake), 0).toFixed(2)} KRYPT</span>
-                            </div>
-                          </div>
+                        <div className="text-terminal-green/70 text-sm">
+                          Earning 0.3-2 tokens every 5 seconds on all pages
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="space-y-4">
-
-                    <div className="border border-terminal-green/30 p-4 rounded">
-                      <h4 className="text-terminal-green font-bold mb-3">Stake New Tokens</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-terminal-green/70 text-sm mb-2">Amount to Stake</label>
-                          <input
-                            type="number"
-                            value={stakeAmount}
-                            onChange={(e) => setStakeAmount(e.target.value)}
-                            placeholder="Enter amount"
-                            className="terminal-input w-full"
-                            max={user?.balance || 0}
-                            disabled={stakeStatus === 'loading'}
-                          />
-                          <div className="text-terminal-green/60 text-xs mt-1">
-                            Available: {(user?.balance || 0).toLocaleString()} KRYPT
-                          </div>
-                        </div>
-                        
-                        <div className="bg-terminal-green/5 border border-terminal-green/30 p-3 rounded">
-                          <div className="text-terminal-green text-sm">
-                            <div className="flex justify-between">
-                              <span>Duration:</span>
-                              <span>{stakeDuration} day{stakeDuration > 1 ? 's' : ''}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Daily Return:</span>
-                              <span>{((parseFloat(stakeAmount) || 0) * 0.01).toFixed(2)} KRYPT</span>
-                            </div>
-                            <div className="flex justify-between font-bold border-t border-terminal-green/30 pt-2 mt-2">
-                              <span>Total Return:</span>
-                              <span>{getDailyReturn(stakeDuration).toFixed(2)} KRYPT</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <button 
-                          onClick={handleStake}
-                          disabled={!stakeAmount || parseFloat(stakeAmount) > (user?.balance || 0) || stakeStatus === 'loading'}
-                          className="terminal-button w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {stakeStatus === 'loading' ? 'Staking...' : `Stake for ${stakeDuration} Day${stakeDuration > 1 ? 's' : ''}`}
-                        </button>
-
-                        {/* Themed Success Message */}
-                        {stakeStatus === 'success' && (
-                          <div className="border border-terminal-green bg-terminal-green/10 p-4 rounded relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-terminal-green/20 via-terminal-green/10 to-terminal-green/20 animate-pulse"></div>
-                            <div className="relative z-10">
-                              <div className="flex items-center space-x-3 mb-2">
-                                <div className="w-3 h-3 bg-terminal-green rounded-full animate-ping"></div>
-                                <span className="text-terminal-green font-bold text-lg">🔒 STAKING ACTIVATED</span>
-                                <div className="w-3 h-3 bg-terminal-green rounded-full animate-ping"></div>
-                              </div>
-                              <div className="text-terminal-green/80 text-sm">
-                                Your KRYPT tokens are now earning daily rewards!
-                              </div>
-                              <div className="text-terminal-green text-xs mt-2 font-mono">
-                                &gt; SECURE_STAKING_PROTOCOL_ENABLED
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                  <div className="bg-black/50 p-6 rounded">
+                    <h3 className="text-terminal-green font-semibold mb-4">Mining Stats</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Status:</span>
+                        <span className={user?.isMining ? 'text-terminal-green' : 'text-gray-400'}>
+                          {user?.isMining ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Rate:</span>
+                        <span className="text-terminal-green">0.3-2 tokens/5s</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Your Balance:</span>
+                        <span className="text-terminal-green">{(user?.balance || 0).toFixed(2)} KRYPT</span>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                <div className="bg-black/50 p-6 rounded">
+                  <h3 className="text-terminal-green font-semibold mb-4">How Mining Works</h3>
+                  <ul className="text-gray-300 space-y-3">
+                    <li>• <span className="text-terminal-green">Click "Start Mining"</span> to begin earning</li>
+                    <li>• <span className="text-terminal-green">Mining continues</span> while on this page</li>
+                    <li>• <span className="text-terminal-green">Earn 0.3-2 tokens</span> every 5 seconds</li>
+                    <li>• <span className="text-terminal-green">Stop anytime</span> by clicking "Stop Mining"</li>
+                    <li>• <span className="text-terminal-green">Tokens added directly</span> to your balance</li>
+                    <li>• <span className="text-terminal-green">No device resources</span> used for mining</li>
+                    <li>• <span className="text-terminal-green">Completely free</span> to participate</li>
+                  </ul>
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Stake Tab */}
+        {activeTab === 'stake' && (
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-8">
+              <h2 className="text-2xl font-bold text-terminal-green mb-6">Stake KRYPT Tokens</h2>
+              <p className="text-gray-300 mb-8">
+                Lock your tokens for fixed periods and earn daily returns. Choose your duration for different rewards.
+              </p>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="bg-black/50 p-6 rounded">
+                    <h3 className="text-terminal-green font-semibold mb-4">Staking Options (Daily Returns)</h3>
+                    <div className="space-y-3">
+                      <div className={`border-2 p-4 rounded cursor-pointer transition-colors ${
+                        stakeDuration === 1 ? 'border-terminal-green bg-terminal-green/10' : 'border-terminal-green/30 hover:border-terminal-green/60'
+                      }`} onClick={() => setStakeDuration(1)}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-terminal-green font-semibold">1 Day</span>
+                          <span className="text-terminal-green">0.5% Daily</span>
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          Flexible staking - test the waters
+                        </div>
+                      </div>
+                      
+                      <div className={`border-2 p-4 rounded cursor-pointer transition-colors ${
+                        stakeDuration === 7 ? 'border-terminal-green bg-terminal-green/10' : 'border-terminal-green/30 hover:border-terminal-green/60'
+                      }`} onClick={() => setStakeDuration(7)}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-terminal-green font-semibold">7 Days</span>
+                          <span className="text-terminal-green">0.8% Daily (5.6% Total)</span>
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          Popular choice - good balance
+                        </div>
+                      </div>
+                      
+                      <div className={`border-2 p-4 rounded cursor-pointer transition-colors ${
+                        stakeDuration === 30 ? 'border-terminal-green bg-terminal-green/10' : 'border-terminal-green/30 hover:border-terminal-green/60'
+                      }`} onClick={() => setStakeDuration(30)}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-terminal-green font-semibold">30 Days</span>
+                          <span className="text-terminal-green">1.2% Daily (36% Total)</span>
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          Maximum returns - long term commitment
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-black/50 p-6 rounded">
+                    <h3 className="text-terminal-green font-semibold mb-4">Stake New Tokens</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-gray-400 text-sm mb-2">Amount to Stake</label>
+                        <input
+                          type="number"
+                          value={stakeAmount}
+                          onChange={(e) => setStakeAmount(e.target.value)}
+                          placeholder="Enter amount"
+                          className="w-full bg-gray-800 border border-terminal-green/30 p-3 rounded text-white placeholder-gray-500"
+                          max={user?.balance || 0}
+                          disabled={stakeStatus === 'loading'}
+                        />
+                        <div className="text-terminal-green/60 text-xs mt-1">
+                          Available: {(user?.balance || 0).toLocaleString()} KRYPT
+                        </div>
+                      </div>
+                      
+                      <div className="bg-terminal-green/5 border border-terminal-green/30 p-4 rounded">
+                        <div className="text-terminal-green space-y-2">
+                          <div className="flex justify-between">
+                            <span>Duration:</span>
+                            <span>{stakeDuration} day{stakeDuration > 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Daily Return:</span>
+                            <span>{getDailyPercentage(stakeDuration)}%</span>
+                          </div>
+                          <div className="flex justify-between font-bold border-t border-terminal-green/30 pt-2">
+                            <span>Total Return:</span>
+                            <span>{getDailyReturn(stakeDuration).toFixed(2)} KRYPT</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={handleStake}
+                        disabled={!stakeAmount || parseFloat(stakeAmount) > (user?.balance || 0) || stakeStatus === 'loading'}
+                        className="w-full bg-terminal-green text-black py-4 rounded font-semibold hover:bg-terminal-green/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {stakeStatus === 'loading' ? 'Staking...' : `Stake for ${stakeDuration} Day${stakeDuration > 1 ? 's' : ''}`}
+                      </button>
+
+                      {stakeStatus === 'success' && (
+                        <div className="border border-terminal-green bg-terminal-green/10 p-4 rounded relative overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-r from-terminal-green/20 via-terminal-green/10 to-terminal-green/20 animate-pulse"></div>
+                          <div className="relative z-10">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <div className="w-3 h-3 bg-terminal-green rounded-full animate-ping"></div>
+                              <span className="text-terminal-green font-bold text-lg">🔒 STAKING ACTIVATED</span>
+                              <div className="w-3 h-3 bg-terminal-green rounded-full animate-ping"></div>
+                            </div>
+                            <div className="text-terminal-green/80 text-sm">
+                              Your KRYPT tokens are now earning daily rewards!
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Stakes */}
+                <div>
+                  {user?.stakes && user.stakes.length > 0 ? (
+                    <div className="bg-black/50 p-6 rounded">
+                      <h3 className="text-terminal-green font-semibold mb-4">🔒 Active Stakes</h3>
+                      <div className="space-y-4">
+                        {user.stakes.map((stake, index) => (
+                          <div key={stake.id} className="border border-terminal-green/30 p-4 rounded bg-terminal-green/5">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-terminal-green font-semibold">Stake #{index + 1}</span>
+                              <span className="text-gray-400 text-xs">
+                                {new Date(stake.startDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Amount:</span>
+                                <span className="text-terminal-green font-bold">{stake.amount.toLocaleString()} KRYPT</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Duration:</span>
+                                <span className="text-terminal-green">{stake.duration} day{stake.duration > 1 ? 's' : ''}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Daily Rate:</span>
+                                <span className="text-terminal-green">{getDailyPercentage(stake.duration)}% daily</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Daily Rewards:</span>
+                                <span className="text-terminal-green">{getCorrectDailyReward(stake).toFixed(2)} KRYPT</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="border-t border-terminal-green/30 pt-4 mt-4">
+                          <div className="flex justify-between text-lg font-bold">
+                            <span className="text-gray-400">Total Staked:</span>
+                            <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + stake.amount, 0).toLocaleString()} KRYPT</span>
+                          </div>
+                          <div className="flex justify-between text-lg font-bold">
+                            <span className="text-gray-400">Total Daily Rewards:</span>
+                            <span className="text-terminal-green">{user.stakes.reduce((total, stake) => total + getCorrectDailyReward(stake), 0).toFixed(2)} KRYPT</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-black/50 p-6 rounded">
+                      <h3 className="text-terminal-green font-semibold mb-4">Staking Benefits</h3>
+                      <ul className="text-gray-300 space-y-3">
+                        <li>• <span className="text-terminal-green">Earn daily returns</span> on your tokens</li>
+                        <li>• <span className="text-terminal-green">Higher rates</span> for longer commitments</li>
+                        <li>• <span className="text-terminal-green">Secure your position</span> before mainnet</li>
+                        <li>• <span className="text-terminal-green">Automatic reward</span> distribution</li>
+                        <li>• <span className="text-terminal-green">Flexible durations</span> from 1-30 days</li>
+                        <li>• <span className="text-terminal-green">No penalties</span> for early unstaking</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
