@@ -17,14 +17,14 @@ export default function Documentation() {
           <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-6">
             <h2 className="text-2xl font-bold text-terminal-green mb-4">🔍 Platform Transparency</h2>
             <p className="text-gray-300 leading-relaxed mb-3">
-              <strong>Krypt Terminal is 100% transparent and verifiable.</strong> Our AI agent uses Claude AI 
-              technology to develop actual blockchain code, with every step visible to users in real-time.
+              <strong>Krypt Terminal is 100% transparent and verifiable.</strong> Our AI agent uses advanced AI 
+              technology to develop actual blockchain code, with every step visible to users in real-time. Already in the process of GPT-5 implementation to assist with next-generation capabilities.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-terminal-green font-semibold mb-2">✅ What's Real</h4>
                 <ul className="text-gray-300 text-sm space-y-1">
-                  <li>• Live AI development system (Claude AI)</li>
+                  <li>• Live AI development system</li>
                   <li>• Real TypeScript blockchain code generation</li>
                   <li>• Actual development progress tracking</li>
                   <li>• Real user wallet tracking & leaderboard</li>
@@ -101,7 +101,7 @@ export default function Documentation() {
                   </div>
                   <div className="flex items-start space-x-3">
                     <span className="text-terminal-green font-mono text-sm">2.</span>
-                    <span>Sends request to Claude AI for code generation</span>
+                    <span>Sends request to AI models for code generation</span>
                   </div>
                   <div className="flex items-start space-x-3">
                     <span className="text-terminal-green font-mono text-sm">3.</span>
