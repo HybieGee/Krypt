@@ -93,6 +93,9 @@ export default {
     if (url.pathname === '/api/logs/clear' && request.method === 'POST') {
       return handleClearLogs(env, jsonHeaders)
     }
+    if (url.pathname === '/api/development/reset' && request.method === 'POST') {
+      return handleResetDevelopment(env, jsonHeaders)
+    }
     if (url.pathname === '/api/typing' && request.method === 'GET') {
       return handleTyping(env, corsHeaders)
     }
@@ -1641,23 +1644,76 @@ async function handleEnterRaffle(request, env, corsHeaders) {
 // ===== CLEAR DEVELOPMENT LOGS =====
 async function handleClearLogs(env, jsonHeaders) {
   try {
-    // Clear logs from KV storage
+    // Clear ALL log storage locations
     await env.KRYPT_DATA.delete('development_logs')
-    
-    // Also clear any backup logs
     await env.KRYPT_DATA.delete('development_logs_backup')
     
-    console.log('✅ Development logs cleared from KV storage')
+    // Also clear in-memory cache
+    logsCache = null
+    
+    // Set empty logs to prevent restore system from recreating old logs
+    await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify([]))
+    
+    console.log('✅ Development logs completely cleared and reset')
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Development logs cleared successfully' 
+      message: 'Development logs cleared and reset successfully' 
     }), {
       headers: jsonHeaders
     })
     
   } catch (error) {
     console.error('❌ Error clearing logs:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: jsonHeaders
+    })
+  }
+}
+
+// ===== COMPLETE DEVELOPMENT RESET =====
+async function handleResetDevelopment(env, jsonHeaders) {
+  try {
+    // Clear all logs completely
+    await env.KRYPT_DATA.delete('development_logs')
+    await env.KRYPT_DATA.delete('development_logs_backup')
+    await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
+    await env.KRYPT_DATA.put('development_logs_backup', JSON.stringify([]))
+    
+    // Reset progress to 0 for fresh start
+    const freshProgress = {
+      currentPhase: 1,
+      componentsCompleted: 0,
+      totalComponents: 4500,
+      percentComplete: 0,
+      phaseProgress: 0,
+      linesOfCode: 0,
+      commits: 0,
+      testsRun: 0,
+      lastUpdated: Date.now()
+    }
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(freshProgress))
+    
+    // Clear all in-memory caches
+    logsCache = null
+    progressCache = null
+    
+    console.log('✅ Complete development reset - fresh blockchain development start')
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Development completely reset - fresh blockchain development will begin' 
+    }), {
+      headers: jsonHeaders
+    })
+    
+  } catch (error) {
+    console.error('❌ Error resetting development:', error)
     return new Response(JSON.stringify({ 
       success: false, 
       error: error.message 
