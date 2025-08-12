@@ -66,15 +66,15 @@ export default {
       return handleClearVisitors(request, env, corsHeaders)
     }
 
-    // Development Logs Routes
+    // Development Logs Routes (fallback to Vercel)
     if (url.pathname === '/api/logs' && request.method === 'GET') {
-      return handleGetLogs(env, corsHeaders)
+      return handleProxyToVercel(url.pathname + url.search, corsHeaders)
     }
-    if (url.pathname === '/api/logs/add' && request.method === 'POST') {
-      return handleAddLog(request, env, corsHeaders)
+    if (url.pathname === '/api/typing' && request.method === 'GET') {
+      return handleProxyToVercel(url.pathname + url.search, corsHeaders)
     }
-    if (url.pathname === '/api/logs/sync' && request.method === 'POST') {
-      return handleSyncLogs(request, env, corsHeaders)
+    if (url.pathname === '/api/session' && request.method === 'POST') {
+      return handleProxyToVercel(url.pathname, corsHeaders, request)
     }
 
     // Statistics Routes
@@ -149,6 +149,38 @@ async function handleSetProgress(request, env, corsHeaders) {
   } catch (error) {
     console.error('Set progress error:', error)
     return new Response(JSON.stringify({ error: 'Failed to set progress' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== PROXY TO VERCEL FOR DEVELOPMENT =====
+async function handleProxyToVercel(path, corsHeaders, request = null) {
+  try {
+    const url = `https://crypto-ai-ten.vercel.app/api${path.replace('/api', '')}`
+    const options = {
+      method: request ? request.method : 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+    
+    if (request && (request.method === 'POST' || request.method === 'PUT')) {
+      const body = await request.text()
+      options.body = body
+    }
+    
+    const response = await fetch(url, options)
+    const data = await response.text()
+    
+    return new Response(data, {
+      status: response.status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Proxy error:', error)
+    return new Response(JSON.stringify({ error: 'Proxy failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
