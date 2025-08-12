@@ -473,6 +473,9 @@ async function handleClearVisitors(request, env, corsHeaders) {
     const visitorList = await env.EARLY_ACCESS.list({ prefix: 'visitor:' })
     const fingerprintList = await env.EARLY_ACCESS.list({ prefix: 'fingerprint:' })
     
+    // Get all user balance records (for duplicate cleanup)
+    const userList = await env.KRYPT_DATA.list({ prefix: 'user:' })
+    
     // Delete all visitor records
     const deletePromises = []
     
@@ -482,6 +485,11 @@ async function handleClearVisitors(request, env, corsHeaders) {
     
     for (const key of fingerprintList.keys) {
       deletePromises.push(env.EARLY_ACCESS.delete(key.name))
+    }
+    
+    // Delete all user balance records (clears duplicate wallet entries)
+    for (const key of userList.keys) {
+      deletePromises.push(env.KRYPT_DATA.delete(key.name))
     }
     
     await Promise.all(deletePromises)
@@ -496,13 +504,14 @@ async function handleClearVisitors(request, env, corsHeaders) {
     leaderboardCache = null
     Object.keys(cacheTimestamps).forEach(key => delete cacheTimestamps[key])
 
-    console.log(`NUCLEAR RESET: Cleared ${visitorList.keys.length} visitor records, ${fingerprintList.keys.length} fingerprint records, reset progress and logs`)
+    console.log(`NUCLEAR RESET: Cleared ${visitorList.keys.length} visitor records, ${fingerprintList.keys.length} fingerprint records, ${userList.keys.length} user balances, reset progress and logs`)
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Nuclear reset completed - EVERYTHING cleared',
+      message: 'Nuclear reset completed - EVERYTHING cleared including user balances',
       visitorsCleared: visitorList.keys.length,
       fingerprintsCleared: fingerprintList.keys.length,
+      userBalancesCleared: userList.keys.length,
       progressReset: true,
       logsReset: true,
       newCount: 0,
