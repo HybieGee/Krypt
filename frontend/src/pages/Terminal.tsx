@@ -8,13 +8,15 @@ export default function Terminal() {
   const { blockchainProgress, terminalLogs } = useStore()
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(false)
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true) // Start with true to auto-scroll on page load
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
-  // Force scroll to top on component mount only
+  // Force scroll to top on component mount and auto-scroll terminal
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
+    // Auto-scroll terminal to bottom on page load
+    setTimeout(() => setShouldAutoScroll(false), 200) // Reset after initial scroll
   }, []) // Empty dependency array = only run once on mount
 
   // Auto-scroll logs view to bottom when switching to logs tab
