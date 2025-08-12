@@ -7,6 +7,9 @@ const CACHE_TTL = 2000 // 2 seconds for faster updates
 // Keep cache variables as null to prevent errors but don't use them for persistence
 let progressCache = null
 let logsCache = null
+let countCache = null
+let leaderboardCache = null
+let statsCache = null
 let cacheTimestamps = {}
 
 // Development configuration
