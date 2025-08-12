@@ -20,9 +20,21 @@ function App() {
 
   // Auto-create wallet for token functionality
   useEffect(() => {
-    if (!user?.walletAddress) {
-      const generatedAddress = `0x${Math.random().toString(16).substring(2, 42)}`
+    const forceNewWallet = localStorage.getItem('krypt-force-new-wallet')
+    
+    if (!user?.walletAddress || forceNewWallet) {
+      // Generate truly unique wallet address using timestamp + random + crypto
+      const timestamp = Date.now().toString(16)
+      const random1 = Math.random().toString(16).substring(2)
+      const random2 = Math.random().toString(16).substring(2)
+      const generatedAddress = `0x${(timestamp + random1 + random2).substring(0, 40)}`
+      
       updateUserWallet(generatedAddress, 0)
+      
+      // Clear the force new wallet flag
+      if (forceNewWallet) {
+        localStorage.removeItem('krypt-force-new-wallet')
+      }
     }
   }, [user, updateUserWallet])
 

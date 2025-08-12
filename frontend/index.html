@@ -35,6 +35,9 @@
             }).catch(console.error);
           }
           
+          // Force a unique wallet generation on next load
+          localStorage.setItem('krypt-force-new-wallet', Date.now().toString());
+          
           console.log('✅ Wallet reset complete! Reloading page...');
           setTimeout(() => location.reload(), 1000);
         } catch (error) {
