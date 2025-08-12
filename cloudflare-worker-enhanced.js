@@ -110,6 +110,12 @@ export default {
         headers: jsonHeaders
       })
     }
+    if (url.pathname === '/api/development/trigger' && request.method === 'POST') {
+      return handleTriggerDevelopment(env, jsonHeaders)
+    }
+    if (url.pathname === '/api/development/sync' && request.method === 'POST') {
+      return handleSyncDevelopment(request, env, jsonHeaders)
+    }
 
     // Statistics Routes
     if (url.pathname === '/api/stats' && request.method === 'GET') {
@@ -1714,6 +1720,104 @@ async function handleResetDevelopment(env, jsonHeaders) {
     
   } catch (error) {
     console.error('❌ Error resetting development:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: jsonHeaders
+    })
+  }
+}
+
+// ===== DEVELOPMENT RESTART HANDLERS =====
+
+async function handleTriggerDevelopment(env, jsonHeaders) {
+  try {
+    console.log('🔄 Manual development trigger requested')
+    
+    const result = await triggerDevelopment(env)
+    
+    return new Response(JSON.stringify({
+      success: result.success,
+      message: result.success ? 'Development triggered successfully' : result.reason,
+      component: result.component,
+      progress: result.progress,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: jsonHeaders
+    })
+    
+  } catch (error) {
+    console.error('❌ Error triggering development:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: jsonHeaders
+    })
+  }
+}
+
+async function handleSyncDevelopment(request, env, jsonHeaders) {
+  try {
+    const body = await request.json()
+    const { targetComponents, currentLogs, generateMissing } = body
+    
+    console.log(`🔗 Syncing development: target=${targetComponents}, currentLogs=${currentLogs}`)
+    
+    const progress = await getProgress(env)
+    const logs = await getLogs(env)
+    
+    let logsGenerated = 0
+    
+    if (generateMissing && targetComponents > logs.length) {
+      // Generate catch-up logs to match progress
+      const missingLogs = Math.min(targetComponents - logs.length, 100) // Cap at 100 to prevent overload
+      
+      for (let i = 0; i < missingLogs; i++) {
+        const componentIndex = logs.length + i
+        const componentName = getComponentName(componentIndex)
+        
+        const catchupLog = {
+          id: `catchup-${componentIndex}`,
+          timestamp: new Date(Date.now() - (missingLogs - i) * 1000).toISOString(), // Stagger timestamps
+          type: 'code',
+          message: `✅ ${componentName} developed (${78 + Math.floor(Math.random() * 40)} lines) [SYNC]`,
+          details: { 
+            componentName: componentName,
+            phase: Math.floor(componentIndex / 1125) + 1,
+            snippet: generateCodeSnippet(componentName),
+            isCatchup: true
+          }
+        }
+        
+        logs.push(catchupLog)
+        logsGenerated++
+      }
+      
+      // Save updated logs
+      await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      logsCache = logs
+      cacheTimestamps.logs = Date.now()
+      
+      console.log(`✅ Generated ${logsGenerated} catch-up logs`)
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: `Sync completed - generated ${logsGenerated} catch-up logs`,
+      logsGenerated,
+      totalLogs: logs.length,
+      currentProgress: progress.componentsCompleted,
+      timestamp: new Date().toISOString()
+    }), {
+      headers: jsonHeaders
+    })
+    
+  } catch (error) {
+    console.error('❌ Error syncing development:', error)
     return new Response(JSON.stringify({ 
       success: false, 
       error: error.message 

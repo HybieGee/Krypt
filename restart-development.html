@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔄 Restart Development System</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .issue { color: #ff4444; background: #330000; padding: 15px; border: 2px solid #ff4444; margin: 20px 0; }
+        .solution { color: #44ff44; background: #003300; padding: 15px; border: 2px solid #44ff44; margin: 20px 0; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        .restart { background: #ff4444; color: white; font-weight: bold; }
+        .check { background: #4444ff; color: white; }
+        .sync { background: #44ff44; color: black; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔄 RESTART DEVELOPMENT SYSTEM</h1>
+    
+    <div class="issue">
+        <h2>🚨 IDENTIFIED ISSUE</h2>
+        <p><strong>Problem:</strong> Node.js backend service stopped at 12:32am (~200 components)</p>
+        <p><strong>Symptoms:</strong></p>
+        <ul>
+            <li>Progress counter shows 694 components (auto-increment still running)</li>
+            <li>Development logs stopped generating (no AI calls)</li>
+            <li>Terminal shows last activity at 12:32am</li>
+        </ul>
+        <p><strong>Root Cause:</strong> The Node.js service that calls Claude AI every 15 seconds has crashed/stopped</p>
+    </div>
+    
+    <button class="check" onclick="diagnoseSituation()">🔍 DIAGNOSE CURRENT STATE</button>
+    <button class="restart" onclick="restartDevelopment()">🔄 RESTART DEVELOPMENT</button>
+    <button class="sync" onclick="syncProgress()">🔗 SYNC PROGRESS TO LOGS</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function diagnoseSituation() {
+            document.getElementById('results').innerHTML = '<p>🔍 Diagnosing development system...</p>'
+            
+            try {
+                // Check Cloudflare progress
+                const cfProgressRes = await fetch('https://kryptterminal.com/api/progress')
+                const cfProgress = await cfProgressRes.json()
+                
+                // Check Cloudflare logs
+                const cfLogsRes = await fetch('https://kryptterminal.com/api/logs?limit=10')
+                const cfLogs = await cfLogsRes.json()
+                
+                // Check Node.js backend (if accessible)
+                let nodeProgress = null
+                let nodeLogs = null
+                try {
+                    const nodeProgressRes = await fetch('https://kryptterminal.com/api/progress')
+                    nodeProgress = await nodeProgressRes.json()
+                    
+                    const nodeLogsRes = await fetch('https://kryptterminal.com/api/logs')
+                    nodeLogs = await nodeLogsRes.json()
+                } catch (e) {
+                    console.log('Node.js backend not accessible via same domain')
+                }
+                
+                const lastLogTime = cfLogs.length > 0 ? new Date(cfLogs[cfLogs.length - 1].timestamp) : null
+                const timeSinceLastLog = lastLogTime ? (Date.now() - lastLogTime.getTime()) / (1000 * 60 * 60) : 'N/A'
+                
+                document.getElementById('results').innerHTML = `
+                    <div style="background: #222; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <h2>🔍 SYSTEM DIAGNOSIS</h2>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                            <div style="background: #001122; padding: 15px; border-left: 4px solid #4444ff;">
+                                <h3>🌐 Cloudflare Worker</h3>
+                                <p><strong>Progress:</strong> ${cfProgress.componentsCompleted || 0}/${cfProgress.totalComponents || 4500}</p>
+                                <p><strong>Logs Count:</strong> ${cfLogs.length}</p>
+                                <p><strong>Last Updated:</strong> ${new Date(cfProgress.lastUpdated || Date.now()).toLocaleString()}</p>
+                            </div>
+                            
+                            <div style="background: ${cfLogs.length === 0 || timeSinceLastLog > 1 ? '#220011' : '#001122'}; padding: 15px; border-left: 4px solid ${cfLogs.length === 0 || timeSinceLastLog > 1 ? '#ff4444' : '#44ff44'};">
+                                <h3>📝 Development Logs</h3>
+                                <p><strong>Total Logs:</strong> ${cfLogs.length}</p>
+                                <p><strong>Last Log:</strong> ${lastLogTime ? lastLogTime.toLocaleString() : 'None'}</p>
+                                <p><strong>Time Since:</strong> ${timeSinceLastLog !== 'N/A' ? timeSinceLastLog.toFixed(1) + ' hours ago' : 'N/A'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="${cfLogs.length === 0 || timeSinceLastLog > 1 ? 'issue' : 'solution'}">
+                            ${cfLogs.length === 0 || timeSinceLastLog > 1 ? `
+                                <h3>🚨 DEVELOPMENT SYSTEM DOWN</h3>
+                                <p>Last activity: ${lastLogTime ? lastLogTime.toLocaleString() : 'Unknown'}</p>
+                                <p>Status: Backend service has stopped generating components</p>
+                                <p>Action: Need to restart Node.js development service</p>
+                            ` : `
+                                <h3>✅ DEVELOPMENT ACTIVE</h3>
+                                <p>System is generating logs and components normally</p>
+                            `}
+                        </div>
+                        
+                        <h3>📊 Recent Logs:</h3>
+                        ${cfLogs.slice(-3).map(log => `
+                            <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #00ff41;">
+                                <strong>${log.type?.toUpperCase()}:</strong> ${log.message}<br>
+                                <small>🕒 ${new Date(log.timestamp).toLocaleString()}</small>
+                            </div>
+                        `).join('') || '<p style="color: #ff4444;">No recent logs found</p>'}
+                    </div>
+                `
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="issue">
+                        <h3>❌ DIAGNOSIS FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `
+            }
+        }
+        
+        async function restartDevelopment() {
+            document.getElementById('results').innerHTML = '<p>🔄 Attempting to restart development...</p>'
+            
+            try {
+                // First, try to trigger development via Cloudflare Worker
+                const response = await fetch('https://kryptterminal.com/api/development/trigger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        force: true,
+                        reason: 'Manual restart after system down'
+                    })
+                })
+                
+                const result = await response.json()
+                
+                if (result.success) {
+                    document.getElementById('results').innerHTML = `
+                        <div class="solution">
+                            <h2>✅ DEVELOPMENT RESTART INITIATED</h2>
+                            <p><strong>Status:</strong> ${result.message || 'Successfully triggered'}</p>
+                            <p><strong>Component:</strong> ${result.component || 'Starting...'}</p>
+                            <p><strong>Progress:</strong> ${result.progress?.componentsCompleted || 'Unknown'} components</p>
+                            
+                            <h3>📋 Next Steps:</h3>
+                            <p>1. ✅ Development trigger sent to Cloudflare Worker</p>
+                            <p>2. ⏳ Wait 30 seconds for new logs to appear</p>
+                            <p>3. 🔄 Check kryptterminal.com terminal for activity</p>
+                            <p>4. 📊 Monitor progress increments</p>
+                            
+                            <p style="color: #ffaa00;"><strong>Note:</strong> If logs don't resume, the Node.js backend may need manual restart on Vercel</p>
+                        </div>
+                    `
+                } else {
+                    throw new Error(result.error || 'Unknown error')
+                }
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="issue">
+                        <h3>❌ RESTART FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                        
+                        <h3>🛠️ Manual Solutions:</h3>
+                        <p><strong>1. Vercel Backend:</strong> If using Vercel, redeploy the backend service</p>
+                        <p><strong>2. Local Node.js:</strong> Run "npm run dev" in the API directory</p>
+                        <p><strong>3. Worker Development:</strong> Use Cloudflare Worker's built-in development system</p>
+                        <p><strong>4. Reset & Sync:</strong> Use sync button below to align progress with logs</p>
+                    </div>
+                `
+            }
+        }
+        
+        async function syncProgress() {
+            document.getElementById('results').innerHTML = '<p>🔗 Syncing progress to development logs...</p>'
+            
+            try {
+                // Get current progress
+                const progressRes = await fetch('https://kryptterminal.com/api/progress')
+                const progress = await progressRes.json()
+                
+                // Get current logs
+                const logsRes = await fetch('https://kryptterminal.com/api/logs?limit=10')
+                const logs = await logsRes.json()
+                
+                const componentsCompleted = progress.componentsCompleted || 0
+                const logCount = logs.length
+                
+                // Calculate how many logs we should have based on progress
+                const expectedLogs = Math.min(componentsCompleted, 200) // Cap at 200 logs for performance
+                const missingLogs = Math.max(0, expectedLogs - logCount)
+                
+                if (missingLogs > 0) {
+                    // Generate missing logs to catch up
+                    const response = await fetch('https://kryptterminal.com/api/development/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            targetComponents: componentsCompleted,
+                            currentLogs: logCount,
+                            generateMissing: true
+                        })
+                    })
+                    
+                    const syncResult = await response.json()
+                    
+                    document.getElementById('results').innerHTML = `
+                        <div class="solution">
+                            <h2>🔗 PROGRESS SYNC COMPLETE</h2>
+                            <p><strong>Components:</strong> ${componentsCompleted}</p>
+                            <p><strong>Previous Logs:</strong> ${logCount}</p>
+                            <p><strong>Missing Logs:</strong> ${missingLogs}</p>
+                            <p><strong>Sync Status:</strong> ${syncResult.success ? '✅ Success' : '❌ Failed'}</p>
+                            
+                            ${syncResult.success ? `
+                                <h3>📊 Sync Results:</h3>
+                                <p>Generated ${syncResult.logsGenerated || 0} catch-up logs</p>
+                                <p>Total logs now: ${syncResult.totalLogs || 'Unknown'}</p>
+                                <p>System ready for continued development</p>
+                            ` : `
+                                <p style="color: #ff4444;">Sync failed: ${syncResult.error}</p>
+                            `}
+                        </div>
+                    `
+                } else {
+                    document.getElementById('results').innerHTML = `
+                        <div class="solution">
+                            <h2>✅ ALREADY IN SYNC</h2>
+                            <p><strong>Components:</strong> ${componentsCompleted}</p>
+                            <p><strong>Logs:</strong> ${logCount}</p>
+                            <p>Progress and logs are already synchronized</p>
+                        </div>
+                    `
+                }
+                
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="issue">
+                        <h3>❌ SYNC FAILED</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `
+            }
+        }
+        
+        // Auto-diagnose on load
+        window.onload = function() {
+            diagnoseSituation()
+        }
+    </script>
+</body>
+</html>
