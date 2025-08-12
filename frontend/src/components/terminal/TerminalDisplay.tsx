@@ -56,12 +56,14 @@ export default function TerminalDisplay({ logs }: Props) {
         typeIndex++
         setTimeout(typeCharacter, 50 + Math.random() * 100) // 50-150ms per character
       } else {
-        // Finished typing, pause then start new text
+        // Finished typing, show cursor for a moment then clear
+        setCurrentTyping(currentText + '█')
         setTimeout(() => {
           targetText = codeSnippets[Math.floor(Math.random() * codeSnippets.length)]
           currentText = ''
           typeIndex = 0
           isTyping = false
+          setCurrentTyping('')
         }, 1000 + Math.random() * 2000) // 1-3 second pause
       }
     }
@@ -158,8 +160,7 @@ export default function TerminalDisplay({ logs }: Props) {
             <div className="text-terminal-green flex items-center">
               <span className="text-terminal-green/60 mr-2">&gt;</span>
               <span className="font-mono text-sm">
-                {currentTyping}
-                <span className="animate-pulse">█</span>
+                {currentTyping || <span className="animate-pulse">█</span>}
               </span>
             </div>
           </div>
