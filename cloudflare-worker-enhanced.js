@@ -157,6 +157,7 @@ async function handleSetProgress(request, env, corsHeaders) {
     progress.lastUpdated = Date.now()
     
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
+    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress))
     progressCache = progress
     cacheTimestamps.progress = Date.now()
 
@@ -235,9 +236,10 @@ async function triggerDevelopment(env) {
     progress.commits++
     progress.lastUpdated = Date.now()
     
-    // Save updates
+    // Save updates with backup
     await Promise.all([
       env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
+      env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress)),
       env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
     ])
     
@@ -478,6 +480,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
     const resetProgress = getDefaultProgress()
     resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
+    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))
     
     // Reset development logs with initial entries
     const initialLogs = generateInitialLogs()
@@ -557,6 +560,7 @@ async function handleMasterReset(request, env, corsHeaders) {
     const resetProgress = getDefaultProgress()
     resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
+    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
     
     if (resetVisitors) {
@@ -652,6 +656,7 @@ async function handleUpdateProgress(request, env, corsHeaders) {
     
     // Save updated progress
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
+    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress))
     progressCache = progress
     cacheTimestamps.progress = Date.now()
     
@@ -700,6 +705,7 @@ async function handleProgressReset(request, env, corsHeaders) {
     const resetProgress = getDefaultProgress()
     resetProgress.lastUpdated = Date.now() // Set current time to prevent auto-increment
     await env.KRYPT_DATA.put('development_progress', JSON.stringify(resetProgress))
+    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(resetProgress))
     await env.KRYPT_DATA.put('development_logs', JSON.stringify([]))
     
     progressCache = null
@@ -977,6 +983,8 @@ async function getProgress(env) {
     const progress = await env.KRYPT_DATA.get('development_progress')
     if (progress) {
       const parsedProgress = JSON.parse(progress)
+      // Also save as backup for recovery
+      await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(parsedProgress))
       progressCache = parsedProgress
       cacheTimestamps[cacheKey] = now
       return parsedProgress
@@ -985,30 +993,47 @@ async function getProgress(env) {
     console.error('Error fetching progress from KV:', error)
   }
   
+  // Try to get the last known progress from a backup key
+  try {
+    const backupProgress = await env.KRYPT_DATA.get('development_progress_backup')
+    if (backupProgress) {
+      const parsedBackup = JSON.parse(backupProgress)
+      // Restore from backup
+      await env.KRYPT_DATA.put('development_progress', backupProgress)
+      progressCache = parsedBackup
+      cacheTimestamps[cacheKey] = now
+      console.log('Restored progress from backup:', parsedBackup.componentsCompleted)
+      return parsedBackup
+    }
+  } catch (error) {
+    console.error('Error fetching backup progress:', error)
+  }
+  
   // Only use default if KV storage truly has no data
   const defaultProgress = getDefaultProgress()
   // Save default to KV to persist it
   await env.KRYPT_DATA.put('development_progress', JSON.stringify(defaultProgress))
+  await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(defaultProgress))
   progressCache = defaultProgress
   cacheTimestamps[cacheKey] = now
   
   return defaultProgress
 }
 
-function getDefaultProgress() {
-  // Check if we should restore previous progress instead of resetting
+function getDefaultProgress(existingComponents = null) {
+  // If we have existing progress, maintain it
   // This prevents data loss during deployments
-  const MIN_COMPONENTS = 100 // Minimum progress to maintain
+  const componentsToUse = existingComponents || 100 // Default to 100 if no existing data
   
   return {
-    currentPhase: 1,
-    componentsCompleted: MIN_COMPONENTS, // Start with minimum progress
+    currentPhase: Math.min(Math.floor(componentsToUse / 1125) + 1, 4),
+    componentsCompleted: componentsToUse,
     totalComponents: BLOCKCHAIN_COMPONENTS,
-    percentComplete: (MIN_COMPONENTS / BLOCKCHAIN_COMPONENTS) * 100,
-    phaseProgress: ((MIN_COMPONENTS % 1125) / 1125) * 100,
-    linesOfCode: MIN_COMPONENTS * 78,
-    commits: MIN_COMPONENTS,
-    testsRun: Math.floor(MIN_COMPONENTS * 0.5),
+    percentComplete: (componentsToUse / BLOCKCHAIN_COMPONENTS) * 100,
+    phaseProgress: ((componentsToUse % 1125) / 1125) * 100,
+    linesOfCode: componentsToUse * 78,
+    commits: componentsToUse,
+    testsRun: Math.floor(componentsToUse * 0.5),
     lastUpdated: Date.now()
   }
 }
