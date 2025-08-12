@@ -12,7 +12,7 @@ import ApiService from './services/api'
 import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
 
 function App() {
-  const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
+  const { setConnectionStatus, user, updateUserWallet, createFreshUser, setProgress, addLogs, setStats } = useStore()
   
   // Initialize early access visitor tracking
   useEarlyAccessTracking()
@@ -29,14 +29,19 @@ function App() {
       const random2 = Math.random().toString(16).substring(2)
       const generatedAddress = `0x${(timestamp + random1 + random2).substring(0, 40)}`
       
-      updateUserWallet(generatedAddress, 0)
+      if (forceNewWallet) {
+        console.log('🔄 Forcing complete wallet reset including staking and minting data')
+        createFreshUser(generatedAddress)
+      } else {
+        updateUserWallet(generatedAddress, 0)
+      }
       
       // Clear the force new wallet flag
       if (forceNewWallet) {
         localStorage.removeItem('krypt-force-new-wallet')
       }
     }
-  }, [user, updateUserWallet])
+  }, [user, updateUserWallet, createFreshUser])
 
   // Sync wallet balance to backend
   useEffect(() => {

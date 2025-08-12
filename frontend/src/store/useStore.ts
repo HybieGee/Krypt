@@ -66,6 +66,7 @@ interface StoreState {
   clearChatMessages: () => void
   updateUserWallet: (walletAddress: string, balance: number) => void
   updateUserMintedAmount: (amount: number) => void
+  createFreshUser: (walletAddress: string) => void
   toggleMining: () => void
   addStake: (amount: number, duration: number, dailyReturn?: number) => void
   setProgress: (progress: any) => void
@@ -127,6 +128,20 @@ export const useStore = create<StoreState>()(
         })),
         updateUserMintedAmount: (amount) => set((state) => ({
           user: state.user ? { ...state.user, mintedAmount: (state.user.mintedAmount || 0) + amount } : null
+        })),
+        createFreshUser: (walletAddress) => set(() => ({
+          user: {
+            id: Math.random().toString(36).substring(7),
+            walletAddress,
+            balance: 0,
+            credits: 0,
+            raffleTickets: 0,
+            isEarlyAccess: true,
+            joinedAt: new Date(),
+            mintedAmount: 0,
+            stakes: [],
+            isMining: false
+          }
         })),
         toggleMining: () => set((state) => ({
           user: state.user ? { ...state.user, isMining: !state.user.isMining } : null
