@@ -826,13 +826,16 @@ async function handleUpdateBalance(request, env, corsHeaders) {
     const { walletAddress, balance } = await request.json()
     
     if (walletAddress && typeof balance === 'number') {
+      // Normalize wallet address to lowercase to prevent duplicates
+      const normalizedAddress = walletAddress.toLowerCase().trim()
+      
       const userData = {
-        walletAddress,
+        walletAddress: normalizedAddress,
         balance,
         lastUpdated: new Date().toISOString()
       }
       
-      await env.KRYPT_DATA.put(`user:${walletAddress}`, JSON.stringify(userData))
+      await env.KRYPT_DATA.put(`user:${normalizedAddress}`, JSON.stringify(userData))
       
       return new Response(JSON.stringify({ success: true, balance }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
