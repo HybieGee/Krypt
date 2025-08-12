@@ -25,6 +25,12 @@ export default {
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
+    
+    // JSON headers with proper UTF-8 charset
+    const jsonHeaders = {
+      ...corsHeaders,
+      'Content-Type': 'application/json; charset=utf-8'
+    }
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders })
@@ -93,7 +99,7 @@ export default {
     if (url.pathname === '/api/develop' && request.method === 'POST') {
       const result = await triggerDevelopment(env)
       return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -146,7 +152,7 @@ export default {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         environment: 'production'
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }), { headers: jsonHeaders })
     }
 
     return new Response('Krypt Terminal API', { 
@@ -164,7 +170,7 @@ async function handleSetProgress(request, env, corsHeaders) {
     if (adminKey !== 'krypt_master_reset_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -194,13 +200,13 @@ async function handleSetProgress(request, env, corsHeaders) {
       message: `Progress set to ${componentsCompleted} components`,
       progress: progress
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Set progress error:', error)
     return new Response(JSON.stringify({ error: 'Failed to set progress' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -211,12 +217,12 @@ async function handleGetLogs(env, corsHeaders) {
     const logs = await getLogs(env)
     console.log(`🔧 DEBUG: handleGetLogs returning ${logs.length} logs`)
     return new Response(JSON.stringify(logs), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Logs error:', error)
     return new Response(JSON.stringify([]), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -355,7 +361,7 @@ async function handleTyping(env, corsHeaders) {
     currentComponent: progress.componentsCompleted,
     phase: progress.currentPhase
   }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    headers: jsonHeaders
   })
 }
 
@@ -372,12 +378,12 @@ async function handleSession(request, corsHeaders) {
         joinedAt: new Date().toISOString()
       }
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Invalid request' }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -392,7 +398,7 @@ async function handleVisit(request, env, corsHeaders) {
     if (isBot(userAgent)) {
       const count = await getVisitorCount(env)
       return new Response(JSON.stringify({ count }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -434,8 +440,7 @@ async function handleVisit(request, env, corsHeaders) {
 
     return new Response(JSON.stringify({ count }), {
       headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json',
+        ...jsonHeaders,
         'Set-Cookie': `ea_uid=${visitorId}; HttpOnly; SameSite=Strict; Max-Age=${7 * 24 * 60 * 60}; Path=/`
       }
     })
@@ -443,7 +448,7 @@ async function handleVisit(request, env, corsHeaders) {
     console.error('Visit tracking error:', error)
     return new Response(JSON.stringify({ error: 'Internal server error', count: 0 }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -452,11 +457,11 @@ async function handleCount(env, corsHeaders) {
   try {
     const count = await getVisitorCount(env)
     return new Response(JSON.stringify({ count }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     return new Response(JSON.stringify({ count: 0 }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -495,7 +500,7 @@ async function handleSetCount(request, env, corsHeaders) {
     if (adminKey !== 'krypt_admin_reset_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -508,13 +513,13 @@ async function handleSetCount(request, env, corsHeaders) {
       message: `Visitor count set to ${count}`,
       count: count
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Set count error:', error)
     return new Response(JSON.stringify({ error: 'Failed to set count' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -531,7 +536,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
       console.error('NUCLEAR RESET: Failed to parse request JSON:', parseError)
       return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
     
@@ -542,7 +547,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
       console.log('NUCLEAR RESET: Unauthorized access attempt')
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -635,8 +640,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
     
     // Force cache headers to ensure no browser/CDN caching
     const noCacheHeaders = {
-      ...corsHeaders,
-      'Content-Type': 'application/json',
+      ...jsonHeaders,
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
@@ -681,7 +685,7 @@ async function handleClearVisitors(request, env, corsHeaders) {
       timestamp: new Date().toISOString()
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -694,7 +698,7 @@ async function handleMasterReset(request, env, corsHeaders) {
     if (adminKey !== 'krypt_master_reset_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -725,13 +729,13 @@ async function handleMasterReset(request, env, corsHeaders) {
       resetVisitors: resetVisitors,
       timestamp: new Date().toISOString()
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Master reset error:', error)
     return new Response(JSON.stringify({ error: 'Reset failed' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -749,19 +753,19 @@ async function handleGetProgress(env, corsHeaders) {
       // Get updated progress
       const updatedProgress = await getProgress(env)
       return new Response(JSON.stringify(updatedProgress), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
     
     return new Response(JSON.stringify(progress), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Progress error:', error)
     // CRITICAL FIX: Never return 0 progress on error
     const safeProgress = progressCache || getDefaultProgress(75)
     return new Response(JSON.stringify(safeProgress), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -776,7 +780,7 @@ async function handleUpdateProgress(request, env, corsHeaders) {
       console.log(`Invalid API key received: ${apiKey}`)
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
     
@@ -825,13 +829,13 @@ async function handleUpdateProgress(request, env, corsHeaders) {
       success: true, 
       progress: progress 
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Update progress error:', error)
     return new Response(JSON.stringify({ error: 'Failed to update progress' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -843,7 +847,7 @@ async function handleProgressReset(request, env, corsHeaders) {
     if (adminKey !== 'krypt_admin_reset_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -866,13 +870,13 @@ async function handleProgressReset(request, env, corsHeaders) {
       message: 'Development progress reset successfully',
       progress: resetProgress 
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Progress reset error:', error)
     return new Response(JSON.stringify({ error: 'Reset failed' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -887,7 +891,7 @@ async function handleSyncLogs(request, env, corsHeaders) {
     if (apiKey && apiKey !== 'krypt_api_key_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
     
@@ -905,13 +909,13 @@ async function handleSyncLogs(request, env, corsHeaders) {
       success: true,
       logCount: logs?.length || 0
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Sync logs error:', error)
     return new Response(JSON.stringify({ error: 'Failed to sync logs' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -925,7 +929,7 @@ async function handleAddLog(request, env, corsHeaders) {
     if (apiKey && apiKey !== 'krypt_api_key_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
     
@@ -949,13 +953,13 @@ async function handleAddLog(request, env, corsHeaders) {
       success: true,
       logCount: logs.length
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Add log error:', error)
     return new Response(JSON.stringify({ error: 'Failed to add log' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -979,7 +983,7 @@ async function handleStats(env, corsHeaders) {
     }
 
     return new Response(JSON.stringify(stats), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Stats error:', error)
@@ -992,7 +996,7 @@ async function handleStats(env, corsHeaders) {
       components_completed: { value: 0, lastUpdated: new Date().toISOString() },
       current_phase: { value: 1, lastUpdated: new Date().toISOString() }
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1015,19 +1019,19 @@ async function handleUpdateBalance(request, env, corsHeaders) {
       await env.KRYPT_DATA.put(`user:${normalizedAddress}`, JSON.stringify(userData))
       
       return new Response(JSON.stringify({ success: true, balance }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
     
     return new Response(JSON.stringify({ error: 'Invalid wallet address or balance' }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Balance update error:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1076,12 +1080,12 @@ async function handleLeaderboard(env, corsHeaders) {
     console.log(`Leaderboard: Found ${list.keys.length} total entries, ${leaderboard.length} unique wallets with balance > 0`)
     
     return new Response(JSON.stringify(rankedLeaderboard), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Leaderboard error:', error)
     return new Response(JSON.stringify([]), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1094,7 +1098,7 @@ async function handleRestoreLogs(request, env, corsHeaders) {
     if (adminKey !== 'krypt_master_reset_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -1109,7 +1113,7 @@ async function handleRestoreLogs(request, env, corsHeaders) {
           message: `Logs already exist (${parsed.length} entries). Use sync endpoint to replace.`,
           logCount: parsed.length
         }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: jsonHeaders
         })
       }
     }
@@ -1128,13 +1132,13 @@ async function handleRestoreLogs(request, env, corsHeaders) {
       message: `Restored ${logsToRestore.length} development logs`,
       logCount: logsToRestore.length
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Restore logs error:', error)
     return new Response(JSON.stringify({ error: 'Failed to restore logs' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1181,7 +1185,7 @@ async function handleInitializeSystem(request, env, corsHeaders) {
     if (adminKey !== 'krypt_master_reset_2024') {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -1221,13 +1225,13 @@ async function handleInitializeSystem(request, env, corsHeaders) {
       forceReset,
       timestamp: new Date().toISOString()
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('System initialization error:', error)
     return new Response(JSON.stringify({ error: 'Initialization failed' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1437,7 +1441,7 @@ async function handleNuclearResetCheck(request, env, corsHeaders) {
       shouldReset: true, // Always return true if we have a reset ID
       resetId: resetId || '0'
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Nuclear reset check error:', error)
@@ -1445,7 +1449,7 @@ async function handleNuclearResetCheck(request, env, corsHeaders) {
       shouldReset: false,
       resetId: '0'
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1473,7 +1477,7 @@ async function handleUserMilestones(request, env, corsHeaders) {
     if (!walletAddress) {
       return new Response(JSON.stringify({ error: 'Wallet address required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -1525,13 +1529,13 @@ async function handleUserMilestones(request, env, corsHeaders) {
     }
 
     return new Response(JSON.stringify(userMilestones), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Milestone error:', error)
     return new Response(JSON.stringify({ error: 'Failed to fetch milestones' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1545,7 +1549,7 @@ async function handleRaffleEntries(request, env, corsHeaders) {
     if (!walletAddress) {
       return new Response(JSON.stringify({ error: 'Wallet address required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -1555,13 +1559,13 @@ async function handleRaffleEntries(request, env, corsHeaders) {
     const parsedEntries = entries ? JSON.parse(entries) : []
 
     return new Response(JSON.stringify(parsedEntries), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Raffle entries error:', error)
     return new Response(JSON.stringify({ error: 'Failed to fetch raffle entries' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
@@ -1573,7 +1577,7 @@ async function handleEnterRaffle(request, env, corsHeaders) {
     if (!walletAddress || !raffleType || !ticketCost) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: jsonHeaders
       })
     }
 
@@ -1603,13 +1607,13 @@ async function handleEnterRaffle(request, env, corsHeaders) {
       entry: newEntry,
       totalEntries: parsedEntries.length 
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   } catch (error) {
     console.error('Enter raffle error:', error)
     return new Response(JSON.stringify({ error: 'Failed to enter raffle' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: jsonHeaders
     })
   }
 }
