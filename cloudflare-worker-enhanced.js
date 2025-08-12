@@ -427,13 +427,16 @@ async function handleUpdateProgress(request, env, corsHeaders) {
   try {
     const { componentsCompleted, linesOfCode, commits, testsRun, apiKey } = await request.json()
     
-    // Verify this is from Krypt (you can add proper API key verification here)
+    // Verify this is from Krypt - allow requests without API key for now
     if (apiKey && apiKey !== 'krypt_api_key_2024') {
+      console.log(`Invalid API key received: ${apiKey}`)
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+    
+    console.log('Updating progress:', { componentsCompleted, linesOfCode, commits, testsRun })
     
     const progress = await getProgress(env)
     

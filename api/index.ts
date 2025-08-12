@@ -143,16 +143,21 @@ async function developNextComponent() {
         log.id !== `${baseId}-analyzing` && log.id !== `${baseId}-request`
       )
       
-      // Show successful development
+      // Show successful development with component name and code snippet
+      const componentName = blockchainComponents[componentIndex % blockchainComponents.length]
+      const codeSnippet = result.code.split('\n').slice(0, 3).join('\n') + '\n...'
+      
       developmentLogs.push({
         id: `${baseId}-response`,
         timestamp: new Date().toISOString(),
         type: 'code',
-        message: `✅ Component ${componentIndex + 1} developed (${result.lines} lines)`,
+        message: `✅ ${componentName} developed (${result.lines} lines)`,
         details: { 
-          componentName: blockchainComponents[componentIndex % blockchainComponents.length],
+          componentName: componentName,
           linesGenerated: result.lines,
-          phase: Math.floor(componentIndex / 160) + 1
+          phase: Math.floor(componentIndex / 1125) + 1,
+          code: result.code, // Full code
+          snippet: codeSnippet // Preview snippet
         }
       })
 
@@ -164,17 +169,22 @@ async function developNextComponent() {
       currentProgress.lastUpdated = Date.now()
       
       // Send progress update to Cloudflare Worker
-      fetch('https://kryptterminal.com/api/progress/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          componentsCompleted: currentProgress.componentsCompleted,
-          linesOfCode: currentProgress.linesOfCode,
-          commits: currentProgress.commits,
-          testsRun: currentProgress.testsRun,
-          apiKey: 'krypt_api_key_2024'
+      try {
+        await fetch('https://kryptterminal.com/api/progress/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            componentsCompleted: currentProgress.componentsCompleted,
+            linesOfCode: currentProgress.linesOfCode,
+            commits: currentProgress.commits,
+            testsRun: currentProgress.testsRun,
+            apiKey: 'krypt_api_key_2024'
+          })
         })
-      }).catch(err => console.error('Failed to update progress:', err))
+        console.log(`Progress synced to Cloudflare: ${currentProgress.componentsCompleted} components`)
+      } catch (err) {
+        console.error('Failed to update progress to Cloudflare:', err)
+      }
 
       // Commit after each component (not every 10)
       currentProgress.commits++
@@ -182,8 +192,12 @@ async function developNextComponent() {
         id: `${baseId}-commit`,
         timestamp: new Date().toISOString(),
         type: 'commit',
-        message: `📦 Committed to krypt-blockchain repo`,
-        details: { commits: currentProgress.commits }
+        message: `📦 Committed ${componentName} to krypt-blockchain repo`,
+        details: { 
+          commits: currentProgress.commits,
+          componentName: componentName,
+          snippet: codeSnippet
+        }
       })
 
       // Real tests based on actual AI generated code
