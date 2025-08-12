@@ -269,6 +269,7 @@ export const useStore = create<StoreState>()(
         partialize: (state) => ({
           user: state.user,
           chatMessages: state.chatMessages,
+          terminalLogs: state.terminalLogs, // Persist logs to prevent reset on refresh
         }),
       }
     )
