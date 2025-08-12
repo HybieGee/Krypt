@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
+import { tokenConfig, getContractAddress, getExplorerUrl } from '../config/token-config'
 
 export default function Tokenomics() {
   const { blockchainProgress } = useStore()
@@ -22,6 +23,53 @@ export default function Tokenomics() {
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
             Supporting the development of the world's first AI-built blockchain through community participation
           </p>
+          
+          {/* Contract Address Display */}
+          {tokenConfig.showContractAddress && getContractAddress() && (
+            <div className="mt-6 inline-block bg-terminal-gray/20 border border-terminal-green/30 rounded-lg px-6 py-3">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-400">Contract Address:</span>
+                <div className="flex items-center space-x-2">
+                  <code className="text-terminal-green font-mono text-sm">
+                    {getContractAddress()}
+                  </code>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(getContractAddress() || '')}
+                    className="text-gray-400 hover:text-terminal-green transition-colors"
+                    title="Copy to clipboard"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                  {getExplorerUrl() && (
+                    <a
+                      href={getExplorerUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-terminal-green transition-colors"
+                      title="View on Explorer"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Coming Soon Badge if no contract */}
+          {!tokenConfig.showContractAddress && (
+            <div className="mt-6 inline-block bg-terminal-gray/20 border border-terminal-green/30 rounded-lg px-6 py-3">
+              <span className="text-terminal-green font-semibold animate-pulse">
+                🚀 Token Launch Coming Soon
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}

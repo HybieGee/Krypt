@@ -8,8 +8,8 @@ export default function Roadmap() {
         { text: 'Launch Krypt Terminal platform', completed: true },
         { text: 'Deploy initial AI capabilities', completed: true },
         { text: 'Begin blockchain development', completed: true },
-        { text: 'Community building', completed: false },
-        { text: 'Token launch', completed: false },
+        { text: 'Community building', completed: true },
+        { text: 'Token launch', completed: true },
       ],
     },
     {

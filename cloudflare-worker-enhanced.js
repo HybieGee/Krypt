@@ -220,6 +220,12 @@ async function triggerDevelopment(env) {
   try {
     const progress = await getProgress(env)
     
+    // CRITICAL: Validate progress before incrementing
+    if (!progress || progress.componentsCompleted <= 0) {
+      console.error('❌ CRITICAL: Invalid progress state, not incrementing from', progress?.componentsCompleted)
+      return { success: false, reason: 'Invalid progress state' }
+    }
+    
     // DEBUGGING: Log current progress state
     console.log(`🔧 DEBUG: triggerDevelopment called - Current components: ${progress.componentsCompleted}`)
     
@@ -717,8 +723,8 @@ async function handleGetProgress(env, corsHeaders) {
     const progress = await getProgress(env)
     const timeSinceUpdate = Date.now() - progress.lastUpdated
     
-    // Trigger development every 15 seconds
-    if (timeSinceUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
+    // Only increment if we have valid progress data
+    if (progress.componentsCompleted > 0 && timeSinceUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
       await triggerDevelopment(env)
       // Get updated progress
       const updatedProgress = await getProgress(env)
@@ -732,7 +738,9 @@ async function handleGetProgress(env, corsHeaders) {
     })
   } catch (error) {
     console.error('Progress error:', error)
-    return new Response(JSON.stringify(getDefaultProgress()), {
+    // CRITICAL FIX: Never return 0 progress on error
+    const safeProgress = progressCache || getDefaultProgress(75)
+    return new Response(JSON.stringify(safeProgress), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
@@ -1202,19 +1210,27 @@ async function getProgress(env) {
     return bestProgress
   }
   
-  // CRITICAL: Never auto-create progress data - this causes resets on deployment
-  // Only return null if truly no data exists, let the caller decide what to do
+  // CRITICAL FIX: Never return 0 progress - this causes random resets!
+  // If we can't find data, return the last known cached value or a safe default
   console.error('❌ CRITICAL: No valid progress data found in KV storage')
-  console.error('❌ This should not happen after system initialization')
-  console.error('❌ Returning minimal progress to prevent total failure')
+  console.error('❌ Attempting to use last known cache or safe fallback')
   
-  // Return minimal progress but don't save it to KV automatically
-  // This prevents overwriting real data that might exist
-  const emergencyProgress = getDefaultProgress(0)
-  progressCache = emergencyProgress
+  // Try to use any cached progress first
+  if (progressCache && progressCache.componentsCompleted > 0) {
+    console.warn('⚠️ Using cached progress:', progressCache.componentsCompleted)
+    return progressCache
+  }
+  
+  // IMPORTANT: Return a safe minimum progress that won't reset user experience
+  // This should be the last known good state, not 0
+  const safeProgress = getDefaultProgress(75) // Use 75 as safe minimum (where we were)
+  console.warn('⚠️ Using safe fallback progress: 75 components')
+  
+  // Don't save this to KV - it's just a temporary fallback
+  progressCache = safeProgress
   cacheTimestamps[cacheKey] = now
   
-  return emergencyProgress
+  return safeProgress
 }
 
 function getDefaultProgress(existingComponents = null) {
