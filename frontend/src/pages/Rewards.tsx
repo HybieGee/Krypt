@@ -167,25 +167,25 @@ export default function Rewards() {
           </div>
         </div>
         
-        <div className="bg-blue-500/10 border border-blue-400/30 p-4 rounded mb-6">
+        <div className="bg-terminal-gray/10 border border-terminal-green/20 p-4 rounded mb-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <span className="text-blue-300/60">Your Score:</span>
-              <div className="text-blue-400 font-bold text-lg">{userScore.totalScore.toLocaleString()}</div>
+              <span className="text-gray-400">Your Score:</span>
+              <div className="text-terminal-green font-bold text-lg">{userScore.totalScore.toLocaleString()}</div>
             </div>
             <div>
-              <span className="text-blue-300/60">Raffle Tickets:</span>
-              <div className="text-blue-400 font-bold text-lg">{raffleTickets}</div>
+              <span className="text-gray-400">Raffle Tickets:</span>
+              <div className="text-terminal-green font-bold text-lg">{raffleTickets}</div>
             </div>
             <div>
-              <span className="text-blue-300/60">Early Access Users:</span>
-              <div className="text-blue-400 font-bold text-lg">
+              <span className="text-gray-400">Early Access Users:</span>
+              <div className="text-terminal-green font-bold text-lg">
                 {statistics.earlyAccessUsers.toLocaleString()}
               </div>
             </div>
             <div>
-              <span className="text-blue-300/60">Milestones:</span>
-              <div className="text-blue-400 font-bold text-lg">
+              <span className="text-gray-400">Milestones:</span>
+              <div className="text-terminal-green font-bold text-lg">
                 {earlyAccessMilestones.filter(m => m.status === 'completed').length}/{earlyAccessMilestones.length}
               </div>
             </div>
@@ -193,36 +193,12 @@ export default function Rewards() {
         </div>
       </div>
 
-      <div className="bg-gray-900 border border-purple-500/30 p-6 rounded-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-purple-400">Rewards Center</h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveTab('milestones')}
-              className={`px-4 py-2 text-sm transition-colors ${
-                activeTab === 'milestones'
-                  ? 'text-purple-400 border-b border-purple-400'
-                  : 'text-purple-300/60 hover:text-purple-400'
-              }`}
-            >
-              🎯 Milestones
-            </button>
-            <button
-              onClick={() => setActiveTab('raffles')}
-              className={`px-4 py-2 text-sm transition-colors ${
-                activeTab === 'raffles'
-                  ? 'text-purple-400 border-b border-purple-400'
-                  : 'text-purple-300/60 hover:text-purple-400'
-              }`}
-            >
-              🎲 Raffles
-            </button>
-          </div>
-        </div>
+      <div className="container mx-auto px-4">
+        <div className="bg-terminal-gray/10 border border-terminal-green/20 p-8 rounded-lg">
 
         {activeTab === 'milestones' && (
           <div className="space-y-4">
-            <div className="text-purple-300/80 mb-6">
+            <div className="text-gray-300 mb-6">
               Automatic rewards distributed to ALL wallet holders when Early Access user milestones are reached!
             </div>
             
@@ -234,7 +210,7 @@ export default function Rewards() {
                     ? 'border-emerald-400 bg-emerald-500/10 shadow-lg shadow-emerald-500/20' 
                     : milestone.status === 'active'
                     ? 'border-amber-400 bg-amber-500/10 shadow-lg shadow-amber-500/20'
-                    : 'border-gray-600 bg-gray-800/50'
+                    : 'border-gray-600 bg-black/50'
                 }`}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -299,23 +275,23 @@ export default function Rewards() {
 
         {activeTab === 'raffles' && (
           <div className="space-y-6">
-            <div className="text-purple-300/80 mb-6">
+            <div className="text-gray-300 mb-6">
               Enter raffles using tickets earned through ecosystem participation. More activity = more tickets!
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Ticket Balance */}
-              <div className="border border-cyan-500/30 p-6 rounded-lg bg-cyan-500/5">
-                <h3 className="text-cyan-400 font-bold mb-4 flex items-center">
+              <div className="bg-black/50 border border-terminal-green/30 p-6 rounded-lg">
+                <h3 className="text-terminal-green font-bold mb-4 flex items-center">
                   <span className="text-2xl mr-2">🎫</span>
                   Your Raffle Tickets
                 </h3>
                 <div className="text-center py-8">
-                  <div className="text-5xl font-bold text-cyan-400 mb-3">{raffleTickets}</div>
-                  <div className="text-cyan-300/60 text-sm">Available Tickets</div>
+                  <div className="text-5xl font-bold text-terminal-green mb-3">{raffleTickets}</div>
+                  <div className="text-gray-400 text-sm">Available Tickets</div>
                 </div>
-                <div className="text-xs text-cyan-300/60 space-y-2">
-                  <div className="font-semibold text-cyan-300 mb-2">Earn tickets by:</div>
+                <div className="text-xs text-gray-400 space-y-2">
+                  <div className="font-semibold text-terminal-green mb-2">Earn tickets by:</div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>• Mining: +1/100 tokens</div>
                     <div>• Staking: +1/100 staked</div>
@@ -327,85 +303,85 @@ export default function Rewards() {
 
               {/* Active Raffles */}
               <div className="lg:col-span-2 space-y-4">
-                <div className="border border-orange-500/30 p-5 rounded-lg bg-orange-500/5">
+                <div className="bg-black/50 border border-terminal-green/30 p-5 rounded-lg">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-orange-400 font-bold text-lg flex items-center">
+                    <h4 className="text-terminal-green font-bold text-lg flex items-center">
                       <span className="text-2xl mr-2">🏆</span>
                       Hourly KRYPT Raffle
                     </h4>
-                    <span className="bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-xs">
+                    <span className="bg-terminal-green/20 text-terminal-green px-3 py-1 rounded-full text-xs">
                       ACTIVE
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div>
-                      <span className="text-orange-300/60">Prize Pool:</span>
-                      <div className="text-orange-300 font-bold">1,000 KRYPT</div>
+                      <span className="text-gray-400">Prize Pool:</span>
+                      <div className="text-terminal-green font-bold">1,000 KRYPT</div>
                     </div>
                     <div>
-                      <span className="text-orange-300/60">Cost:</span>
-                      <div className="text-orange-300 font-bold">1 Ticket</div>
+                      <span className="text-gray-400">Cost:</span>
+                      <div className="text-terminal-green font-bold">1 Ticket</div>
                     </div>
                     <div>
-                      <span className="text-orange-300/60">Next Draw:</span>
-                      <div className="text-orange-300 font-bold">Every hour</div>
+                      <span className="text-gray-400">Next Draw:</span>
+                      <div className="text-terminal-green font-bold">Every hour</div>
                     </div>
                     <div>
-                      <span className="text-orange-300/60">Your Entries:</span>
-                      <div className="text-orange-300 font-bold">
+                      <span className="text-gray-400">Your Entries:</span>
+                      <div className="text-terminal-green font-bold">
                         {raffleEntries.filter(entry => entry.raffleType === 'hourly').length}
                       </div>
                     </div>
                   </div>
                   <button 
                     onClick={() => handleRaffleEntry('hourly', 1)}
-                    className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 px-4 bg-terminal-green hover:bg-terminal-green/80 text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={raffleTickets < 1}
                   >
                     {raffleTickets >= 1 ? 'Enter Hourly Raffle (1 ticket)' : 'Need 1 Ticket'}
                   </button>
                 </div>
 
-                <div className="border border-purple-500/30 p-5 rounded-lg bg-purple-500/5">
+                <div className="bg-black/50 border border-terminal-green/30 p-5 rounded-lg">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-purple-400 font-bold text-lg flex items-center">
+                    <h4 className="text-terminal-green font-bold text-lg flex items-center">
                       <span className="text-2xl mr-2">💎</span>
                       Weekly Mega Jackpot
                     </h4>
-                    <span className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-xs">
+                    <span className="bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full text-xs">
                       WEEKLY
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                     <div>
-                      <span className="text-purple-300/60">Prize Pool:</span>
-                      <div className="text-purple-300 font-bold">25,000 KRYPT</div>
+                      <span className="text-gray-400">Prize Pool:</span>
+                      <div className="text-terminal-green font-bold">25,000 KRYPT</div>
                     </div>
                     <div>
-                      <span className="text-purple-300/60">Cost:</span>
-                      <div className="text-purple-300 font-bold">5 Tickets</div>
+                      <span className="text-gray-400">Cost:</span>
+                      <div className="text-terminal-green font-bold">5 Tickets</div>
                     </div>
                     <div>
-                      <span className="text-purple-300/60">Next Draw:</span>
-                      <div className="text-purple-300 font-bold">Every Sunday</div>
+                      <span className="text-gray-400">Next Draw:</span>
+                      <div className="text-terminal-green font-bold">Every Sunday</div>
                     </div>
                     <div>
-                      <span className="text-purple-300/60">Your Entries:</span>
-                      <div className="text-purple-300 font-bold">
+                      <span className="text-gray-400">Your Entries:</span>
+                      <div className="text-terminal-green font-bold">
                         {raffleEntries.filter(entry => entry.raffleType === 'weekly').length}
                       </div>
                     </div>
                   </div>
                   <button 
                     onClick={() => handleRaffleEntry('weekly', 5)}
-                    className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 px-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={raffleTickets < 5}
                   >
                     {raffleTickets >= 5 ? 'Enter Weekly Jackpot (5 tickets)' : 'Need 5 Tickets'}
                   </button>
                 </div>
 
-                <div className="border border-emerald-500/30 p-5 rounded-lg bg-emerald-500/5">
+                <div className="bg-black/50 border border-terminal-green/30 p-5 rounded-lg">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-emerald-400 font-bold text-lg flex items-center">
                       <span className="text-2xl mr-2">🚀</span>
@@ -446,12 +422,12 @@ export default function Rewards() {
               </div>
             </div>
 
-            <div className="bg-indigo-500/10 border border-indigo-400/30 p-6 rounded-lg">
-              <h4 className="text-indigo-400 font-bold mb-3 flex items-center">
+            <div className="bg-terminal-gray/10 border border-terminal-green/20 p-6 rounded-lg">
+              <h4 className="text-terminal-green font-bold mb-3 flex items-center">
                 <span className="text-xl mr-2">🎯</span>
                 How Raffles Work
               </h4>
-              <div className="text-indigo-300/80 text-sm space-y-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="text-gray-300 text-sm space-y-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p>• <strong>Tickets earned automatically</strong> based on your ecosystem activity</p>
                   <p>• <strong>Multiple entries allowed</strong> - more tickets = better odds</p>
@@ -466,6 +442,7 @@ export default function Rewards() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )
