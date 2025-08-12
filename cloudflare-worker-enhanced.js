@@ -76,6 +76,12 @@ export default {
     if (url.pathname === '/api/logs' && request.method === 'GET') {
       return handleGetLogs(env, corsHeaders)
     }
+    if (url.pathname === '/api/logs/add' && request.method === 'POST') {
+      return handleAddLog(request, env, corsHeaders)
+    }
+    if (url.pathname === '/api/logs/sync' && request.method === 'POST') {
+      return handleSyncLogs(request, env, corsHeaders)
+    }
     if (url.pathname === '/api/typing' && request.method === 'GET') {
       return handleTyping(env, corsHeaders)
     }
@@ -1088,49 +1094,53 @@ async function getProgress(env) {
     return progressCache
   }
   
+  let primaryProgress = null
+  let backupProgress = null
+  
   try {
-    const progress = await env.KRYPT_DATA.get('development_progress')
-    if (progress) {
-      const parsedProgress = JSON.parse(progress)
-      console.log(`🔧 DEBUG: Found primary progress: ${parsedProgress.componentsCompleted} components`)
-      // Also save as backup for recovery
-      await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(parsedProgress))
-      progressCache = parsedProgress
-      cacheTimestamps[cacheKey] = now
-      return parsedProgress
-    } else {
-      console.warn('⚠️ DEBUG: No primary progress found, trying backup...')
+    const progressData = await env.KRYPT_DATA.get('development_progress')
+    if (progressData) {
+      primaryProgress = JSON.parse(progressData)
+      console.log(`🔧 DEBUG: Found primary progress: ${primaryProgress.componentsCompleted} components`)
     }
   } catch (error) {
-    console.error('❌ DEBUG: Error fetching progress from KV:', error)
+    console.error('❌ DEBUG: Error fetching primary progress from KV:', error)
   }
   
-  // Try to get the last known progress from a backup key
   try {
-    const backupProgress = await env.KRYPT_DATA.get('development_progress_backup')
-    if (backupProgress) {
-      const parsedBackup = JSON.parse(backupProgress)
-      
-      // CRITICAL FIX: Only restore backup if it has reasonable data
-      // Prevent restoring backups that would cause progress to go backward
-      if (parsedBackup.componentsCompleted >= 0 && parsedBackup.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
-        // Restore from backup
-        await env.KRYPT_DATA.put('development_progress', backupProgress)
-        progressCache = parsedBackup
-        cacheTimestamps[cacheKey] = now
-        console.log('✅ Restored progress from backup:', parsedBackup.componentsCompleted)
-        return parsedBackup
-      } else {
-        console.warn('⚠️ Backup progress invalid, creating fresh progress:', parsedBackup.componentsCompleted)
-      }
+    const backupData = await env.KRYPT_DATA.get('development_progress_backup')
+    if (backupData) {
+      backupProgress = JSON.parse(backupData)
+      console.log(`🔧 DEBUG: Found backup progress: ${backupProgress.componentsCompleted} components`)
     }
   } catch (error) {
-    console.error('Error fetching backup progress:', error)
+    console.error('❌ DEBUG: Error fetching backup progress from KV:', error)
   }
   
-  // Only use default if KV storage truly has no data
-  const defaultProgress = getDefaultProgress()
-  // Save default to KV to persist it
+  // CRITICAL FIX: Choose the highest valid progress to prevent resets
+  let bestProgress = null
+  
+  if (primaryProgress && primaryProgress.componentsCompleted >= 0 && primaryProgress.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
+    bestProgress = primaryProgress
+    console.log(`✅ Using primary progress: ${bestProgress.componentsCompleted} components`)
+  } else if (backupProgress && backupProgress.componentsCompleted >= 0 && backupProgress.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
+    bestProgress = backupProgress
+    console.log(`✅ Using backup progress: ${bestProgress.componentsCompleted} components`)
+    // Restore backup to primary
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(bestProgress))
+  }
+  
+  if (bestProgress) {
+    // Always update backup with current best progress
+    await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(bestProgress))
+    progressCache = bestProgress
+    cacheTimestamps[cacheKey] = now
+    return bestProgress
+  }
+  
+  // Only create fresh progress if no valid data exists
+  console.warn('⚠️ DEBUG: No valid progress found, creating fresh start from 0')
+  const defaultProgress = getDefaultProgress(0)
   await env.KRYPT_DATA.put('development_progress', JSON.stringify(defaultProgress))
   await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(defaultProgress))
   progressCache = defaultProgress
@@ -1140,9 +1150,11 @@ async function getProgress(env) {
 }
 
 function getDefaultProgress(existingComponents = null) {
-  // If we have existing progress, maintain it
-  // This prevents data loss during deployments
-  const componentsToUse = existingComponents || 100 // Default to 100 if no existing data
+  // CRITICAL FIX: Only use 0 as default to prevent resets
+  // If we have existing components, use them; otherwise start fresh
+  const componentsToUse = existingComponents !== null ? existingComponents : 0
+  
+  console.log(`🔧 DEBUG: getDefaultProgress called with existingComponents=${existingComponents}, using=${componentsToUse}`)
   
   return {
     currentPhase: Math.min(Math.floor(componentsToUse / 1125) + 1, 4),
