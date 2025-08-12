@@ -209,6 +209,9 @@ async function triggerDevelopment(env) {
   try {
     const progress = await getProgress(env)
     
+    // DEBUGGING: Log current progress state
+    console.log(`🔧 DEBUG: triggerDevelopment called - Current components: ${progress.componentsCompleted}`)
+    
     // Don't trigger if already at max or recently updated (< 10 seconds ago)
     if (progress.componentsCompleted >= BLOCKCHAIN_COMPONENTS) {
       return { success: false, reason: 'Development complete' }
@@ -218,6 +221,9 @@ async function triggerDevelopment(env) {
     if (timeSinceUpdate < 10000) {
       return { success: false, reason: 'Recent update, waiting...' }
     }
+    
+    // DEBUGGING: Log before increment
+    console.log(`🔧 DEBUG: About to increment from ${progress.componentsCompleted} to ${progress.componentsCompleted + 1}`)
 
     // Generate new component
     const componentIndex = progress.componentsCompleted
@@ -1086,14 +1092,17 @@ async function getProgress(env) {
     const progress = await env.KRYPT_DATA.get('development_progress')
     if (progress) {
       const parsedProgress = JSON.parse(progress)
+      console.log(`🔧 DEBUG: Found primary progress: ${parsedProgress.componentsCompleted} components`)
       // Also save as backup for recovery
       await env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(parsedProgress))
       progressCache = parsedProgress
       cacheTimestamps[cacheKey] = now
       return parsedProgress
+    } else {
+      console.warn('⚠️ DEBUG: No primary progress found, trying backup...')
     }
   } catch (error) {
-    console.error('Error fetching progress from KV:', error)
+    console.error('❌ DEBUG: Error fetching progress from KV:', error)
   }
   
   // Try to get the last known progress from a backup key
@@ -1101,12 +1110,19 @@ async function getProgress(env) {
     const backupProgress = await env.KRYPT_DATA.get('development_progress_backup')
     if (backupProgress) {
       const parsedBackup = JSON.parse(backupProgress)
-      // Restore from backup
-      await env.KRYPT_DATA.put('development_progress', backupProgress)
-      progressCache = parsedBackup
-      cacheTimestamps[cacheKey] = now
-      console.log('Restored progress from backup:', parsedBackup.componentsCompleted)
-      return parsedBackup
+      
+      // CRITICAL FIX: Only restore backup if it has reasonable data
+      // Prevent restoring backups that would cause progress to go backward
+      if (parsedBackup.componentsCompleted >= 0 && parsedBackup.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
+        // Restore from backup
+        await env.KRYPT_DATA.put('development_progress', backupProgress)
+        progressCache = parsedBackup
+        cacheTimestamps[cacheKey] = now
+        console.log('✅ Restored progress from backup:', parsedBackup.componentsCompleted)
+        return parsedBackup
+      } else {
+        console.warn('⚠️ Backup progress invalid, creating fresh progress:', parsedBackup.componentsCompleted)
+      }
     }
   } catch (error) {
     console.error('Error fetching backup progress:', error)
