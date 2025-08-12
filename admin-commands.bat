@@ -10,11 +10,10 @@ echo 3. Reset ALL (progress, logs, visitors)
 echo 4. Reset progress only
 echo 5. NUCLEAR RESET (everything + visitor records)
 echo 6. Add test user balance
-echo 7. Toggle auto-increment (ON/OFF)
-echo 8. Set progress manually
-echo 9. Exit
+echo 7. Set progress manually (for testing only)
+echo 8. Exit
 echo.
-set /p choice="Enter your choice (1-9): "
+set /p choice="Enter your choice (1-8): "
 
 if %choice%==1 goto SET_ONE
 if %choice%==2 goto SET_CUSTOM
@@ -22,9 +21,8 @@ if %choice%==3 goto RESET_ALL
 if %choice%==4 goto RESET_PROGRESS
 if %choice%==5 goto CLEAR_VISITORS
 if %choice%==6 goto ADD_BALANCE
-if %choice%==7 goto TOGGLE_AUTO
-if %choice%==8 goto SET_PROGRESS
-if %choice%==9 goto END
+if %choice%==7 goto SET_PROGRESS
+if %choice%==8 goto END
 
 :SET_ONE
 echo Setting visitor count to 1...
@@ -94,25 +92,11 @@ echo.
 pause
 goto END
 
-:TOGGLE_AUTO
-echo Toggle auto-increment for blockchain progress:
-echo 1. Enable auto-increment (progress increases every 15s)
-echo 2. Disable auto-increment (progress stays static)
-set /p toggle="Enter your choice (1-2): "
-if %toggle%==1 (
-    echo Enabling auto-increment...
-    curl -X POST "https://kryptterminal.com/api/admin/toggle-auto-increment" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"enabled\":true}"
-) else (
-    echo Disabling auto-increment...
-    curl -X POST "https://kryptterminal.com/api/admin/toggle-auto-increment" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"enabled\":false}"
-)
-echo.
-pause
-goto END
-
 :SET_PROGRESS
-set /p components="Enter number of components completed (0-%BLOCKCHAIN_COMPONENTS%): "
-echo Setting progress to %components% components...
+echo NOTE: Progress should only be updated by Krypt's API calls!
+echo This manual setting is for testing purposes only.
+set /p components="Enter number of components completed (0-4500): "
+echo Setting progress to %components% components (TEST MODE)...
 curl -X POST "https://kryptterminal.com/api/admin/set-progress" -H "Content-Type: application/json" -d "{\"adminKey\":\"krypt_master_reset_2024\",\"componentsCompleted\":%components%}"
 echo.
 pause

@@ -50,17 +50,16 @@ Building a Web3 AI terminal website for Krypt Terminal - an AI agent specialized
 4. Reset progress only
 5. **NUCLEAR RESET** ☢️ (everything + visitor records)
 6. Add test user balance
-7. **Toggle auto-increment** (ON/OFF for blockchain progress)
-8. **Set progress manually** (set specific component count)
-9. Exit
+7. **Set progress manually** (for testing only - normally from Krypt)
+8. Exit
 
 ## **Key Features Working** ✅
 - **Early Access Users**: Real-time visitor tracking with cookie/fingerprint detection
-- **Development Stats**: Controllable progress (auto-increment can be toggled ON/OFF)
+- **Development Stats**: ONLY updates when Krypt sends API calls (no auto-increment)
 - **Top Holders**: Real user balances from wallet connections (use test-leaderboard.bat to test)
-- **Blockchain Progress**: Live terminal display with 4500 components target
+- **Blockchain Progress**: Shows REAL coding activity from Krypt (static when API off)
 - **Launch Reset**: Complete system reset capability
-- **Progress Control**: Admin can manually set progress or enable/disable auto-increment
+- **Krypt Integration**: Progress endpoint `/api/progress/update` for real-time updates
 
 ## **Testing Approach**
 - **Real data only** - No fake/mock data in production
@@ -77,6 +76,7 @@ Building a Web3 AI terminal website for Krypt Terminal - an AI agent specialized
 ## **Critical Files**
 - `cloudflare-worker-enhanced.js` - Main production worker
 - `admin-commands.bat` - Admin control panel
+- `krypt-api-example.js` - Shows how Krypt updates progress
 - `frontend/src/hooks/useEarlyAccessTracking.ts` - Visitor tracking
 - `vercel.json` - Frontend deployment config
 
@@ -102,11 +102,11 @@ admin-commands.bat            # Windows admin panel
 ```
 
 ## **Latest Updates (Current Session)**
-- ✅ **Auto-increment Control Added** - Can now toggle blockchain progress auto-increment ON/OFF
-- ✅ **Manual Progress Setting** - Admin can set specific component count
+- ✅ **REMOVED Auto-increment** - Progress ONLY updates from Krypt's actual API calls
+- ✅ **Added Krypt API Endpoint** - `/api/progress/update` for Krypt to send real progress
+- ✅ **Progress is Now Static** - No changes when API is off, only when Krypt is coding
 - ✅ **Leaderboard Debug Logging** - Added logging to troubleshoot Top Holders
 - ✅ **Test Script Created** - `test-leaderboard.bat` for testing leaderboard functionality
-- ✅ **Auto-increment Persistence** - Setting saved in KV storage across worker restarts
 
 ## **Next Session Priorities**
 1. Final launch preparations and stress testing

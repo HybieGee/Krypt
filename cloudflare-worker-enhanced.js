@@ -11,22 +11,12 @@ const CACHE_TTL = 2000 // 2 seconds for faster updates
 
 // Development configuration
 const BLOCKCHAIN_COMPONENTS = 4500
-const DEVELOPMENT_INTERVAL = 15000 // 15 seconds between components
-let AUTO_INCREMENT_ENABLED = false // Set to true to enable auto-increment
 
 // No mock data - use real user balances only
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
-    
-    // Initialize auto-increment setting from KV storage
-    if (AUTO_INCREMENT_ENABLED === false) {
-      const storedSetting = await env.KRYPT_DATA.get('auto_increment_enabled')
-      if (storedSetting !== null) {
-        AUTO_INCREMENT_ENABLED = storedSetting === 'true'
-      }
-    }
     
     // CORS headers for all responses
     const corsHeaders = {
@@ -52,7 +42,10 @@ export default {
 
     // Development Progress Routes
     if (url.pathname === '/api/progress' && request.method === 'GET') {
-      return handleProgressWithAutoIncrement(env, corsHeaders)
+      return handleGetProgress(env, corsHeaders)
+    }
+    if (url.pathname === '/api/progress/update' && request.method === 'POST') {
+      return handleUpdateProgress(request, env, corsHeaders)
     }
     if (url.pathname === '/api/progress/reset' && request.method === 'POST') {
       return handleProgressReset(request, env, corsHeaders)
@@ -93,11 +86,6 @@ export default {
       return handleLeaderboard(env, corsHeaders)
     }
 
-    // Toggle auto-increment
-    if (url.pathname === '/api/admin/toggle-auto-increment' && request.method === 'POST') {
-      return handleToggleAutoIncrement(request, env, corsHeaders)
-    }
-
     // Manual progress update
     if (url.pathname === '/api/admin/set-progress' && request.method === 'POST') {
       return handleSetProgress(request, env, corsHeaders)
@@ -115,39 +103,6 @@ export default {
     return new Response('Krypt Terminal API', { 
       status: 404,
       headers: corsHeaders 
-    })
-  }
-}
-
-// ===== ADMIN: TOGGLE AUTO-INCREMENT =====
-async function handleToggleAutoIncrement(request, env, corsHeaders) {
-  try {
-    const { adminKey, enabled } = await request.json()
-    
-    if (adminKey !== 'krypt_master_reset_2024') {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    AUTO_INCREMENT_ENABLED = enabled
-    
-    // Store the setting in KV for persistence
-    await env.KRYPT_DATA.put('auto_increment_enabled', enabled.toString())
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Auto-increment ${enabled ? 'enabled' : 'disabled'}`,
-      enabled: AUTO_INCREMENT_ENABLED
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  } catch (error) {
-    console.error('Toggle auto-increment error:', error)
-    return new Response(JSON.stringify({ error: 'Failed to toggle auto-increment' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 }
@@ -449,65 +404,86 @@ async function handleMasterReset(request, env, corsHeaders) {
   }
 }
 
-// ===== DEVELOPMENT PROGRESS WITH AUTO-INCREMENT =====
-async function handleProgressWithAutoIncrement(env, corsHeaders) {
+// ===== GET PROGRESS (NO AUTO-INCREMENT) =====
+async function handleGetProgress(env, corsHeaders) {
   try {
-    let progress = await getProgress(env)
-    
-    // Auto-increment logic (only if enabled)
-    const now = Date.now()
-    const timeSinceLastUpdate = now - (progress.lastUpdated || now)
-    
-    // If auto-increment is enabled and more than 15 seconds have passed, increment progress
-    if (AUTO_INCREMENT_ENABLED && timeSinceLastUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
-      const incrementAmount = Math.floor(timeSinceLastUpdate / 15000)
-      progress.componentsCompleted = Math.min(
-        progress.componentsCompleted + incrementAmount,
-        BLOCKCHAIN_COMPONENTS
-      )
-      
-      // Update derived values
-      progress.percentComplete = (progress.componentsCompleted / BLOCKCHAIN_COMPONENTS) * 100
-      progress.currentPhase = Math.min(Math.floor(progress.componentsCompleted / 1125) + 1, 4)
-      progress.phaseProgress = ((progress.componentsCompleted % 1125) / 1125) * 100
-      progress.linesOfCode = progress.componentsCompleted * 78
-      progress.commits = progress.componentsCompleted
-      progress.testsRun = Math.floor(progress.componentsCompleted * 0.5)
-      progress.lastUpdated = now
-      
-      // Save updated progress
-      await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
-      progressCache = progress
-      cacheTimestamps.progress = now
-      
-      // Add log entry for significant milestones
-      if (progress.componentsCompleted % 100 === 0) {
-        const logs = await getLogs(env)
-        logs.push({
-          id: `milestone-${progress.componentsCompleted}`,
-          timestamp: new Date().toISOString(),
-          type: 'system',
-          message: `Reached ${progress.componentsCompleted} components!`,
-          details: { components: progress.componentsCompleted }
-        })
-        
-        // Keep only last 50 logs
-        if (logs.length > 50) {
-          logs.splice(0, logs.length - 50)
-        }
-        
-        await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
-        logsCache = logs
-        cacheTimestamps.logs = now
-      }
-    }
-    
+    const progress = await getProgress(env)
     return new Response(JSON.stringify(progress), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
     console.error('Progress error:', error)
     return new Response(JSON.stringify(getDefaultProgress()), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== UPDATE PROGRESS FROM KRYPT =====
+async function handleUpdateProgress(request, env, corsHeaders) {
+  try {
+    const { componentsCompleted, linesOfCode, commits, testsRun, apiKey } = await request.json()
+    
+    // Verify this is from Krypt (you can add proper API key verification here)
+    if (apiKey && apiKey !== 'krypt_api_key_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    const progress = await getProgress(env)
+    
+    // Update progress with data from Krypt
+    if (typeof componentsCompleted === 'number') {
+      progress.componentsCompleted = Math.min(componentsCompleted, BLOCKCHAIN_COMPONENTS)
+      progress.percentComplete = (progress.componentsCompleted / BLOCKCHAIN_COMPONENTS) * 100
+      progress.currentPhase = Math.min(Math.floor(progress.componentsCompleted / 1125) + 1, 4)
+      progress.phaseProgress = ((progress.componentsCompleted % 1125) / 1125) * 100
+    }
+    
+    if (typeof linesOfCode === 'number') progress.linesOfCode = linesOfCode
+    if (typeof commits === 'number') progress.commits = commits
+    if (typeof testsRun === 'number') progress.testsRun = testsRun
+    
+    progress.lastUpdated = Date.now()
+    
+    // Save updated progress
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
+    progressCache = progress
+    cacheTimestamps.progress = Date.now()
+    
+    // Add log entry for significant milestones
+    if (progress.componentsCompleted % 100 === 0 && progress.componentsCompleted > 0) {
+      const logs = await getLogs(env)
+      logs.push({
+        id: `milestone-${progress.componentsCompleted}`,
+        timestamp: new Date().toISOString(),
+        type: 'system',
+        message: `Krypt reached ${progress.componentsCompleted} components!`,
+        details: { components: progress.componentsCompleted }
+      })
+      
+      // Keep only last 50 logs
+      if (logs.length > 50) {
+        logs.splice(0, logs.length - 50)
+      }
+      
+      await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      logsCache = logs
+      cacheTimestamps.logs = Date.now()
+    }
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      progress: progress 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Update progress error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to update progress' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
