@@ -857,35 +857,43 @@ async function handleLeaderboard(env, corsHeaders) {
   try {
     // List all user balance keys
     const list = await env.KRYPT_DATA.list({ prefix: 'user:' })
-    const leaderboard = []
+    const walletMap = new Map()
     let totalBalance = 0
     
-    // Fetch all user balances
+    // Fetch all user balances and deduplicate by wallet address
     for (const key of list.keys) {
       const userData = await env.KRYPT_DATA.get(key.name)
       if (userData) {
         const user = JSON.parse(userData)
-        if (user.balance > 0) {
-          leaderboard.push({
-            walletAddress: user.walletAddress,
-            balance: user.balance
-          })
-          totalBalance += user.balance
+        if (user.balance > 0 && user.walletAddress) {
+          const existing = walletMap.get(user.walletAddress)
+          
+          // Keep the entry with the most recent update or highest balance
+          if (!existing || 
+              new Date(user.lastUpdated || 0) > new Date(existing.lastUpdated || 0) ||
+              (user.lastUpdated === existing.lastUpdated && user.balance > existing.balance)) {
+            walletMap.set(user.walletAddress, {
+              walletAddress: user.walletAddress,
+              balance: user.balance,
+              lastUpdated: user.lastUpdated
+            })
+          }
         }
       }
     }
     
-    // Sort by balance descending
+    // Convert map to array and sort by balance descending
+    const leaderboard = Array.from(walletMap.values())
     leaderboard.sort((a, b) => b.balance - a.balance)
     
     // Format for Top Holders display - match frontend expectations
-    const rankedLeaderboard = leaderboard.slice(0, 10).map((user, index) => ({
+    const rankedLeaderboard = leaderboard.slice(0, 10).map((user) => ({
       address: user.walletAddress.substring(0, 6) + '...' + user.walletAddress.slice(-4),
       balance: user.balance
     }))
     
     // Log for debugging
-    console.log(`Leaderboard: Found ${list.keys.length} users, ${leaderboard.length} with balance > 0`)
+    console.log(`Leaderboard: Found ${list.keys.length} total entries, ${leaderboard.length} unique wallets with balance > 0`)
     
     return new Response(JSON.stringify(rankedLeaderboard), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
