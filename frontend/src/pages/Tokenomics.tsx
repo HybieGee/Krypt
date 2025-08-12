@@ -7,8 +7,8 @@ export default function Tokenomics() {
 
   const tokenDistribution = [
     { label: 'Community Pool', amount: 920000000, percentage: 92, color: 'bg-terminal-green' },
-    { label: 'Community Rewards', amount: 50000000, percentage: 5, color: 'bg-purple-400' },
-    { label: 'Development Fund', amount: 30000000, percentage: 3, color: 'bg-red-400' }
+    { label: 'Community Rewards', amount: 50000000, percentage: 5, color: 'bg-cyan-400' },
+    { label: 'Development Fund', amount: 30000000, percentage: 3, color: 'bg-orange-400' }
   ]
 
   return (
@@ -163,8 +163,8 @@ export default function Tokenomics() {
                         // Color mapping
                         const colorMap: { [key: string]: string } = {
                           'bg-terminal-green': '#00ff41',
-                          'bg-purple-400': '#c084fc', 
-                          'bg-red-400': '#f87171'
+                          'bg-cyan-400': '#22d3ee', 
+                          'bg-orange-400': '#fb923c'
                         }
                         
                         return (
@@ -212,11 +212,11 @@ export default function Tokenomics() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Community Rewards:</span>
-                        <span className="text-purple-400 font-medium">5%</span>
+                        <span className="text-cyan-400 font-medium">5%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Development Fund:</span>
-                        <span className="text-red-400 font-medium">3%</span>
+                        <span className="text-orange-400 font-medium">3%</span>
                       </div>
                     </div>
                   </div>

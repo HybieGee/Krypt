@@ -44,7 +44,7 @@ export default function Header() {
                     : 'text-terminal-green hover:bg-terminal-green/10'
                 }`}
               >
-                Tokens
+                Wallet
               </Link>
               <Link
                 to="/rewards"
