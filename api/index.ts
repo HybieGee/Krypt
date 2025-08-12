@@ -244,17 +244,21 @@ async function developNextComponent() {
       developmentLogs = developmentLogs.slice(-50)
     }
     
-    // Send latest logs to Cloudflare Worker
+    // Send ALL logs to Cloudflare Worker to ensure sync
     if (developmentLogs.length > 0) {
-      const latestLog = developmentLogs[developmentLogs.length - 1]
-      fetch('https://kryptterminal.com/api/logs/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          log: latestLog,
-          apiKey: 'krypt_api_key_2024'
+      try {
+        await fetch('https://kryptterminal.com/api/logs/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            logs: developmentLogs,
+            apiKey: 'krypt_api_key_2024'
+          })
         })
-      }).catch(err => console.error('Failed to send log:', err))
+        console.log(`Synced ${developmentLogs.length} logs to Cloudflare`)
+      } catch (err) {
+        console.error('Failed to sync logs to Cloudflare:', err)
+      }
     }
 
   } catch (error) {

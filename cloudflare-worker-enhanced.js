@@ -73,6 +73,9 @@ export default {
     if (url.pathname === '/api/logs/add' && request.method === 'POST') {
       return handleAddLog(request, env, corsHeaders)
     }
+    if (url.pathname === '/api/logs/sync' && request.method === 'POST') {
+      return handleSyncLogs(request, env, corsHeaders)
+    }
 
     // Statistics Routes
     if (url.pathname === '/api/stats' && request.method === 'GET') {
@@ -544,6 +547,43 @@ async function handleGetLogs(env, corsHeaders) {
   } catch (error) {
     console.error('Logs error:', error)
     return new Response(JSON.stringify([]), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== SYNC ALL LOGS FROM KRYPT =====
+async function handleSyncLogs(request, env, corsHeaders) {
+  try {
+    const { logs, apiKey } = await request.json()
+    
+    // Verify this is from Krypt
+    if (apiKey && apiKey !== 'krypt_api_key_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    // Replace all logs with the synced logs from Vercel API
+    if (Array.isArray(logs)) {
+      await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      logsCache = logs
+      cacheTimestamps.logs = Date.now()
+      
+      console.log(`Synced ${logs.length} logs from Vercel API`)
+    }
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      logCount: logs?.length || 0
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Sync logs error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to sync logs' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
