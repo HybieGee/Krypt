@@ -67,8 +67,11 @@ export default {
     }
 
     // Development Logs Routes
-    if (url.pathname.startsWith('/api/logs')) {
-      return handleLogs(request, env, corsHeaders)
+    if (url.pathname === '/api/logs' && request.method === 'GET') {
+      return handleGetLogs(env, corsHeaders)
+    }
+    if (url.pathname === '/api/logs/add' && request.method === 'POST') {
+      return handleAddLog(request, env, corsHeaders)
     }
 
     // Statistics Routes
@@ -528,8 +531,8 @@ async function handleProgressReset(request, env, corsHeaders) {
   }
 }
 
-// ===== DEVELOPMENT LOGS =====
-async function handleLogs(request, env, corsHeaders) {
+// ===== GET DEVELOPMENT LOGS =====
+async function handleGetLogs(env, corsHeaders) {
   try {
     const logs = await getLogs(env)
     return new Response(JSON.stringify(logs), {
@@ -538,6 +541,54 @@ async function handleLogs(request, env, corsHeaders) {
   } catch (error) {
     console.error('Logs error:', error)
     return new Response(JSON.stringify([]), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== ADD DEVELOPMENT LOG FROM KRYPT =====
+async function handleAddLog(request, env, corsHeaders) {
+  try {
+    const { log, apiKey } = await request.json()
+    
+    // Verify this is from Krypt (you can add proper API key verification here)
+    if (apiKey && apiKey !== 'krypt_api_key_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    const logs = await getLogs(env)
+    
+    // Add the new log
+    logs.push({
+      id: log.id || `log-${Date.now()}`,
+      timestamp: log.timestamp || new Date().toISOString(),
+      type: log.type || 'system',
+      message: log.message,
+      details: log.details || {}
+    })
+    
+    // Keep only last 50 logs
+    if (logs.length > 50) {
+      logs.splice(0, logs.length - 50)
+    }
+    
+    await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+    logsCache = logs
+    cacheTimestamps.logs = Date.now()
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      logCount: logs.length
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Add log error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to add log' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
