@@ -137,11 +137,16 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
             </div>
             
             {(log.details?.snippet || log.details?.code) && (
-              <div className="ml-20 p-2 bg-terminal-gray/50 border-l-2 border-terminal-green/30">
-                <pre className="text-terminal-green/70 text-[10px]">
+              <div className="ml-6 mt-2 p-3 bg-black/60 border border-terminal-green/20 rounded">
+                <div className="text-terminal-green/40 text-[9px] mb-1 font-semibold">
+                  📄 Code Generated:
+                </div>
+                <pre className="text-terminal-green/80 text-[10px] leading-tight overflow-x-auto">
                   {log.details.snippet || 
-                   (log.details.code.split('\n').slice(0, 3).join('\n') + 
-                    (log.details.code.split('\n').length > 3 ? '\n... [truncated]' : ''))}
+                   (log.details.code ? 
+                     (log.details.code.split('\n').slice(0, 8).join('\n') + 
+                      (log.details.code.split('\n').length > 8 ? '\n... [view full code in Development Logs]' : ''))
+                     : '')}
                 </pre>
               </div>
             )}
