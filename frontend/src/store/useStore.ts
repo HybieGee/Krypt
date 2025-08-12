@@ -216,8 +216,15 @@ export const useStore = create<StoreState>()(
           }
         }),
         resetAllData: () => set(() => {
-          // Clear localStorage
+          // Clear all possible storage locations
           localStorage.removeItem('krypt-terminal-storage')
+          localStorage.clear()
+          sessionStorage.clear()
+          
+          // Clear cookies
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
           
           // Reset to initial state
           return {

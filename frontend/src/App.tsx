@@ -12,7 +12,7 @@ import ApiService from './services/api'
 import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
 
 function App() {
-  const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats, resetAllData } = useStore()
+  const { setConnectionStatus, user, updateUserWallet, setProgress, addLogs, setStats } = useStore()
   
   // Initialize early access visitor tracking
   useEarlyAccessTracking()
