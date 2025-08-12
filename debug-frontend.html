@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Frontend Terminal</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Debug Frontend Terminal - Real-time API Test</h1>
+    
+    <div id="status"></div>
+    <div id="progress"></div>
+    <div id="logs"></div>
+    
+    <script>
+        async function testAPI() {
+            try {
+                // Test API endpoints directly
+                console.log('Testing API endpoints...')
+                
+                // Test Progress
+                const progressResponse = await axios.get('https://kryptterminal.com/api/progress')
+                console.log('✅ Progress API:', progressResponse.data)
+                document.getElementById('progress').innerHTML = `
+                    <h3>Progress (API Working ✅):</h3>
+                    <pre>${JSON.stringify(progressResponse.data, null, 2)}</pre>
+                `
+                
+                // Test Logs
+                const logsResponse = await axios.get('https://kryptterminal.com/api/logs?limit=10')
+                console.log('✅ Logs API:', logsResponse.data)
+                console.log(`📊 Logs count: ${logsResponse.data.length}`)
+                
+                if (logsResponse.data.length > 0) {
+                    document.getElementById('logs').innerHTML = `
+                        <h3>Recent Logs (API Working ✅): ${logsResponse.data.length} logs</h3>
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+                            ${logsResponse.data.slice(0, 5).map(log => `
+                                <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #00ff41; background: #f5f5f5;">
+                                    <div><strong>ID:</strong> ${log.id}</div>
+                                    <div><strong>Type:</strong> ${log.type}</div>
+                                    <div><strong>Time:</strong> ${new Date(log.timestamp).toLocaleString()}</div>
+                                    <div><strong>Message:</strong> ${log.message}</div>
+                                    ${log.details?.code ? `<div><strong>Code:</strong><br><pre style="background: #eee; padding: 5px; font-size: 11px; white-space: pre-wrap; max-height: 100px; overflow-y: auto;">${log.details.code.substring(0, 300)}...</pre></div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `
+                } else {
+                    document.getElementById('logs').innerHTML = `
+                        <h3>❌ No Logs Found</h3>
+                        <p>API returned empty logs array</p>
+                    `
+                }
+                
+                document.getElementById('status').innerHTML = `
+                    <div style="color: green; font-weight: bold;">
+                        ✅ API IS WORKING CORRECTLY<br>
+                        📊 Components: ${progressResponse.data.componentsCompleted}<br>
+                        📝 Logs Available: ${logsResponse.data.length}<br>
+                        🕒 Last Updated: ${new Date().toLocaleString()}
+                    </div>
+                `
+                
+            } catch (error) {
+                console.error('❌ API Error:', error)
+                document.getElementById('status').innerHTML = `
+                    <div style="color: red; font-weight: bold;">
+                        ❌ API ERROR: ${error.message}
+                    </div>
+                `
+            }
+        }
+        
+        // Test immediately
+        testAPI()
+        
+        // Test every 5 seconds
+        setInterval(testAPI, 5000)
+    </script>
+</body>
+</html>

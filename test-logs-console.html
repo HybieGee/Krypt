@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Frontend Logs - Console Debug</title>
+</head>
+<body>
+    <h1>Testing Frontend Logs</h1>
+    <p>Open the console to see debug output</p>
+    
+    <div>
+        <button onclick="testStoreLogic()">Test Store Logic</button>
+        <button onclick="testAPIDirectly()">Test API Directly</button>
+    </div>
+    
+    <div id="output"></div>
+    
+    <script>
+        // Simulate the store's addLogs function
+        function addLogs(existingLogs, newLogs) {
+            console.group('🔍 Testing addLogs function')
+            console.log('Existing logs:', existingLogs.length)
+            console.log('New logs received:', newLogs.length)
+            
+            // Create a map of existing logs by ID for efficient lookup (from store)
+            const existingLogsMap = new Map(existingLogs.map(log => [log.id, log]))
+            console.log('Existing log IDs:', Array.from(existingLogsMap.keys()))
+            
+            // Process new logs and only add if they don't exist (from store)
+            const actuallyNewLogs = newLogs.filter(log => {
+                const exists = existingLogsMap.has(log.id)
+                if (exists) {
+                    console.log(`⏭️ Skipping duplicate log: ${log.id}`)
+                }
+                return !exists
+            })
+            
+            console.log(`✅ Actually new logs: ${actuallyNewLogs.length}`)
+            actuallyNewLogs.forEach(log => {
+                console.log(`  - ${log.id}: ${log.message}`)
+            })
+            
+            // Merge existing logs with new logs (from store)
+            const allLogs = [...existingLogs, ...actuallyNewLogs]
+            
+            // Sort by timestamp to ensure proper chronological order (from store)
+            const sortedLogs = allLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+            
+            console.log(`📊 Final log count: ${sortedLogs.length}`)
+            console.groupEnd()
+            
+            return sortedLogs
+        }
+        
+        async function testStoreLogic() {
+            console.clear()
+            console.log('🧪 Testing Store Logic')
+            
+            try {
+                // Fetch some logs from API
+                const response = await fetch('https://kryptterminal.com/api/logs?limit=10')
+                const apiLogs = await response.json()
+                console.log('📡 Fetched logs from API:', apiLogs.length)
+                
+                // Test with empty existing logs (fresh start)
+                const existingLogs = []
+                const result1 = addLogs(existingLogs, apiLogs)
+                document.getElementById('output').innerHTML += `<p><strong>Test 1 (fresh start):</strong> ${result1.length} logs</p>`
+                
+                // Test with existing logs (simulate second poll)
+                const result2 = addLogs(result1, apiLogs)
+                document.getElementById('output').innerHTML += `<p><strong>Test 2 (duplicate check):</strong> ${result2.length} logs (should be same as Test 1)</p>`
+                
+                // Test with some new logs mixed in
+                const mixedLogs = [
+                    ...apiLogs.slice(0, 5), // 5 existing
+                    {
+                        id: 'test-new-log',
+                        timestamp: new Date().toISOString(),
+                        type: 'code',
+                        message: '✅ TestComponent developed (50 lines)'
+                    }
+                ]
+                const result3 = addLogs(result1, mixedLogs)
+                document.getElementById('output').innerHTML += `<p><strong>Test 3 (mixed logs):</strong> ${result3.length} logs (should be +1)</p>`
+                
+            } catch (error) {
+                console.error('❌ Error testing store logic:', error)
+                document.getElementById('output').innerHTML += `<p style="color: red;"><strong>Error:</strong> ${error.message}</p>`
+            }
+        }
+        
+        async function testAPIDirectly() {
+            console.clear()
+            console.log('🌐 Testing API Directly')
+            
+            try {
+                const response = await fetch('https://kryptterminal.com/api/logs?limit=5')
+                const logs = await response.json()
+                
+                console.log('📡 Raw API Response:')
+                console.table(logs.map(log => ({
+                    id: log.id,
+                    type: log.type,
+                    message: log.message.substring(0, 50) + '...',
+                    timestamp: new Date(log.timestamp).toLocaleString()
+                })))
+                
+                // Test encoding
+                logs.forEach(log => {
+                    if (log.message.includes('\\u')) {
+                        console.warn(`🔤 Encoding issue detected in: ${log.id}`)
+                        console.log(`Raw: ${JSON.stringify(log.message)}`)
+                    } else {
+                        console.log(`✅ Clean message: ${log.message}`)
+                    }
+                })
+                
+                document.getElementById('output').innerHTML += `<h3>API Test Results:</h3>`
+                document.getElementById('output').innerHTML += `<p><strong>Logs fetched:</strong> ${logs.length}</p>`
+                document.getElementById('output').innerHTML += `<pre>${JSON.stringify(logs[0], null, 2)}</pre>`
+                
+            } catch (error) {
+                console.error('❌ Error testing API:', error)
+                document.getElementById('output').innerHTML += `<p style="color: red;"><strong>API Error:</strong> ${error.message}</p>`
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = function() {
+            console.log('🚀 Starting automatic tests...')
+            setTimeout(testAPIDirectly, 1000)
+            setTimeout(testStoreLogic, 2000)
+        }
+    </script>
+</body>
+</html>

@@ -1,13 +1,7 @@
 // Enhanced Cloudflare Worker with Auto-progression and Mock Data
 // Handles: Visitor Tracking, Development Progress, Logs, Leaderboard, User Balances
 
-// In-memory caches for immediate consistency
-let countCache = null
-let progressCache = null
-let logsCache = null
-let leaderboardCache = null
-let statsCache = null
-let cacheTimestamps = {}
+// No in-memory caches - always read from KV for persistence across deployments
 const CACHE_TTL = 2000 // 2 seconds for faster updates
 
 // Development configuration
@@ -1270,16 +1264,8 @@ async function incrementVisitorCount(env) {
 
 // Progress with caching - SIMPLIFIED AND STABLE
 async function getProgress(env) {
-  const now = Date.now()
-  const cacheKey = 'progress'
-  
-  // Use cache if fresh (within 2 seconds for real-time feel)
-  if (progressCache !== null && (now - (cacheTimestamps[cacheKey] || 0)) < 2000) {
-    return progressCache
-  }
-  
   try {
-    // SINGLE SOURCE OF TRUTH: Only use primary progress
+    // Always read from KV for persistence across deployments
     const progressData = await env.KRYPT_DATA.get('development_progress')
     
     if (progressData) {
@@ -1289,34 +1275,26 @@ async function getProgress(env) {
       if (progress && typeof progress.componentsCompleted === 'number' && 
           progress.componentsCompleted >= 0 && progress.componentsCompleted <= BLOCKCHAIN_COMPONENTS) {
         
-        console.log(`✅ Using stable progress: ${progress.componentsCompleted} components`)
-        
-        // Cache the valid progress
-        progressCache = progress
-        cacheTimestamps[cacheKey] = now
-        
+        console.log(`✅ Progress from KV: ${progress.componentsCompleted} components`)
         return progress
       } else {
         console.error('❌ Invalid progress data structure:', progress)
       }
     }
+    
+    console.log('⚠️ No valid progress in KV, creating default')
+    const defaultProgress = getDefaultProgress(0)
+    
+    // Save default to KV immediately
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(defaultProgress))
+    return defaultProgress
+    
   } catch (error) {
-    console.error('❌ Error fetching progress from KV:', error)
+    console.error('❌ Error with progress KV:', error)
+    
+    // Emergency fallback - but don't cache in memory
+    return getDefaultProgress(0)
   }
-  
-  // Fallback: Use cached data if available
-  if (progressCache && progressCache.componentsCompleted >= 0) {
-    console.warn('⚠️ Using cached progress as fallback:', progressCache.componentsCompleted)
-    return progressCache
-  }
-  
-  // Emergency fallback: Return minimal progress
-  console.error('❌ EMERGENCY: Creating minimal progress - this should not happen in production')
-  const emergencyProgress = getDefaultProgress(0)
-  progressCache = emergencyProgress
-  cacheTimestamps[cacheKey] = now
-  
-  return emergencyProgress
 }
 
 function getDefaultProgress(existingComponents = null) {

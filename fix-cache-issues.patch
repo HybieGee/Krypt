@@ -1,0 +1,39 @@
+# SURGICAL FIX: Remove problematic in-memory caches, keep all other functions
+
+## Problem: 
+- progressCache, logsCache get wiped on deployment
+- Terminal shows nothing because cached data is lost
+- All other functions work fine
+
+## Solution: 
+1. Remove in-memory cache variables (lines 5-11)
+2. Modify getProgress() to always read from KV
+3. Modify getLogs() to always read from KV  
+4. Keep ALL existing functions intact
+
+## Changes needed:
+
+### 1. Remove cache variables (lines 5-11):
+DELETE:
+```javascript
+let countCache = null
+let progressCache = null
+let logsCache = null
+let leaderboardCache = null
+let statsCache = null
+let cacheTimestamps = {}
+```
+
+### 2. Fix getProgress() function (around line 1272):
+REPLACE cache logic with direct KV reads
+
+### 3. Fix getLogs() function:
+REPLACE cache logic with direct KV reads
+
+### 4. Keep everything else identical:
+- All 35+ functions stay exactly the same
+- All routes stay the same  
+- All visitor tracking, leaderboard, session management stays
+- Just remove the 3 problematic cache variables
+
+This fixes the terminal issue without breaking anything!
