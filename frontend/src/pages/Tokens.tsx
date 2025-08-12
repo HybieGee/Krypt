@@ -243,24 +243,125 @@ export default function Tokens() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="bg-slate-900 border border-indigo-500/30 p-6 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-indigo-400 mb-4">
-          KRYPT Wallet Operations
-        </h1>
-        <p className="text-indigo-300/80 mb-6">
-          Mint, mine, and stake KRYPT tokens for free. Build your position before mainnet launch.
-        </p>
-        
-        <div className="bg-indigo-500/10 border border-indigo-400/30 p-4 rounded mb-6">
-          <div className="text-indigo-300/90 text-sm">
-            ✅ Free operations: No wallet connection required - wallet auto-generated for each user.
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-terminal-green mb-4">
+            KRYPT Wallet Operations
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Mint, mine, and stake KRYPT tokens for free. Build your position before mainnet launch.
+          </p>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-terminal-gray/20 rounded-lg p-1 flex space-x-1">
+            {[
+              { id: 'wallet', label: '💳 Wallet', icon: '💳' },
+              { id: 'mint', label: '🪙 Mint', icon: '🪙' },
+              { id: 'mine', label: '⛏️ Mine', icon: '⛏️' },
+              { id: 'stake', label: '🔒 Stake', icon: '🔒' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-2 rounded-md transition-all ${
+                  activeTab === tab.id 
+                    ? 'bg-terminal-green text-black font-semibold' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Operations & Balance */}
+        {/* Content Based on Active Tab */}
+        {activeTab === 'wallet' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Wallet Details */}
+            <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-terminal-green mb-4">Your KRYPT Wallet</h2>
+              <div className="space-y-4">
+                <div className="bg-black/50 p-4 rounded">
+                  <h3 className="text-terminal-green font-semibold mb-2">Wallet Address</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-gray-800 border border-terminal-green/30 p-3 rounded font-mono text-sm text-terminal-green break-all">
+                      {user?.walletAddress || 'Generating...'}
+                    </div>
+                    <button
+                      onClick={copyAddress}
+                      className="bg-terminal-green text-black px-3 py-2 text-xs font-semibold rounded hover:bg-terminal-green/80 transition-colors"
+                      disabled={!user?.walletAddress}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-black/50 p-4 rounded">
+                    <h3 className="text-terminal-green font-semibold">Available Balance</h3>
+                    <p className="text-2xl font-bold">{(user?.balance || 0).toLocaleString()}</p>
+                    <p className="text-sm text-gray-400">KRYPT Tokens</p>
+                  </div>
+                  <div className="bg-black/50 p-4 rounded">
+                    <h3 className="text-terminal-green font-semibold">Staked Tokens</h3>
+                    <p className="text-2xl font-bold">{(user?.stakes?.reduce((total, stake) => total + stake.amount, 0) || 0).toLocaleString()}</p>
+                    <p className="text-sm text-gray-400">Locked Staking</p>
+                  </div>
+                  <div className="bg-black/50 p-4 rounded">
+                    <h3 className="text-terminal-green font-semibold">Minted</h3>
+                    <p className="text-2xl font-bold">{user?.mintedAmount || 0}</p>
+                    <p className="text-sm text-gray-400">of 1000 Max</p>
+                  </div>
+                  <div className="bg-black/50 p-4 rounded">
+                    <h3 className="text-terminal-green font-semibold">Mining Status</h3>
+                    <p className={`text-2xl font-bold ${user?.isMining ? 'text-terminal-green animate-pulse' : 'text-gray-400'}`}>
+                      {user?.isMining ? 'Active' : 'Inactive'}
+                    </p>
+                    <p className="text-sm text-gray-400">Real-time Mining</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Holders Leaderboard */}
+            <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-terminal-green mb-4">Top Holders</h2>
+              <div className="space-y-3">
+                {leaderboard.length > 0 ? (
+                  leaderboard.map((holder: { address: string; balance: number }, index: number) => (
+                    <div key={holder.address} className="bg-black/50 p-4 rounded flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-terminal-green/20 rounded-full flex items-center justify-center">
+                          <span className="text-terminal-green font-bold text-sm">#{index + 1}</span>
+                        </div>
+                        <span className="text-white font-mono text-sm">
+                          {holder.address}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-terminal-green font-bold">{holder.balance.toLocaleString()}</div>
+                        <div className="text-gray-400 text-xs">KRYPT</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-black/50 p-8 rounded text-center">
+                    <p className="text-gray-400">Leaderboard will appear when users start holding tokens</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Remove old sidebar structure */}
+        <div className="hidden">{/* Old content will be replaced */}</div>
         <div className="space-y-4">
           <div className="bg-slate-800 border border-blue-500/30 p-4 rounded-lg">
             <h3 className="text-lg font-bold text-blue-400 mb-4">Operations</h3>

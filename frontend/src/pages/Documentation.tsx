@@ -1,14 +1,21 @@
 export default function Documentation() {
   return (
-    <div className="bg-slate-900 border border-violet-500/30 p-8 rounded-lg shadow-lg max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-violet-400 mb-6">
-        Krypt Terminal Documentation
-      </h1>
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-terminal-green mb-4">
+            Krypt Terminal Documentation
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Complete guide to understanding Krypt Terminal's AI blockchain development platform
+          </p>
+        </div>
 
-      <div className="space-y-8">
-        <section>
-          <h2 className="text-xl text-terminal-green mb-3">🔍 Platform Transparency</h2>
-          <div className="bg-terminal-green/5 border border-terminal-green/30 p-4 rounded mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Platform Transparency */}
+          <div className="bg-terminal-gray/10 border border-terminal-green/20 rounded-lg p-6">
+            <h2 className="text-2xl font-bold text-terminal-green mb-4">🔍 Platform Transparency</h2>
             <p className="text-terminal-green/80 leading-relaxed mb-3">
               <strong>Krypt Terminal is 100% transparent and verifiable.</strong> Our AI agent uses Claude AI 
               technology to develop actual blockchain code, with every step visible to users in real-time.

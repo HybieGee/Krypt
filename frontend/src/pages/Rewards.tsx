@@ -133,14 +133,39 @@ export default function Rewards() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="bg-gray-900 border border-blue-500/30 p-6 rounded-lg">
-        <h1 className="text-2xl font-bold text-blue-400 mb-4">
-          KRYPT Rewards System
-        </h1>
-        <p className="text-blue-300/80 mb-6">
-          Automatic rewards distributed when Early Access user milestones are reached. Plus raffle participation for extra rewards!
-        </p>
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-terminal-green mb-4">
+            KRYPT Rewards System
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Automatic rewards distributed when Early Access user milestones are reached. Plus raffle participation for extra rewards!
+          </p>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-terminal-gray/20 rounded-lg p-1 flex space-x-1">
+            {[
+              { id: 'milestones', label: '🎯 Milestones' },
+              { id: 'raffles', label: '🎲 Raffles' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-2 rounded-md transition-all ${
+                  activeTab === tab.id 
+                    ? 'bg-terminal-green text-black font-semibold' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
         
         <div className="bg-blue-500/10 border border-blue-400/30 p-4 rounded mb-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

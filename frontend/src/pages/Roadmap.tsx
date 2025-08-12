@@ -51,21 +51,30 @@ export default function Roadmap() {
   ]
 
   return (
-    <div className="bg-slate-900 border border-amber-500/30 p-8 rounded-lg shadow-lg max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-amber-400 mb-6">
-        Development Roadmap
-      </h1>
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-terminal-green mb-4">
+            Development Roadmap
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Track the journey from initial AI development to full blockchain ecosystem deployment
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {phases.map((phase, index) => (
-          <button
-            key={index}
-            onClick={() => setActivePhase(index)}
-            className={`p-4 border rounded-lg transition-all ${
-              activePhase === index
-                ? 'border-amber-400 bg-amber-500/10'
-                : 'border-amber-500/30 hover:border-amber-500/60'
-            }`}
+        {/* Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-terminal-gray/20 rounded-lg p-1 flex flex-wrap gap-1">
+            {phases.map((phase, index) => (
+              <button
+                key={index}
+                onClick={() => setActivePhase(index)}
+                className={`px-4 py-2 rounded-md transition-all ${
+                  activePhase === index 
+                    ? 'bg-terminal-green text-black font-semibold' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
           >
             <div className={`text-lg font-bold mb-2 ${
               phase.status === 'in-progress' 
