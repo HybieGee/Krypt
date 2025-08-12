@@ -292,7 +292,7 @@ export default function Tokenomics() {
                     to the community with full transparency at least 48 hours before execution.
                   </p>
                   <p>
-                    <strong>Community Discussion:</strong> Major fund utilizations (>1M KRYPT) will be 
+                    <strong>Community Discussion:</strong> Major fund utilizations (&gt;1M KRYPT) will be 
                     subject to community discussion and feedback before implementation.
                   </p>
                   <p>
