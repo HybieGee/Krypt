@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Krypt Terminal Wallet Reset</title>
+    <style>
+        body { 
+            background: black; 
+            color: #00ff00; 
+            font-family: monospace; 
+            padding: 20px;
+        }
+        .bookmarklet {
+            background: #001100;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .bookmarklet a {
+            color: #ffff00;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .instructions {
+            background: #000033;
+            border: 1px solid #0066ff;
+            color: #ffffff;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Krypt Terminal Wallet Reset</h1>
+    
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ol>
+            <li>Drag the bookmarklet below to your bookmarks bar</li>
+            <li>Go to kryptterminal.com</li>
+            <li>Click the bookmarklet in your bookmarks</li>
+            <li>Refresh the page</li>
+        </ol>
+    </div>
+    
+    <div class="bookmarklet">
+        <a href="javascript:(function(){localStorage.clear();sessionStorage.clear();if('indexedDB' in window){indexedDB.databases().then(databases=>{databases.forEach(db=>{indexedDB.deleteDatabase(db.name);});}).catch(console.error);}document.cookie.split(';').forEach(function(c){document.cookie=c.replace(/^ +/,'').replace(/=.*/,'=;expires=' + new Date().toUTCString() + ';path=/');});alert('✅ Wallet data cleared! Refresh the page for a fresh wallet.');})();">
+            🧹 CLEAR KRYPT WALLET
+        </a>
+    </div>
+    
+    <p>Or manually run this in the browser console on kryptterminal.com:</p>
+    <div style="background: #333; padding: 10px; border: 1px solid #666; margin: 10px 0; font-family: monospace; color: #fff;">
+        localStorage.clear();<br>
+        sessionStorage.clear();<br>
+        location.reload();
+    </div>
+    
+    <h3>Alternative: Manual Browser Clear</h3>
+    <p>If the bookmarklet doesn't work:</p>
+    <ol>
+        <li>Press F12 on kryptterminal.com</li>
+        <li>Go to Application/Storage tab</li>
+        <li>Clear Local Storage for kryptterminal.com</li>
+        <li>Refresh the page</li>
+    </ol>
+</body>
+</html>

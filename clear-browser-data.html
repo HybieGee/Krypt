@@ -45,11 +45,23 @@
             // Clear the specific Krypt Terminal localStorage
             localStorage.removeItem('krypt-terminal-storage');
             
-            // Clear all localStorage just to be safe
+            // Clear all possible storage locations
             localStorage.clear();
-            
-            // Clear sessionStorage too
             sessionStorage.clear();
+            
+            // Clear indexedDB if it exists
+            if ('indexedDB' in window) {
+                indexedDB.databases().then(databases => {
+                    databases.forEach(db => {
+                        indexedDB.deleteDatabase(db.name);
+                    });
+                }).catch(console.error);
+            }
+            
+            // Clear all cookies for current domain
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
             
             document.getElementById('result').innerHTML = `
                 ✅ <strong>All browser data cleared!</strong><br>
