@@ -90,6 +90,9 @@ export default {
     if (url.pathname === '/api/logs/sync' && request.method === 'POST') {
       return handleSyncLogs(request, env, corsHeaders)
     }
+    if (url.pathname === '/api/logs/clear' && request.method === 'POST') {
+      return handleClearLogs(env, jsonHeaders)
+    }
     if (url.pathname === '/api/typing' && request.method === 'GET') {
       return handleTyping(env, corsHeaders)
     }
@@ -1598,6 +1601,36 @@ async function handleEnterRaffle(request, env, corsHeaders) {
   } catch (error) {
     console.error('Enter raffle error:', error)
     return new Response(JSON.stringify({ error: 'Failed to enter raffle' }), {
+      status: 500,
+      headers: jsonHeaders
+    })
+  }
+}
+
+// ===== CLEAR DEVELOPMENT LOGS =====
+async function handleClearLogs(env, jsonHeaders) {
+  try {
+    // Clear logs from KV storage
+    await env.KRYPT_DATA.delete('development_logs')
+    
+    // Also clear any backup logs
+    await env.KRYPT_DATA.delete('development_logs_backup')
+    
+    console.log('✅ Development logs cleared from KV storage')
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Development logs cleared successfully' 
+    }), {
+      headers: jsonHeaders
+    })
+    
+  } catch (error) {
+    console.error('❌ Error clearing logs:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
       status: 500,
       headers: jsonHeaders
     })
