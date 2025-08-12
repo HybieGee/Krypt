@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || window.location.origin + '/api'
+// Separate endpoints for different data sources
+const CLOUDFLARE_API_URL = window.location.origin + '/api' // For progress, visitor count, stats
+const VERCEL_API_URL = 'https://crypto-ai-ten.vercel.app/api' // For logs, development activity
 
 export interface ProgressData {
   currentPhase: number
@@ -41,7 +43,7 @@ class ApiService {
   }
 
   async getProgress(): Promise<ProgressData> {
-    const response = await fetch(`${API_BASE_URL}/progress`)
+    const response = await fetch(`${CLOUDFLARE_API_URL}/progress`)
     if (!response.ok) {
       throw new Error(`Failed to fetch progress: ${response.statusText}`)
     }
@@ -49,7 +51,7 @@ class ApiService {
   }
 
   async getLogs(limit: number = 50): Promise<LogEntry[]> {
-    const response = await fetch(`${API_BASE_URL}/logs?limit=${limit}`)
+    const response = await fetch(`${VERCEL_API_URL}/logs?limit=${limit}`)
     if (!response.ok) {
       throw new Error(`Failed to fetch logs: ${response.statusText}`)
     }
@@ -57,7 +59,7 @@ class ApiService {
   }
 
   async getStats(): Promise<StatsData> {
-    const response = await fetch(`${API_BASE_URL}/stats`)
+    const response = await fetch(`${CLOUDFLARE_API_URL}/stats`)
     if (!response.ok) {
       throw new Error(`Failed to fetch stats: ${response.statusText}`)
     }
@@ -80,7 +82,7 @@ class ApiService {
   }
 
   async getTyping(): Promise<{ text: string; isActive: boolean; currentComponent: number; phase: number }> {
-    const response = await fetch(`${API_BASE_URL}/typing`)
+    const response = await fetch(`${VERCEL_API_URL}/typing`)
     if (!response.ok) {
       throw new Error(`Failed to fetch typing: ${response.statusText}`)
     }
@@ -88,7 +90,7 @@ class ApiService {
   }
 
   async updateUserBalance(walletAddress: string, balance: number): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/user/balance`, {
+    const response = await fetch(`${CLOUDFLARE_API_URL}/user/balance`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -103,7 +105,7 @@ class ApiService {
   }
 
   async getLeaderboard(): Promise<Array<{ address: string; balance: number }>> {
-    const response = await fetch(`${API_BASE_URL}/leaderboard`)
+    const response = await fetch(`${CLOUDFLARE_API_URL}/leaderboard`)
     if (!response.ok) {
       throw new Error(`Failed to fetch leaderboard: ${response.statusText}`)
     }

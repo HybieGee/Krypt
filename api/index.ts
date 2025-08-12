@@ -131,7 +131,7 @@ async function developNextComponent() {
     timestamp: new Date().toISOString(),
     type: 'api',
     message: `🔄 Sending request to Krypt AI...`,
-    details: { endpoint: 'anthropic.messages.create' }
+    details: { endpoint: 'krypt.ai.generate' }
   })
 
   try {
@@ -244,22 +244,7 @@ async function developNextComponent() {
       developmentLogs = developmentLogs.slice(-50)
     }
     
-    // Send ALL logs to Cloudflare Worker to ensure sync
-    if (developmentLogs.length > 0) {
-      try {
-        await fetch('https://kryptterminal.com/api/logs/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            logs: developmentLogs,
-            apiKey: 'krypt_api_key_2024'
-          })
-        })
-        console.log(`Synced ${developmentLogs.length} logs to Cloudflare`)
-      } catch (err) {
-        console.error('Failed to sync logs to Cloudflare:', err)
-      }
-    }
+    // Logs are served directly from this API - no sync needed
 
   } catch (error) {
     console.error('Development error:', error)
