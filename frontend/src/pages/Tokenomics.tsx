@@ -138,15 +138,27 @@ export default function Tokenomics() {
                   ))}
                 </div>
 
-                {/* Circular Progress Chart */}
+                {/* Enhanced Donut Chart */}
                 <div className="flex flex-col items-center justify-center">
                   <div className="relative w-80 h-80">
-                    <svg viewBox="0 0 200 200" className="w-full h-full transform -rotate-90">
+                    <svg viewBox="0 0 200 200" className="w-full h-full">
+                      {/* Background circle */}
+                      <circle
+                        cx="100"
+                        cy="100"
+                        r="75"
+                        fill="transparent"
+                        stroke="#374151"
+                        strokeWidth="25"
+                        className="opacity-20"
+                      />
+                      
+                      {/* Data segments */}
                       {tokenDistribution.map((segment, index) => {
                         const previousPercentages = tokenDistribution.slice(0, index).reduce((sum, s) => sum + s.percentage, 0)
-                        const circumference = 2 * Math.PI * 80
+                        const circumference = 2 * Math.PI * 75
                         const strokeDasharray = (segment.percentage / 100) * circumference
-                        const strokeDashoffset = circumference - (previousPercentages / 100) * circumference
+                        const strokeDashoffset = -((previousPercentages / 100) * circumference)
                         
                         // Color mapping
                         const colorMap: { [key: string]: string } = {
@@ -160,36 +172,51 @@ export default function Tokenomics() {
                             key={segment.label}
                             cx="100"
                             cy="100"
-                            r="80"
+                            r="75"
                             fill="transparent"
                             stroke={colorMap[segment.color] || '#00ff41'}
-                            strokeWidth="20"
-                            strokeDasharray={`${strokeDasharray} ${circumference}`}
-                            strokeDashoffset={-strokeDashoffset}
-                            className="transition-all duration-300 hover:opacity-80"
+                            strokeWidth="25"
+                            strokeDasharray={`${strokeDasharray} ${circumference - strokeDasharray}`}
+                            strokeDashoffset={strokeDashoffset}
+                            className="transition-all duration-1000 ease-out hover:opacity-80"
+                            style={{
+                              filter: 'drop-shadow(0 0 6px rgba(0, 255, 65, 0.3))'
+                            }}
                           />
                         )
                       })}
+                      
+                      {/* Center content */}
+                      <text x="100" y="90" textAnchor="middle" className="fill-terminal-green text-2xl font-bold">1B</text>
+                      <text x="100" y="105" textAnchor="middle" className="fill-gray-400 text-xs">Total Supply</text>
+                      <text x="100" y="120" textAnchor="middle" className="fill-gray-500 text-xs">KRYPT Tokens</text>
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-terminal-green">1B</div>
-                        <div className="text-sm text-gray-400">Total Supply</div>
-                        <div className="text-xs text-gray-500 mt-1">KRYPT Memecoin</div>
-                      </div>
+                    
+                    {/* Legend with percentages */}
+                    <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex space-x-4 text-xs">
+                      {tokenDistribution.map((segment) => (
+                        <div key={segment.label} className="flex items-center space-x-1">
+                          <div className={`w-3 h-3 rounded-full ${segment.color}`}></div>
+                          <span className="text-gray-300">{segment.percentage}%</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
-                  <div className="mt-6 bg-black/50 p-4 rounded-lg">
-                    <h4 className="text-terminal-green font-semibold mb-2">Quick Stats</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-400">Community:</span>
-                        <span className="text-white ml-2">97%</span>
+                  <div className="mt-16 bg-black/50 p-4 rounded-lg w-full max-w-sm">
+                    <h4 className="text-terminal-green font-semibold mb-3 text-center">Distribution Breakdown</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Community Pool:</span>
+                        <span className="text-white font-medium">92%</span>
                       </div>
-                      <div>
-                        <span className="text-gray-400">Development:</span>
-                        <span className="text-white ml-2">3%</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Community Rewards:</span>
+                        <span className="text-purple-400 font-medium">5%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Development Fund:</span>
+                        <span className="text-red-400 font-medium">3%</span>
                       </div>
                     </div>
                   </div>
