@@ -68,13 +68,23 @@ export default function Header() {
               </Link>
               <Link
                 to="/docs"
-                className={`px-4 py-2 text-sm font-medium transition-all duration-200 rounded-r ${
+                className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-r border-terminal-green/30 ${
                   location.pathname === '/docs' 
                     ? 'text-terminal-bg bg-terminal-green' 
                     : 'text-terminal-green hover:bg-terminal-green/10'
                 }`}
               >
                 Docs
+              </Link>
+              <Link
+                to="/tokenomics"
+                className={`px-4 py-2 text-sm font-medium transition-all duration-200 rounded-r ${
+                  location.pathname === '/tokenomics' 
+                    ? 'text-terminal-bg bg-terminal-green' 
+                    : 'text-terminal-green hover:bg-terminal-green/10'
+                }`}
+              >
+                Tokenomics
               </Link>
             </div>
           </div>

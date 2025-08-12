@@ -195,9 +195,9 @@ export const useStore = create<StoreState>()(
           // Sort by timestamp to ensure proper chronological order
           const sortedLogs = allLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
           
-          // Keep only the most recent 100 logs to prevent memory issues
+          // Keep only the most recent 500 logs to prevent memory issues
           return {
-            terminalLogs: sortedLogs.slice(-100)
+            terminalLogs: sortedLogs.slice(-500)
           }
         }),
         setStats: (stats) => set((state) => {

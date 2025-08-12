@@ -6,6 +6,7 @@ import Documentation from './pages/Documentation'
 import Roadmap from './pages/Roadmap'
 import Tokens from './pages/Tokens'
 import Rewards from './pages/Rewards'
+import Tokenomics from './pages/Tokenomics'
 import { useStore } from './store/useStore'
 import ApiService from './services/api'
 import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
@@ -96,6 +97,7 @@ function App() {
           <Route path="rewards" element={<Rewards />} />
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="docs" element={<Documentation />} />
+          <Route path="tokenomics" element={<Tokenomics />} />
         </Route>
       </Routes>
     </Router>
