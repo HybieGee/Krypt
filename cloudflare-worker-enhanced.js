@@ -279,13 +279,31 @@ async function triggerDevelopment(env) {
     progress.commits++
     progress.lastUpdated = Date.now()
     
-    // Save updates with backup
-    await Promise.all([
-      env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
-      env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress)),
-      env.KRYPT_DATA.put('development_logs', JSON.stringify(logs)),
-      env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
-    ])
+    // Save updates with rate limiting protection
+    try {
+      await Promise.all([
+        env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
+        env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
+      ])
+      
+      // Backup saves with delay to avoid rate limiting
+      setTimeout(async () => {
+        try {
+          await Promise.all([
+            env.KRYPT_DATA.put('development_progress_backup', JSON.stringify(progress)),
+            env.KRYPT_DATA.put('development_logs_backup', JSON.stringify(logs))
+          ])
+        } catch (backupError) {
+          console.warn('Backup save failed (non-critical):', backupError.message)
+        }
+      }, 1000)
+    } catch (error) {
+      if (error.message.includes('429')) {
+        console.warn('Rate limited, skipping this update cycle')
+        return { success: false, reason: 'Rate limited' }
+      }
+      throw error
+    }
     
     console.log(`✅ DEBUG: Saved ${logs.length} logs to KV storage`)
     

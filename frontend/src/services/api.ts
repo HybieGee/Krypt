@@ -188,19 +188,29 @@ class ApiService {
     this.isPolling = true
     
     const poll = async () => {
+      // Fetch each endpoint independently to avoid one failure breaking all
+      let progress, logs, stats
+      
       try {
-        const [progress, logs, stats] = await Promise.all([
-          this.getProgress(),
-          this.getLogs(100), // Get last 100 logs for better coverage
-          this.getStats()
-        ])
-        
+        progress = await this.getProgress()
         onProgress(progress)
+      } catch (error) {
+        console.error('Progress polling error:', error)
+      }
+      
+      try {
+        logs = await this.getLogs(100)
         onLogs(logs)
+      } catch (error) {
+        console.error('Logs polling error:', error)
+        // Don't break polling for logs errors
+      }
+      
+      try {
+        stats = await this.getStats()
         onStats(stats)
       } catch (error) {
-        console.error('Polling error:', error)
-        onError(error as Error)
+        console.error('Stats polling error:', error)
       }
     }
 
