@@ -222,11 +222,6 @@ async function triggerDevelopment(env) {
     progress.commits++
     progress.lastUpdated = Date.now()
     
-    // Keep only last 50 logs
-    if (logs.length > 50) {
-      logs.splice(0, logs.length - 50)
-    }
-    
     // Save updates
     await Promise.all([
       env.KRYPT_DATA.put('development_progress', JSON.stringify(progress)),
@@ -648,11 +643,6 @@ async function handleUpdateProgress(request, env, corsHeaders) {
         details: { components: progress.componentsCompleted }
       })
       
-      // Keep only last 50 logs
-      if (logs.length > 50) {
-        logs.splice(0, logs.length - 50)
-      }
-      
       await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
       logsCache = logs
       cacheTimestamps.logs = Date.now()
@@ -773,11 +763,6 @@ async function handleAddLog(request, env, corsHeaders) {
       message: log.message,
       details: log.details || {}
     })
-    
-    // Keep only last 50 logs
-    if (logs.length > 50) {
-      logs.splice(0, logs.length - 50)
-    }
     
     await env.KRYPT_DATA.put('development_logs', JSON.stringify(logs))
     logsCache = logs

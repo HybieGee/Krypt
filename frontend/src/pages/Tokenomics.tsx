@@ -162,7 +162,7 @@ export default function Tokenomics() {
                         
                         // Color mapping
                         const colorMap: { [key: string]: string } = {
-                          'bg-terminal-green': '#00ff41',
+                          'bg-terminal-green': '#22c55e',
                           'bg-cyan-400': '#22d3ee', 
                           'bg-orange-400': '#fb923c'
                         }
