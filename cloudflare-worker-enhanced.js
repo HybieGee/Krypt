@@ -12,12 +12,21 @@ const CACHE_TTL = 2000 // 2 seconds for faster updates
 // Development configuration
 const BLOCKCHAIN_COMPONENTS = 4500
 const DEVELOPMENT_INTERVAL = 15000 // 15 seconds between components
+let AUTO_INCREMENT_ENABLED = false // Set to true to enable auto-increment
 
 // No mock data - use real user balances only
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
+    
+    // Initialize auto-increment setting from KV storage
+    if (AUTO_INCREMENT_ENABLED === false) {
+      const storedSetting = await env.KRYPT_DATA.get('auto_increment_enabled')
+      if (storedSetting !== null) {
+        AUTO_INCREMENT_ENABLED = storedSetting === 'true'
+      }
+    }
     
     // CORS headers for all responses
     const corsHeaders = {
@@ -79,9 +88,19 @@ export default {
       return handleUpdateBalance(request, env, corsHeaders)
     }
 
-    // Leaderboard Routes - Returns mock data
+    // Leaderboard Routes - Returns real user data
     if (url.pathname === '/api/leaderboard' && request.method === 'GET') {
       return handleLeaderboard(env, corsHeaders)
+    }
+
+    // Toggle auto-increment
+    if (url.pathname === '/api/admin/toggle-auto-increment' && request.method === 'POST') {
+      return handleToggleAutoIncrement(request, env, corsHeaders)
+    }
+
+    // Manual progress update
+    if (url.pathname === '/api/admin/set-progress' && request.method === 'POST') {
+      return handleSetProgress(request, env, corsHeaders)
     }
 
     // Health check
@@ -96,6 +115,81 @@ export default {
     return new Response('Krypt Terminal API', { 
       status: 404,
       headers: corsHeaders 
+    })
+  }
+}
+
+// ===== ADMIN: TOGGLE AUTO-INCREMENT =====
+async function handleToggleAutoIncrement(request, env, corsHeaders) {
+  try {
+    const { adminKey, enabled } = await request.json()
+    
+    if (adminKey !== 'krypt_master_reset_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    AUTO_INCREMENT_ENABLED = enabled
+    
+    // Store the setting in KV for persistence
+    await env.KRYPT_DATA.put('auto_increment_enabled', enabled.toString())
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Auto-increment ${enabled ? 'enabled' : 'disabled'}`,
+      enabled: AUTO_INCREMENT_ENABLED
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Toggle auto-increment error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to toggle auto-increment' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ===== ADMIN: SET PROGRESS =====
+async function handleSetProgress(request, env, corsHeaders) {
+  try {
+    const { adminKey, componentsCompleted } = await request.json()
+    
+    if (adminKey !== 'krypt_master_reset_2024') {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    const progress = getDefaultProgress()
+    progress.componentsCompleted = Math.min(componentsCompleted, BLOCKCHAIN_COMPONENTS)
+    progress.percentComplete = (progress.componentsCompleted / BLOCKCHAIN_COMPONENTS) * 100
+    progress.currentPhase = Math.min(Math.floor(progress.componentsCompleted / 1125) + 1, 4)
+    progress.phaseProgress = ((progress.componentsCompleted % 1125) / 1125) * 100
+    progress.linesOfCode = progress.componentsCompleted * 78
+    progress.commits = progress.componentsCompleted
+    progress.testsRun = Math.floor(progress.componentsCompleted * 0.5)
+    progress.lastUpdated = Date.now()
+    
+    await env.KRYPT_DATA.put('development_progress', JSON.stringify(progress))
+    progressCache = progress
+    cacheTimestamps.progress = Date.now()
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Progress set to ${componentsCompleted} components`,
+      progress: progress
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
+  } catch (error) {
+    console.error('Set progress error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to set progress' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 }
@@ -360,12 +454,12 @@ async function handleProgressWithAutoIncrement(env, corsHeaders) {
   try {
     let progress = await getProgress(env)
     
-    // Auto-increment logic
+    // Auto-increment logic (only if enabled)
     const now = Date.now()
     const timeSinceLastUpdate = now - (progress.lastUpdated || now)
     
-    // If more than 15 seconds have passed, increment progress
-    if (timeSinceLastUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
+    // If auto-increment is enabled and more than 15 seconds have passed, increment progress
+    if (AUTO_INCREMENT_ENABLED && timeSinceLastUpdate > 15000 && progress.componentsCompleted < BLOCKCHAIN_COMPONENTS) {
       const incrementAmount = Math.floor(timeSinceLastUpdate / 15000)
       progress.componentsCompleted = Math.min(
         progress.componentsCompleted + incrementAmount,
@@ -573,6 +667,9 @@ async function handleLeaderboard(env, corsHeaders) {
       address: user.walletAddress.substring(0, 6) + '...' + user.walletAddress.slice(-4),
       balance: user.balance
     }))
+    
+    // Log for debugging
+    console.log(`Leaderboard: Found ${list.keys.length} users, ${leaderboard.length} with balance > 0`)
     
     return new Response(JSON.stringify(rankedLeaderboard), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

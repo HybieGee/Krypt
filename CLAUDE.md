@@ -50,14 +50,17 @@ Building a Web3 AI terminal website for Krypt Terminal - an AI agent specialized
 4. Reset progress only
 5. **NUCLEAR RESET** ☢️ (everything + visitor records)
 6. Add test user balance
-7. Exit
+7. **Toggle auto-increment** (ON/OFF for blockchain progress)
+8. **Set progress manually** (set specific component count)
+9. Exit
 
 ## **Key Features Working** ✅
 - **Early Access Users**: Real-time visitor tracking with cookie/fingerprint detection
-- **Development Stats**: Auto-incrementing progress (15s intervals)
-- **Top Holders**: Real user balances from wallet connections
+- **Development Stats**: Controllable progress (auto-increment can be toggled ON/OFF)
+- **Top Holders**: Real user balances from wallet connections (use test-leaderboard.bat to test)
 - **Blockchain Progress**: Live terminal display with 4500 components target
 - **Launch Reset**: Complete system reset capability
+- **Progress Control**: Admin can manually set progress or enable/disable auto-increment
 
 ## **Testing Approach**
 - **Real data only** - No fake/mock data in production
@@ -99,11 +102,11 @@ admin-commands.bat            # Windows admin panel
 ```
 
 ## **Latest Updates (Current Session)**
-- ✅ **Documentation Page Fully Updated** - Added comprehensive enterprise-grade details
-- ✅ **Nuclear Reset Functionality** - Complete system reset with visitor record clearing
-- ✅ **Performance Specs Documented** - 10K+ concurrent users, <10ms responses
-- ✅ **Security Architecture Detailed** - Multi-layer protection, database security
-- ✅ **Technical Credibility Enhanced** - Full transparency on load handling & infrastructure
+- ✅ **Auto-increment Control Added** - Can now toggle blockchain progress auto-increment ON/OFF
+- ✅ **Manual Progress Setting** - Admin can set specific component count
+- ✅ **Leaderboard Debug Logging** - Added logging to troubleshoot Top Holders
+- ✅ **Test Script Created** - `test-leaderboard.bat` for testing leaderboard functionality
+- ✅ **Auto-increment Persistence** - Setting saved in KV storage across worker restarts
 
 ## **Next Session Priorities**
 1. Final launch preparations and stress testing
