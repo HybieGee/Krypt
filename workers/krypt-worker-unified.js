@@ -323,6 +323,7 @@ async function handleEarlyAccessVisit(request, env) {
 
     // Set cookie if new visitor
     const response = new Response(JSON.stringify({ 
+      success: true,
       count: finalCount,
       visitorId: visitorId || generateVisitorId()
     }), { headers: JSON_HEADERS });
@@ -363,11 +364,38 @@ async function handleEarlyAccessStream(env) {
 // ===== PROGRESS HANDLERS =====
 async function handleGetProgress(env) {
   try {
-    const progress = await kvGetJSON(env, 'dev_progress', 0);
-    return new Response(JSON.stringify({ progress: Number(progress) }), { headers: JSON_HEADERS });
+    const componentsCompleted = await kvGetJSON(env, 'dev_progress', 0);
+    const totalComponents = parseInt(env.COMPONENTS_TOTAL) || 4500;
+    const currentPhase = Math.floor(componentsCompleted / 500) + 1;
+    const phaseProgress = (componentsCompleted % 500) / 500 * 100;
+    
+    // Get stats for additional metrics
+    const stats = await kvGetJSON(env, 'stats', {});
+    
+    const progressData = {
+      currentPhase,
+      phaseProgress,
+      componentsCompleted: Number(componentsCompleted),
+      totalComponents,
+      percentComplete: (componentsCompleted / totalComponents) * 100,
+      linesOfCode: stats.total_lines_of_code?.value || componentsCompleted * 45,
+      commits: stats.total_commits?.value || Math.floor(componentsCompleted / 10),
+      testsRun: stats.total_tests_run?.value || Math.floor(componentsCompleted / 5)
+    };
+    
+    return new Response(JSON.stringify(progressData), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Get progress error:', error);
-    return new Response(JSON.stringify({ progress: 0 }), { headers: JSON_HEADERS });
+    return new Response(JSON.stringify({
+      currentPhase: 1,
+      phaseProgress: 0,
+      componentsCompleted: 0,
+      totalComponents: 4500,
+      percentComplete: 0,
+      linesOfCode: 0,
+      commits: 0,
+      testsRun: 0
+    }), { headers: JSON_HEADERS });
   }
 }
 
@@ -413,10 +441,19 @@ async function handleGetLogs(env, url) {
     const limit = parseInt(url.searchParams.get('limit')) || logs.length;
     const limitedLogs = logs.slice(-limit);
     
-    return new Response(JSON.stringify({ logs: limitedLogs }), { headers: JSON_HEADERS });
+    // Convert internal format to expected format
+    const formattedLogs = limitedLogs.map(log => ({
+      id: log.id || `log-${log.ts}`,
+      timestamp: new Date(log.ts || Date.now()).toISOString(),
+      type: log.level || log.type || 'system',
+      message: log.msg || log.message || 'Development log entry',
+      details: log.details || null
+    }));
+    
+    return new Response(JSON.stringify(formattedLogs), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Get logs error:', error);
-    return new Response(JSON.stringify({ logs: [] }), { headers: JSON_HEADERS });
+    return new Response(JSON.stringify([]), { headers: JSON_HEADERS });
   }
 }
 

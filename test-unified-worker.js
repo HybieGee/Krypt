@@ -3,7 +3,7 @@
  * Tests all critical endpoints and ensures KV persistence works
  */
 
-const WORKER_BASE = 'https://krypt-terminal-unified.kimberly-92f.workers.dev';
+const WORKER_BASE = 'https://krypt-terminal-unified.stealthbundlebot.workers.dev';
 
 class WorkerTests {
   constructor() {
@@ -14,15 +14,18 @@ class WorkerTests {
 
   async test(name, testFn) {
     console.log(`\n🧪 Testing: ${name}`);
+    let testPassed = false;
     try {
       await testFn();
       console.log(`✅ PASS: ${name}`);
       this.passed++;
+      testPassed = true;
     } catch (error) {
       console.error(`❌ FAIL: ${name}`, error.message);
       this.failed++;
+      testPassed = false;
     }
-    this.tests.push({ name, passed: !error });
+    this.tests.push({ name, passed: testPassed });
   }
 
   async fetch(endpoint, options = {}) {
@@ -141,11 +144,21 @@ class WorkerTests {
     await this.test('Raffle Entry', async () => {
       const testAddress = '0xraffle' + Date.now();
       
-      const result = await this.fetch('/api/raffle/enter', {
+      // First create a user with balance
+      await this.fetch('/api/user/balance', {
         method: 'POST',
         body: JSON.stringify({
           address: testAddress,
-          amount: 100
+          balance: 1000
+        })
+      });
+      
+      const result = await this.fetch('/api/raffle/enter', {
+        method: 'POST',
+        body: JSON.stringify({
+          walletAddress: testAddress,
+          raffleType: 'test_raffle',
+          ticketCost: 1
         })
       });
       
