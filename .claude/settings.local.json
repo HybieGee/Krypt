@@ -31,7 +31,8 @@
       "Bash(start kickstart-development.html)",
       "Bash(start fix-kv-namespaces.html)",
       "Bash(start raffle-admin.html)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(timeout:*)"
     ],
     "deny": []
   }

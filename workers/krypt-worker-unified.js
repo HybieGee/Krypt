@@ -210,6 +210,8 @@ export default {
           return handleAdminInitialize(env);
         case url.pathname === '/api/nuclear-reset-check' && request.method === 'GET':
           return handleNuclearResetCheck(env);
+        case url.pathname === '/api/admin/clean-test-wallets' && request.method === 'POST':
+          return handleCleanTestWallets(env);
 
         default:
           return new Response(JSON.stringify({ error: 'Not found' }), { 
@@ -820,7 +822,6 @@ async function generateNextComponent(env) {
     });
     
     // 6. Final completion with code snippet
-    const shortCodeSnippet = generateShortCodeSnippet(componentName);
     const actualLineCount = codeSnippet.split('\n').length;
     developmentLogs.push({
       id: `comp-${currentProgress}-${baseTime}`,
@@ -833,8 +834,8 @@ async function generateNextComponent(env) {
         totalComponents: 4500,
         linesAdded: actualLineCount, // Use actual line count
         commitHash,
-        snippet: shortCodeSnippet, // For terminal display
-        code: codeSnippet // Full code for development logs
+        // Only send full code - frontend will show first 8 lines in Live View
+        code: codeSnippet // Full code for both views
       }
     });
     
@@ -937,52 +938,6 @@ function getComponentName(index) {
   return names[index % names.length] + (index >= names.length ? `_v${Math.floor(index / names.length) + 1}` : '');
 }
 
-function generateShortCodeSnippet(componentName) {
-  const snippets = [
-    `class ${componentName} {
-  constructor(config) {
-    this.config = config;
-    this.initialized = false;
-  }
-  
-  async initialize() {
-    // Implementation here
-    this.initialized = true;
-  }
-}`,
-    `const ${componentName} = {
-  async process(data) {
-    const validated = await this.validate(data);
-    return this.transform(validated);
-  }
-};`,
-    `interface I${componentName} {
-  id: string;
-  timestamp: number;
-  data: any;
-}
-
-export class ${componentName} implements I${componentName} {
-  constructor(id: string) {
-    this.id = id;
-    this.timestamp = Date.now();
-  }
-}`,
-    `export default class ${componentName} {
-  private state: Map<string, any> = new Map();
-  
-  setState(key: string, value: any): void {
-    this.state.set(key, value);
-  }
-  
-  getState(key: string): any {
-    return this.state.get(key);
-  }
-}`
-  ];
-  
-  return snippets[Math.floor(Math.random() * snippets.length)];
-}
 
 function generateCodeSnippet(componentName) {
   const templates = [
@@ -1181,7 +1136,10 @@ class ConfigurationError extends Error {
 // ===== USER & LEADERBOARD HANDLERS =====
 async function handleUpdateUserBalance(request, env) {
   try {
-    const { address, balance } = await request.json();
+    const body = await request.json();
+    // Support both 'address' and 'walletAddress' for backward compatibility
+    const address = body.address || body.walletAddress;
+    const balance = body.balance;
     
     if (!address || typeof balance !== 'number') {
       return new Response(JSON.stringify({ 
@@ -1191,6 +1149,28 @@ async function handleUpdateUserBalance(request, env) {
     }
 
     const normalizedAddress = address.toLowerCase();
+    
+    // Filter out test/fake wallets - reject if they match test patterns
+    const testPatterns = [
+      '0x1234567890abcdef1234567890abcdef12345678',
+      '0xabcdef1234567890abcdef1234567890abcdef12', 
+      '0x9876543210fedcba9876543210fedcba98765432',
+      '0xtest',
+      '0xraffle',
+      '0xfake'
+    ];
+    
+    const isTestWallet = testPatterns.some(pattern => 
+      normalizedAddress.startsWith(pattern.toLowerCase())
+    );
+    
+    if (isTestWallet) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Test wallets not allowed in production leaderboard' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
     const userKey = `user:${normalizedAddress}`;
     
     const userData = {
@@ -1219,10 +1199,27 @@ async function handleGetLeaderboard(env) {
     const listResult = await env.KRYPT_DATA.list({ prefix: 'user:' });
     const users = [];
     
+    // Test patterns to filter out
+    const testPatterns = [
+      '0x1234567890abcdef1234567890abcdef12345678',
+      '0xabcdef1234567890abcdef1234567890abcdef12', 
+      '0x9876543210fedcba9876543210fedcba98765432',
+      '0xtest',
+      '0xraffle',
+      '0xfake'
+    ];
+    
     for (const key of listResult.keys) {
       const userData = await kvGetJSON(env, key.name, null);
       if (userData && userData.balance > 0) {
-        users.push(userData);
+        // Filter out test/fake wallets
+        const isTestWallet = testPatterns.some(pattern => 
+          userData.address.toLowerCase().startsWith(pattern.toLowerCase())
+        );
+        
+        if (!isTestWallet) {
+          users.push(userData);
+        }
       }
     }
     
@@ -1576,6 +1573,48 @@ async function handleNuclearResetCheck(env) {
       status: 500, 
       headers: JSON_HEADERS 
     });
+  }
+}
+
+async function handleCleanTestWallets(env) {
+  try {
+    const testPatterns = [
+      '0x1234567890abcdef1234567890abcdef12345678',
+      '0xabcdef1234567890abcdef1234567890abcdef12', 
+      '0x9876543210fedcba9876543210fedcba98765432',
+      '0xtest',
+      '0xraffle',
+      '0xfake'
+    ];
+    
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'user:' });
+    let deletedCount = 0;
+    
+    for (const key of listResult.keys) {
+      const userData = await kvGetJSON(env, key.name, null);
+      if (userData && userData.address) {
+        const isTestWallet = testPatterns.some(pattern => 
+          userData.address.toLowerCase().startsWith(pattern.toLowerCase())
+        );
+        
+        if (isTestWallet) {
+          await env.KRYPT_DATA.delete(key.name);
+          deletedCount++;
+        }
+      }
+    }
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      deletedCount, 
+      message: `Cleaned ${deletedCount} test wallets from leaderboard` 
+    }), { headers: JSON_HEADERS });
+  } catch (error) {
+    console.error('Clean test wallets error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to clean test wallets' 
+    }), { status: 500, headers: JSON_HEADERS });
   }
 }
 
