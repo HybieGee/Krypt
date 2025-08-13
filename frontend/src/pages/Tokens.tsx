@@ -323,16 +323,32 @@ export default function Tokens() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Custom Notification */}
+      {/* Custom Notification - Maximum z-index */}
       {notification && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 max-w-md">
-          <div className={`p-4 rounded-lg border-2 ${
-            notification.type === 'success' 
-              ? 'bg-terminal-green/10 border-terminal-green text-terminal-green' 
-              : notification.type === 'warning'
-              ? 'bg-yellow-400/10 border-yellow-400 text-yellow-400'
-              : 'bg-red-400/10 border-red-400 text-red-400'
-          }`}>
+        <div 
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-md"
+          style={{ 
+            zIndex: 2147483647,
+            pointerEvents: 'auto'
+          }}
+        >
+          <div 
+            className={`p-4 rounded-lg border-2 shadow-2xl ${
+              notification.type === 'success' 
+                ? 'bg-black border-terminal-green text-terminal-green' 
+                : notification.type === 'warning'
+                ? 'bg-black border-yellow-400 text-yellow-400'
+                : 'bg-black border-red-400 text-red-400'
+            }`}
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.98)',
+              boxShadow: notification.type === 'success' 
+                ? '0 0 50px rgba(0, 255, 0, 0.8), 0 0 100px rgba(0, 0, 0, 0.9)'
+                : '0 0 50px rgba(255, 255, 0, 0.8), 0 0 100px rgba(0, 0, 0, 0.9)',
+              position: 'relative',
+              zIndex: 2147483647
+            }}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium">{notification.message}</p>
