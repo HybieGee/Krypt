@@ -94,11 +94,7 @@ export default function Rewards() {
     checkMilestones()
   }, [user?.walletAddress, statistics.earlyAccessUsers])
 
-  // Generate raffle tickets based on user activity
-  useEffect(() => {
-    const tickets = Math.floor(userScore.totalScore / 100) + (user?.raffleTickets || 0)
-    setRaffleTickets(tickets)
-  }, [userScore.totalScore, user?.raffleTickets])
+  // Note: Raffle tickets now fetched from backend in loadRaffleData()
 
   // Load raffle entries and status
   const loadRaffleData = async () => {
@@ -106,12 +102,17 @@ export default function Rewards() {
     
     const apiService = ApiService.getInstance()
     try {
-      const [entries, status] = await Promise.all([
+      const [entries, status, tickets] = await Promise.all([
         apiService.getRaffleEntries(user.walletAddress),
-        apiService.getRaffleStatus()
+        apiService.getRaffleStatus(),
+        apiService.getUserTickets(user.walletAddress)
       ])
+      console.log('Raffle entries:', entries)
+      console.log('Raffle status:', status)
+      console.log('User tickets:', tickets)
       setRaffleEntries(entries || [])
       setRaffleStatus(status || {})
+      setRaffleTickets(tickets.availableTickets || 0)
     } catch (error) {
       console.error('Failed to fetch raffle data:', error)
     }

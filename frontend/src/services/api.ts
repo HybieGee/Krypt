@@ -258,6 +258,14 @@ class ApiService {
     return response.json()
   }
 
+  async getUserTickets(walletAddress: string): Promise<{ availableTickets: number; totalTickets: number; usedTickets: number }> {
+    const response = await fetch(`${API_BASE_URL}/user/raffle-tickets?walletAddress=${walletAddress}`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user tickets: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,
