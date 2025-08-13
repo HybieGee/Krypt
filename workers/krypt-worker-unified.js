@@ -322,6 +322,12 @@ export default {
         case url.pathname === '/api/development/seed' && request.method === 'POST':
           return handleSeedDevelopment(env);
 
+        // Chat endpoints
+        case url.pathname === '/api/chat/messages' && request.method === 'GET':
+          return handleGetChatMessages(env);
+        case url.pathname === '/api/chat/send' && request.method === 'POST':
+          return handleSendChatMessage(request, env);
+
         // User & Leaderboard endpoints
         case url.pathname === '/api/user/balance' && request.method === 'POST':
           return handleUpdateUserBalance(request, env);
@@ -2635,6 +2641,7 @@ async function handleAdminClearVisitors(env) {
     await kvPutJSON(env, 'dev_progress', 0);
     await kvPutJSON(env, 'dev_logs', []);
     await kvPutJSON(env, 'dev_code', []);
+    await kvPutJSON(env, 'chat_messages', []);
     await kvPutJSON(env, 'early_access_count', 0);
     await kvPutJSON(env, 'total_users', 0);
     await kvPutJSON(env, 'total_lines_of_code', 0);
@@ -2884,5 +2891,77 @@ async function automaticRaffleDraw(env, raffleType, prizeAmount) {
     console.log(`🎉 ${raffleType} raffle drawn! Winner: ${winner.walletAddress}, Prize: ${prizeAmount} KRYPT`);
   } catch (error) {
     console.error(`Automatic ${raffleType} raffle draw error:`, error);
+  }
+}
+
+// ===== CHAT HANDLERS =====
+async function handleGetChatMessages(env) {
+  try {
+    const messages = await kvGetJSON(env, 'chat_messages', []);
+    // Return last 100 messages to prevent excessive data
+    const recentMessages = messages.slice(-100);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      messages: recentMessages
+    }), { headers: JSON_HEADERS });
+  } catch (error) {
+    console.error('Get chat messages error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Failed to get chat messages'
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleSendChatMessage(request, env) {
+  try {
+    const { message, username, walletAddress } = await request.json();
+    
+    if (!message || !message.trim()) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Message cannot be empty'
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    // Basic profanity filter and length limit
+    if (message.length > 500) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Message too long (max 500 characters)'
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    const chatMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      message: message.trim(),
+      username: username || 'Anonymous',
+      walletAddress: walletAddress || null,
+      timestamp: new Date().toISOString(),
+      type: 'user'
+    };
+    
+    // Get existing messages and add new one
+    const messages = await kvGetJSON(env, 'chat_messages', []);
+    messages.push(chatMessage);
+    
+    // Keep only last 1000 messages to prevent storage bloat
+    if (messages.length > 1000) {
+      messages.splice(0, messages.length - 1000);
+    }
+    
+    await kvPutJSON(env, 'chat_messages', messages);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: chatMessage
+    }), { headers: JSON_HEADERS });
+  } catch (error) {
+    console.error('Send chat message error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Failed to send message'
+    }), { status: 500, headers: JSON_HEADERS });
   }
 }

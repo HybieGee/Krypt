@@ -75,6 +75,7 @@ echo =============================================
 echo This will reset EVERYTHING:
 echo - Development progress (back to 0 components)
 echo - Development logs (all cleared)
+echo - Chat messages (global chat cleared)
 echo - Early Access Users count (back to 0)
 echo - ALL visitor records (everyone becomes new)
 echo - ALL wallet balances ^& data (completely wiped)

@@ -298,6 +298,32 @@ class ApiService {
     return result
   }
 
+  async getChatMessages(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/chat/messages`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chat messages: ${response.statusText}`)
+    }
+    const result = await response.json()
+    return result.success ? result.messages : []
+  }
+
+  async sendChatMessage(message: string, username: string, walletAddress?: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/chat/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message, username, walletAddress })
+    })
+    
+    const result = await response.json()
+    
+    if (!response.ok) {
+      return { success: false, message: result.error || 'Failed to send message' }
+    }
+    return result
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,
