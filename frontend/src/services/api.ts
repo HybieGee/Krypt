@@ -56,6 +56,14 @@ class ApiService {
     return response.json()
   }
 
+  async getAllLogs(): Promise<LogEntry[]> {
+    const response = await fetch(`${API_BASE_URL}/logs`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch all logs: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   async getStats(): Promise<StatsData> {
     const response = await fetch(`${API_BASE_URL}/stats`)
     if (!response.ok) {
@@ -247,7 +255,7 @@ class ApiService {
       }
       
       try {
-        logs = await this.getLogs(100)
+        logs = await this.getAllLogs()
         onLogs(logs)
       } catch (error) {
         console.error('Logs polling error:', error)

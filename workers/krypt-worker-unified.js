@@ -1603,22 +1603,33 @@ async function handleGetStats(env) {
 // ===== ADMIN HANDLERS =====
 async function handleAdminResetAll(env) {
   try {
-    const keysToReset = [
-      'dev_progress', 'dev_logs', 'dev_code', 'early_access_count', 'last_dev_tick'
-    ];
+    // Get all keys from KRYPT_DATA to delete everything
+    const allDataResult = await env.KRYPT_DATA.list();
+    const allEarlyAccessResult = await env.EARLY_ACCESS.list();
     
+    console.log(`🗑️ Nuclear reset: Deleting ${allDataResult.keys.length} KRYPT_DATA keys and ${allEarlyAccessResult.keys.length} EARLY_ACCESS keys`);
+    
+    // Delete ALL data from both namespaces for complete fresh start
     await Promise.all([
-      ...keysToReset.map(key => env.KRYPT_DATA.delete(key)),
-      // Clear visitor dedup from EARLY_ACCESS namespace
-      env.EARLY_ACCESS.list().then(result => 
-        Promise.all(result.keys.map(key => env.EARLY_ACCESS.delete(key.name)))
-      )
+      // Delete all KRYPT_DATA keys (progress, logs, users, fingerprints, etc.)
+      ...allDataResult.keys.map(key => env.KRYPT_DATA.delete(key.name)),
+      // Delete all EARLY_ACCESS keys (visitor dedup, etc.)
+      ...allEarlyAccessResult.keys.map(key => env.EARLY_ACCESS.delete(key.name))
     ]);
     
-    // Reinitialize
+    // Reinitialize fresh system
     await initializeSystemIfNeeded(env);
     
-    return new Response(JSON.stringify({ success: true }), { headers: JSON_HEADERS });
+    console.log('✅ Nuclear reset complete: All data wiped, system reinitialized');
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Nuclear reset complete - all data wiped for fresh launch',
+      deletedKeys: {
+        kryptData: allDataResult.keys.length,
+        earlyAccess: allEarlyAccessResult.keys.length
+      }
+    }), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Admin reset all error:', error);
     return new Response(JSON.stringify({ 
