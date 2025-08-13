@@ -341,14 +341,10 @@ class ApiService {
     this.isPolling = true
     
     const poll = async () => {
-      // First trigger development tick for real-time component generation
-      try {
-        await this.triggerDevelopmentTick()
-      } catch (error) {
-        console.error('Development tick error:', error)
-      }
+      // Real autonomous development is handled by Cloudflare Worker cron job
+      // No need to trigger manually - just fetch the latest data
       
-      // Then fetch all data
+      // Fetch all data
       let progress, logs, stats
       
       try {

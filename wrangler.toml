@@ -31,3 +31,6 @@ new_classes = ["ChatRoom"]
 [vars]
 DEVELOPMENT_MODE = "production"
 COMPONENTS_TOTAL = "4500"
+
+# Secrets (use 'wrangler secret put CLAUDE_API_KEY' to set)
+# CLAUDE_API_KEY will be set as a secret, not in this file
