@@ -12,6 +12,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Notification Portal - Must be at root level -->
+    <div id="notification-portal" style="
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      pointer-events: none !important;
+      z-index: 2147483647 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    "></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
       // Global wallet reset function for debugging

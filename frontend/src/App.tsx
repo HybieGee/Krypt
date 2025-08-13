@@ -48,30 +48,7 @@ function App() {
   // Initialize airdrop notifications
   const { pendingAirdrops, dismissAirdrop } = useAirdropNotifications()
 
-  // Create portal container for notifications
-  useEffect(() => {
-    const notificationPortal = document.createElement('div')
-    notificationPortal.id = 'notification-portal'
-    notificationPortal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 2147483647;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `
-    document.body.appendChild(notificationPortal)
-
-    return () => {
-      if (document.body.contains(notificationPortal)) {
-        document.body.removeChild(notificationPortal)
-      }
-    }
-  }, [])
+  // Portal element is now defined in index.html
 
 
   // Auto-create wallet for token functionality with persistent device fingerprinting
@@ -355,20 +332,27 @@ function App() {
         </Routes>
       </Router>
       
-      {/* Airdrop Notifications - Using React Portal for guaranteed top-level rendering */}
-      {pendingAirdrops.length > 0 && document.getElementById('notification-portal') && 
+      {/* Airdrop Notifications - Using React Portal to render at document body level */}
+      {pendingAirdrops.length > 0 &&
         createPortal(
-          <div className="space-y-4" style={{ pointerEvents: 'auto' }}>
+          <div 
+            className="space-y-4"
+            style={{ 
+              pointerEvents: 'auto',
+              position: 'relative',
+              zIndex: 2147483647
+            }}
+          >
             {pendingAirdrops.map((airdrop, index) => (
               <MilestoneNotification
                 key={airdrop.airdropId}
                 airdrop={airdrop}
                 onDismiss={dismissAirdrop}
-                delay={index * 200} // Stagger animations
+                delay={index * 200}
               />
             ))}
           </div>,
-          document.getElementById('notification-portal')!
+          document.getElementById('notification-portal') as HTMLElement
         )
       }
     </>

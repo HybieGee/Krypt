@@ -36,14 +36,32 @@ export default function MilestoneNotification({ airdrop, onDismiss, delay = 0 }:
 
   if (!isVisible) return null
 
+  useEffect(() => {
+    console.log('🔔 MilestoneNotification rendered:', airdrop.airdropId)
+  }, [])
+
   return (
-    <div className={`transition-all duration-300 transform pointer-events-auto ${
-      isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-    }`}>
+    <div 
+      className={`transition-all duration-300 transform pointer-events-auto ${
+        isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+      style={{
+        position: 'fixed',
+        zIndex: 2147483647,
+        top: '50%',
+        left: '50%',
+        transform: `translate(-50%, -50%) ${isAnimating ? 'translateX(0)' : 'translateX(100%)'}`,
+        pointerEvents: 'auto'
+      }}
+    >
       <div 
-        className="bg-black border-2 border-terminal-green shadow-2xl rounded-lg p-4 max-w-sm relative overflow-hidden" 
+        className="bg-black border-4 border-terminal-green shadow-2xl rounded-lg p-4 max-w-sm relative overflow-hidden" 
         style={{ 
           boxShadow: '0 0 50px rgba(0, 255, 0, 0.8), 0 0 100px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 255, 0, 0.2)',
+          position: 'relative',
+          zIndex: 2147483647,
+          backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          backdropFilter: 'blur(10px)'
         }}
       >
         {/* Animated background effect */}
