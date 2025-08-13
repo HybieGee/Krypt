@@ -343,8 +343,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 55 seconds to allow each component sequence to complete without interruption
-    this.pollInterval = setInterval(poll, 55000)
+    // Poll every 5 seconds to show progressive log messages in real-time
+    this.pollInterval = setInterval(poll, 5000)
   }
 
   stopPolling() {
