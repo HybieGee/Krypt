@@ -216,8 +216,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 1 second for very frequent stats updates (wallet-based tracking)
-    this.pollInterval = setInterval(poll, 1000)
+    // Poll every 2 seconds for rapid progress updates
+    this.pollInterval = setInterval(poll, 2000)
   }
 
   stopPolling() {

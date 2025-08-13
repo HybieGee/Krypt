@@ -3,7 +3,7 @@
 // No external dependencies - generates all 4500 components without stopping
 
 const BLOCKCHAIN_COMPONENTS = 4500
-const DEVELOPMENT_INTERVAL = 15000 // 15 seconds per component
+const DEVELOPMENT_INTERVAL = 5000 // 5 seconds per component (3x faster)
 const MAX_LOGS = 10000
 const CACHE_TTL = 2000
 

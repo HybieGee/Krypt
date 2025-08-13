@@ -2,7 +2,7 @@
 // Handles: Visitor Tracking, Development Progress, Logs, Leaderboard, User Balances
 
 // No in-memory caches - always read from KV for persistence across deployments
-const CACHE_TTL = 2000 // 2 seconds for faster updates
+const CACHE_TTL = 500 // Reduce cache to 0.5 seconds for faster updates // 2 seconds for faster updates
 
 // Keep cache variables as null to prevent errors but don't use them for persistence
 let progressCache = null
