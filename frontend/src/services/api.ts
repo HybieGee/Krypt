@@ -95,10 +95,13 @@ class ApiService {
     return response.json()
   }
 
-  async updateUserBalance(walletAddress: string, balance: number, mintedAmount?: number): Promise<any> {
+  async updateUserBalance(walletAddress: string, balance: number, mintedAmount?: number, stakedAmount?: number): Promise<any> {
     const payload: any = { walletAddress, balance }
     if (mintedAmount !== undefined) {
       payload.mintedAmount = mintedAmount
+    }
+    if (stakedAmount !== undefined) {
+      payload.stakedAmount = stakedAmount
     }
     
     const response = await fetch(`${API_BASE_URL}/user/balance`, {

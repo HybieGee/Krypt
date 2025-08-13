@@ -168,20 +168,40 @@ export default function Tokens() {
     
     setStakeStatus('loading')
     
-    // Simulate staking process
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
     if (user?.walletAddress) {
-      // Remove staked amount from balance
-      updateUserWallet(user.walletAddress, (user.balance || 0) - amount)
-      // Add new stake with correct daily return calculation
-      const dailyReturn = getDailyReturn(stakeDuration, amount)
-      addStake(amount, stakeDuration, dailyReturn)
-      setStakeAmount('')
-      setStakeStatus('success')
-      
-      // Reset success message after 4 seconds
-      setTimeout(() => setStakeStatus('idle'), 4000)
+      try {
+        // Calculate new amounts
+        const newBalance = (user.balance || 0) - amount
+        const currentStaked = user.stakes?.reduce((total, stake) => total + stake.amount, 0) || 0
+        const newStakedAmount = currentStaked + amount
+        
+        // Update backend with new balance and staked amount
+        const apiService = ApiService.getInstance()
+        await apiService.updateUserBalance(
+          user.walletAddress, 
+          newBalance,
+          user.mintedAmount, // Preserve existing minted amount
+          newStakedAmount     // Update staked amount
+        )
+        
+        // Update frontend state
+        updateUserWallet(user.walletAddress, newBalance)
+        const dailyReturn = getDailyReturn(stakeDuration, amount)
+        addStake(amount, stakeDuration, dailyReturn)
+        
+        setStakeAmount('')
+        setStakeStatus('success')
+        
+        console.log(`✅ Staking successful! Balance: ${newBalance}, Staked: ${newStakedAmount}`)
+        
+        // Reset success message after 4 seconds
+        setTimeout(() => setStakeStatus('idle'), 4000)
+        
+      } catch (error) {
+        console.error('Staking failed:', error)
+        showNotification('error', 'Failed to stake tokens. Please try again.')
+        setStakeStatus('idle')
+      }
     }
   }
 

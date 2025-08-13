@@ -1833,6 +1833,7 @@ async function handleUpdateUserBalance(request, env) {
     const address = body.address || body.walletAddress;
     const balance = body.balance;
     const mintedAmount = body.mintedAmount; // Optional field for minting tracking
+    const stakedAmount = body.stakedAmount; // Optional field for staking tracking
     
     if (!address || typeof balance !== 'number') {
       return new Response(JSON.stringify({ 
@@ -1887,6 +1888,7 @@ async function handleUpdateUserBalance(request, env) {
       address: normalizedAddress,
       balance: Math.max(0, balance),
       mintedAmount: mintedAmount !== undefined ? Math.max(0, mintedAmount) : (existingUser?.mintedAmount || 0),
+      stakedAmount: stakedAmount !== undefined ? Math.max(0, stakedAmount) : (existingUser?.stakedAmount || 0),
       firstSeen: existingUser?.firstSeen || Date.now(), // Track when user first registered
       lastUpdated: Date.now()
     };
@@ -1896,7 +1898,8 @@ async function handleUpdateUserBalance(request, env) {
     return new Response(JSON.stringify({ 
       success: true, 
       balance: userData.balance,
-      mintedAmount: userData.mintedAmount
+      mintedAmount: userData.mintedAmount,
+      stakedAmount: userData.stakedAmount
     }), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Update user balance error:', error);
