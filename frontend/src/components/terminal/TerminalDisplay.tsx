@@ -119,7 +119,7 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
       style={{
         scrollbarWidth: 'thin',
         scrollbarColor: '#00ff41 #1a1a1a',
-        minHeight: '384px',
+        minHeight: '100%',
         contain: 'layout style',
         willChange: 'scroll-position'
       }}
