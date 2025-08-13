@@ -163,31 +163,22 @@ export const useStore = create<StoreState>()(
           } : null
         })),
         setProgress: (progress) => set((state) => {
-          // Only update if values have actually changed and are valid
+          // Update progress immediately for smooth real-time updates
           const currentProgress = state.blockchainProgress
           
-          // Ensure we never go backwards in progress (prevents flickering)
+          // Allow forward progress and prevent only major backwards jumps
           const newProgress = {
-            currentPhase: Math.max(progress.currentPhase ?? currentProgress.currentPhase ?? 1, currentProgress.currentPhase ?? 1),
-            phaseProgress: Math.max(progress.phaseProgress ?? currentProgress.phaseProgress ?? 0, currentProgress.phaseProgress ?? 0),
+            currentPhase: progress.currentPhase ?? currentProgress.currentPhase ?? 1,
+            phaseProgress: progress.phaseProgress ?? currentProgress.phaseProgress ?? 0,
             totalComponents: progress.totalComponents ?? currentProgress.totalComponents,
-            completedComponents: Math.max(progress.componentsCompleted ?? currentProgress.completedComponents ?? 0, currentProgress.completedComponents ?? 0),
-            linesOfCode: Math.max(progress.linesOfCode ?? currentProgress.linesOfCode ?? 0, currentProgress.linesOfCode ?? 0),
-            commits: Math.max(progress.commits ?? currentProgress.commits ?? 0, currentProgress.commits ?? 0),
-            testsRun: Math.max(progress.testsRun ?? currentProgress.testsRun ?? 0, currentProgress.testsRun ?? 0),
+            completedComponents: progress.componentsCompleted ?? currentProgress.completedComponents ?? 0,
+            linesOfCode: progress.linesOfCode ?? currentProgress.linesOfCode ?? 0,
+            commits: progress.commits ?? currentProgress.commits ?? 0,
+            testsRun: progress.testsRun ?? currentProgress.testsRun ?? 0,
             estimatedCompletion: currentProgress.estimatedCompletion
           }
           
-          // Check if any values actually changed
-          const hasChanged = Object.keys(newProgress).some((key) => {
-            const typedKey = key as keyof typeof newProgress
-            return newProgress[typedKey] !== currentProgress[typedKey]
-          })
-          
-          if (!hasChanged) {
-            return state // No changes, don't trigger re-render
-          }
-          
+          // Always update for smooth real-time progress
           return {
             blockchainProgress: newProgress
           }

@@ -13,10 +13,10 @@ interface Props {
 }
 
 export default function ProgressBar({ progress }: Props) {
-  // Add safety checks to prevent glitches
-  const safeCompletedComponents = Math.max(0, progress.completedComponents || 0)
-  const safeTotalComponents = Math.max(1, progress.totalComponents || 4500)
-  const overallProgress = Math.min(100, Math.max(0, (safeCompletedComponents / safeTotalComponents) * 100))
+  // Direct calculation for smooth updates
+  const completedComponents = progress.completedComponents || 0
+  const totalComponents = progress.totalComponents || 4500
+  const overallProgress = (completedComponents / totalComponents) * 100
   const phases = ['Core Infrastructure', 'Consensus', 'Smart Contracts', 'Network']
 
   return (
@@ -28,7 +28,7 @@ export default function ProgressBar({ progress }: Props) {
         </div>
         <div className="h-4 bg-terminal-gray border border-terminal-green/30 rounded overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-terminal-green to-terminal-dark-green transition-all duration-500"
+            className="h-full bg-gradient-to-r from-terminal-green to-terminal-dark-green transition-all duration-150"
             style={{ width: `${overallProgress}%` }}
           >
             <div className="h-full bg-white/20 animate-pulse" />
@@ -39,11 +39,11 @@ export default function ProgressBar({ progress }: Props) {
       <div className="grid grid-cols-4 gap-2">
         {phases.map((phase, index) => {
           const phaseNumber = index + 1
-          const currentPhase = Math.max(1, progress.currentPhase || 1)
+          const currentPhase = progress.currentPhase || 1
           const isActive = currentPhase === phaseNumber
           const isCompleted = currentPhase > phaseNumber
-          const safePhaseProgress = Math.min(100, Math.max(0, progress.phaseProgress || 0))
-          const phasePercent = isActive ? safePhaseProgress : isCompleted ? 100 : 0
+          const phaseProgress = progress.phaseProgress || 0
+          const phasePercent = isActive ? phaseProgress : isCompleted ? 100 : 0
 
           return (
             <div key={phase} className="text-center">
@@ -56,7 +56,7 @@ export default function ProgressBar({ progress }: Props) {
               </div>
               <div className="h-2 bg-terminal-gray border border-terminal-green/30 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full transition-all duration-500 ${
+                  className={`h-full transition-all duration-150 ${
                     isActive ? 'bg-terminal-green animate-pulse' :
                     isCompleted ? 'bg-terminal-dark-green' :
                     'bg-transparent'
@@ -82,19 +82,19 @@ export default function ProgressBar({ progress }: Props) {
         <div className="grid grid-cols-3 gap-3 mt-2">
           <div className="text-center">
             <div className="text-terminal-green text-sm font-bold">
-              {Math.max(0, progress.linesOfCode || 0).toLocaleString()}
+              {(progress.linesOfCode || 0).toLocaleString()}
             </div>
             <div className="text-terminal-green/60 text-[10px]">Lines of Code</div>
           </div>
           <div className="text-center">
             <div className="text-terminal-green text-sm font-bold">
-              {Math.max(0, progress.commits || 0).toLocaleString()}
+              {(progress.commits || 0).toLocaleString()}
             </div>
             <div className="text-terminal-green/60 text-[10px]">Commits</div>
           </div>
           <div className="text-center">
             <div className="text-terminal-green text-sm font-bold">
-              {Math.max(0, progress.testsRun || 0).toLocaleString()}
+              {(progress.testsRun || 0).toLocaleString()}
             </div>
             <div className="text-terminal-green/60 text-[10px]">Tests Run</div>
           </div>
