@@ -75,6 +75,10 @@ export default {
       return handleForceDevelopment(env, jsonHeaders)
     }
 
+    if (url.pathname === '/api/development/tick' && request.method === 'POST') {
+      return handleDevelopmentTick(env, jsonHeaders)
+    }
+
     if (url.pathname === '/api/logs/clear' && request.method === 'POST') {
       return handleClearLogs(env, jsonHeaders)
     }
@@ -124,22 +128,24 @@ async function continuousDevelopment(env) {
   try {
     const progress = await getProgress(env)
     
-    // Check if we should develop (every 15 seconds)
-    const timeSinceLastUpdate = Date.now() - (progress.lastUpdated || 0)
-    const shouldDevelop = timeSinceLastUpdate >= DEVELOPMENT_INTERVAL
-    
-    if (!shouldDevelop) {
-      console.log(`⏳ Waiting... ${Math.ceil((DEVELOPMENT_INTERVAL - timeSinceLastUpdate) / 1000)}s until next component`)
-      return
-    }
-    
     // Stop if we've completed all components
     if (progress.componentsCompleted >= BLOCKCHAIN_COMPONENTS) {
       console.log('✅ All 4500 components completed!')
       return
     }
     
-    // Generate next component
+    // Check if enough time has passed since last update
+    const timeSinceLastUpdate = Date.now() - (progress.lastUpdated || 0)
+    const shouldGenerate = timeSinceLastUpdate >= DEVELOPMENT_INTERVAL
+    
+    if (!shouldGenerate) {
+      console.log(`⏳ Not time yet. ${Math.ceil((DEVELOPMENT_INTERVAL - timeSinceLastUpdate) / 1000)}s remaining`)
+      return
+    }
+    
+    console.log(`🚀 Generating component (${Math.floor(timeSinceLastUpdate / 1000)}s since last)`)
+    
+    // Generate exactly ONE component with real timestamp
     await generateNextComponent(env, progress)
     
   } catch (error) {
@@ -491,6 +497,48 @@ async function handleDevelopmentStatus(env, headers) {
       status: 500, 
       headers 
     })
+  }
+}
+
+async function handleDevelopmentTick(env, headers) {
+  try {
+    const progress = await getProgress(env)
+    
+    if (progress.componentsCompleted >= BLOCKCHAIN_COMPONENTS) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'All components completed',
+        shouldStop: true
+      }), { headers })
+    }
+
+    // Check if 15 seconds have passed
+    const timeSinceLastUpdate = Date.now() - (progress.lastUpdated || 0)
+    if (timeSinceLastUpdate < DEVELOPMENT_INTERVAL) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Not time yet',
+        secondsRemaining: Math.ceil((DEVELOPMENT_INTERVAL - timeSinceLastUpdate) / 1000)
+      }), { headers })
+    }
+
+    // Generate component
+    await generateNextComponent(env, progress)
+    const updatedProgress = await getProgress(env)
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Component generated',
+      component: getComponentName(progress.componentsCompleted),
+      progress: updatedProgress
+    }), { headers })
+
+  } catch (error) {
+    console.error('Development tick error:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: error.message 
+    }), { headers })
   }
 }
 

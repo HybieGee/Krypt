@@ -177,6 +177,17 @@ class ApiService {
     return response.json()
   }
 
+  async triggerDevelopmentTick(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/development/tick`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (!response.ok) {
+      throw new Error(`Failed to trigger development tick: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,
@@ -187,7 +198,14 @@ class ApiService {
     this.isPolling = true
     
     const poll = async () => {
-      // Fetch each endpoint independently to avoid one failure breaking all
+      // First trigger development tick for real-time component generation
+      try {
+        await this.triggerDevelopmentTick()
+      } catch (error) {
+        console.error('Development tick error:', error)
+      }
+      
+      // Then fetch all data
       let progress, logs, stats
       
       try {
@@ -202,7 +220,6 @@ class ApiService {
         onLogs(logs)
       } catch (error) {
         console.error('Logs polling error:', error)
-        // Don't break polling for logs errors
       }
       
       try {
@@ -216,8 +233,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 1 second for smooth real-time updates
-    this.pollInterval = setInterval(poll, 1000)
+    // Poll every 15 seconds for REAL 15-second component generation
+    this.pollInterval = setInterval(poll, 15000)
   }
 
   stopPolling() {

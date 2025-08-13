@@ -5,13 +5,13 @@ compatibility_date = "2024-01-01"
 # KV Namespaces
 [[kv_namespaces]]
 binding = "KRYPT_DATA"
-id = "YOUR_KRYPT_DATA_NAMESPACE_ID"
+id = "1cfdd55d3f4b4b8f972d54ca074b1da9"
 
 [[kv_namespaces]]
 binding = "EARLY_ACCESS"
-id = "YOUR_EARLY_ACCESS_NAMESPACE_ID"
+id = "b465f2964e3d4fb2ad7cd164dee8a343"
 
-# Cron Triggers - Run every minute to check if 15 seconds have passed
+# Cron Triggers - Run every minute, generate 4 components with spread timestamps
 [triggers]
 crons = ["* * * * *"]
 

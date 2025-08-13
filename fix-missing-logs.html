@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Fix Missing Development Logs</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .issue { color: #ff4444; background: #330000; padding: 15px; border: 2px solid #ff4444; margin: 20px 0; }
+        .success { color: #44ff44; background: #003300; padding: 15px; border: 2px solid #44ff44; margin: 20px 0; }
+        .warning { color: #ffaa00; background: #332200; padding: 15px; border: 2px solid #ffaa00; margin: 20px 0; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        .diagnose { background: #4444ff; color: white; }
+        .fix { background: #00ff41; color: #000; font-weight: bold; }
+        .force { background: #ff4444; color: white; font-weight: bold; }
+        pre { background: #000; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 FIX MISSING DEVELOPMENT LOGS</h1>
+    
+    <div class="issue">
+        <h2>🚨 ISSUES DETECTED</h2>
+        <p><strong>1. No development logs showing in terminal</strong></p>
+        <p><strong>2. Development stats show 100 lines but 0 commits (inconsistent data)</strong></p>
+        <p><strong>3. Progress shows 0.0% but should have some progress</strong></p>
+    </div>
+
+    <div>
+        <h2>🔍 Step 1: Diagnose Current State</h2>
+        <button class="diagnose" onclick="diagnoseLogs()">🔍 CHECK LOGS & PROGRESS</button>
+        <button class="diagnose" onclick="checkWorkerStatus()">⚙️ CHECK WORKER STATUS</button>
+    </div>
+
+    <div>
+        <h2>🛠️ Step 2: Fix The Issues</h2>
+        <button class="fix" onclick="resetAndRestart()">🔄 RESET & RESTART DEVELOPMENT</button>
+        <button class="fix" onclick="forceGeneration()">⚡ FORCE LOG GENERATION</button>
+        <button class="force" onclick="nuclearFix()">☢️ NUCLEAR FIX (Complete Reset)</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'success') {
+            const div = document.createElement('div')
+            div.className = type
+            div.innerHTML = message
+            document.getElementById('results').insertBefore(div, document.getElementById('results').firstChild)
+            
+            // Keep only last 15 results
+            const results = document.getElementById('results')
+            while (results.children.length > 15) {
+                results.removeChild(results.lastChild)
+            }
+        }
+        
+        async function diagnoseLogs() {
+            addResult('🔍 Diagnosing logs and progress...', 'success')
+            
+            try {
+                const [progressRes, logsRes] = await Promise.all([
+                    fetch('/api/progress?diag=' + Date.now(), { cache: 'no-cache' }),
+                    fetch('/api/logs?limit=50&diag=' + Date.now(), { cache: 'no-cache' })
+                ])
+                
+                const progress = await progressRes.json()
+                const logs = await logsRes.json()
+                
+                // Analyze the data
+                const codeLogsCount = logs.filter(log => log.type === 'code').length
+                const systemLogsCount = logs.filter(log => log.type === 'system').length
+                const commitLogsCount = logs.filter(log => log.type === 'commit').length
+                
+                let diagnosis = `
+                    <h3>📊 DIAGNOSIS RESULTS:</h3>
+                    <strong>Progress Data:</strong><br>
+                    • Components: ${progress.componentsCompleted || 0}/${progress.totalComponents || 4500}<br>
+                    • Lines of Code: ${progress.linesOfCode || 0}<br>
+                    • Commits: ${progress.commits || 0}<br>
+                    • Tests: ${progress.testsRun || 0}<br>
+                    • Last Updated: ${new Date(progress.lastUpdated || Date.now()).toLocaleString()}<br><br>
+                    
+                    <strong>Logs Analysis:</strong><br>
+                    • Total Logs: ${logs.length}<br>
+                    • Code Logs: ${codeLogsCount}<br>
+                    • Commit Logs: ${commitLogsCount}<br>
+                    • System Logs: ${systemLogsCount}<br><br>
+                `
+                
+                // Detect issues
+                const issues = []
+                
+                if (logs.length === 0) {
+                    issues.push('❌ NO LOGS FOUND - Worker not generating any logs')
+                }
+                
+                if (progress.componentsCompleted > 0 && codeLogsCount === 0) {
+                    issues.push('❌ PROGRESS WITHOUT LOGS - Progress exists but no development logs')
+                }
+                
+                if (progress.linesOfCode > 0 && progress.commits === 0) {
+                    issues.push('❌ INCONSISTENT STATS - Lines of code but no commits')
+                }
+                
+                if (codeLogsCount > progress.componentsCompleted) {
+                    issues.push('❌ MORE LOGS THAN PROGRESS - Log count exceeds progress counter')
+                }
+                
+                const timeSinceUpdate = Date.now() - (progress.lastUpdated || 0)
+                if (timeSinceUpdate > 120000) { // 2 minutes
+                    issues.push(`❌ STALE PROGRESS - Last updated ${Math.floor(timeSinceUpdate/1000/60)} minutes ago`)
+                }
+                
+                if (issues.length > 0) {
+                    diagnosis += `<div style="color: #ff4444;"><strong>🚨 ISSUES FOUND:</strong><br>${issues.map(i => '• ' + i).join('<br>')}</div>`
+                } else {
+                    diagnosis += `<div style="color: #44ff44;"><strong>✅ NO ISSUES DETECTED</strong></div>`
+                }
+                
+                // Show recent logs if any
+                if (logs.length > 0) {
+                    diagnosis += `<br><strong>📝 Recent Logs (Last 5):</strong><br>`
+                    logs.slice(-5).forEach(log => {
+                        diagnosis += `<div style="margin: 5px 0; padding: 5px; border-left: 2px solid #00ff41;">
+                            <strong>${log.type.toUpperCase()}:</strong> ${log.message}<br>
+                            <small>🕒 ${new Date(log.timestamp).toLocaleTimeString()}</small>
+                        </div>`
+                    })
+                } else {
+                    diagnosis += `<br><div style="color: #ff4444;"><strong>📝 NO LOGS TO DISPLAY</strong></div>`
+                }
+                
+                addResult(diagnosis, issues.length > 0 ? 'warning' : 'success')
+                
+            } catch (error) {
+                addResult(`❌ Diagnosis failed: ${error.message}`, 'issue')
+            }
+        }
+        
+        async function checkWorkerStatus() {
+            addResult('⚙️ Checking autonomous worker status...', 'success')
+            
+            try {
+                const response = await fetch('/api/development/status?check=' + Date.now(), {
+                    cache: 'no-cache'
+                })
+                
+                if (response.ok) {
+                    const status = await response.json()
+                    
+                    const statusReport = `
+                        <h3>⚙️ WORKER STATUS:</h3>
+                        <strong>Running:</strong> ${status.isRunning ? '✅ Yes' : '❌ No'}<br>
+                        <strong>Components:</strong> ${status.componentsCompleted || 0}/${status.totalComponents || 4500}<br>
+                        <strong>Logs Count:</strong> ${status.logsCount || 0}<br>
+                        <strong>Next Update:</strong> ${status.nextUpdateIn || 'Unknown'} seconds<br>
+                        <strong>Last Updated:</strong> ${status.lastUpdated ? new Date(status.lastUpdated).toLocaleString() : 'Unknown'}<br>
+                        <strong>Est. Completion:</strong> ${status.estimatedCompletion ? new Date(status.estimatedCompletion).toLocaleString() : 'Unknown'}<br>
+                    `
+                    
+                    addResult(statusReport, status.isRunning ? 'success' : 'warning')
+                    
+                    if (!status.isRunning) {
+                        addResult('⚠️ Worker appears to be stopped or stalled', 'warning')
+                    }
+                } else {
+                    addResult(`❌ Worker status check failed: HTTP ${response.status}`, 'issue')
+                }
+            } catch (error) {
+                addResult(`❌ Status check failed: ${error.message}`, 'issue')
+            }
+        }
+        
+        async function resetAndRestart() {
+            addResult('🔄 Resetting and restarting development...', 'success')
+            
+            try {
+                // Step 1: Reset development 
+                const resetResponse = await fetch('/api/development/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                
+                if (resetResponse.ok) {
+                    addResult('✅ Development reset successful', 'success')
+                    
+                    // Step 2: Wait a moment then force generation
+                    await new Promise(r => setTimeout(r, 2000))
+                    
+                    const forceResponse = await fetch('/api/development/force', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    
+                    if (forceResponse.ok) {
+                        const result = await forceResponse.json()
+                        addResult(`✅ Development restarted: ${result.component || 'Component generated'}`, 'success')
+                        
+                        // Step 3: Verify logs are now generating
+                        setTimeout(async () => {
+                            const verifyLogs = await fetch('/api/logs?limit=5&verify=' + Date.now())
+                            const newLogs = await verifyLogs.json()
+                            addResult(`📊 Verification: ${newLogs.length} logs now present`, newLogs.length > 0 ? 'success' : 'warning')
+                        }, 3000)
+                        
+                    } else {
+                        throw new Error('Force generation failed')
+                    }
+                } else {
+                    throw new Error('Reset failed')
+                }
+                
+            } catch (error) {
+                addResult(`❌ Reset and restart failed: ${error.message}`, 'issue')
+            }
+        }
+        
+        async function forceGeneration() {
+            addResult('⚡ Forcing multiple component generation...', 'success')
+            
+            try {
+                // Force generate 3 components rapidly
+                for (let i = 0; i < 3; i++) {
+                    const response = await fetch('/api/development/force', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    
+                    if (response.ok) {
+                        const result = await response.json()
+                        addResult(`✅ Component ${i+1}: ${result.component || 'Generated'}`, 'success')
+                        
+                        // Small delay between generations
+                        await new Promise(r => setTimeout(r, 1000))
+                    } else {
+                        throw new Error(`Generation ${i+1} failed`)
+                    }
+                }
+                
+                // Check results
+                setTimeout(async () => {
+                    const checkProgress = await fetch('/api/progress?check=' + Date.now())
+                    const checkLogs = await fetch('/api/logs?limit=10&check=' + Date.now())
+                    
+                    const progressData = await checkProgress.json()
+                    const logsData = await checkLogs.json()
+                    
+                    addResult(`📊 After forcing: ${progressData.componentsCompleted || 0} components, ${logsData.length} logs`, 'success')
+                }, 2000)
+                
+            } catch (error) {
+                addResult(`❌ Force generation failed: ${error.message}`, 'issue')
+            }
+        }
+        
+        async function nuclearFix() {
+            if (!confirm('This will completely reset ALL progress and logs. Continue?')) return
+            
+            addResult('☢️ Executing nuclear fix...', 'warning')
+            
+            try {
+                // Step 1: Nuclear reset
+                const resetResponse = await fetch('/api/development/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nuclear: true })
+                })
+                
+                if (resetResponse.ok) {
+                    addResult('☢️ Nuclear reset completed', 'success')
+                    
+                    // Step 2: Clear logs
+                    await fetch('/api/logs/clear', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    
+                    addResult('🧹 Logs cleared', 'success')
+                    
+                    // Step 3: Restart from fresh
+                    await new Promise(r => setTimeout(r, 3000))
+                    
+                    const startResponse = await fetch('/api/development/force', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    
+                    if (startResponse.ok) {
+                        addResult('🚀 Fresh development started', 'success')
+                        addResult('✅ Nuclear fix complete - refresh the site to see changes', 'success')
+                    }
+                }
+                
+            } catch (error) {
+                addResult(`❌ Nuclear fix failed: ${error.message}`, 'issue')
+            }
+        }
+        
+        // Auto-diagnose on load
+        window.onload = function() {
+            addResult('🔧 Diagnostic tool loaded - checking system...', 'success')
+            setTimeout(diagnoseLogs, 1000)
+        }
+    </script>
+</body>
+</html>

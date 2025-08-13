@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔍 Basic Endpoint Test</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .result { background: #001122; padding: 15px; margin: 10px 0; border-left: 3px solid #00ff41; }
+        .error { border-left-color: #ff4444; color: #ff4444; }
+        .success { border-left-color: #00ff41; color: #00ff41; }
+        button { padding: 10px 20px; margin: 5px; background: #00ff41; color: #000; border: none; cursor: pointer; }
+        .url-input { width: 100%; padding: 10px; background: #222; color: #00ff41; border: 1px solid #00ff41; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 BASIC ENDPOINT TEST</h1>
+    
+    <div style="background: #333; padding: 15px; margin: 20px 0;">
+        <h3>🎯 What this tests:</h3>
+        <p>• Are the API endpoints responding at all?</p>
+        <p>• Which worker is actually handling the requests?</p>
+        <p>• What error messages are we getting?</p>
+    </div>
+
+    <div>
+        <h3>📍 Test Different URLs:</h3>
+        <input type="text" class="url-input" id="testUrl" value="https://kryptterminal.com" placeholder="Enter base URL to test">
+        <br>
+        <button onclick="testEndpoint('/api/health')">Test /api/health</button>
+        <button onclick="testEndpoint('/api/progress')">Test /api/progress</button>
+        <button onclick="testEndpoint('/api/logs')">Test /api/logs</button>
+        <button onclick="testEndpoint('/api/development/status')">Test /api/development/status</button>
+    </div>
+
+    <div>
+        <h3>🔧 Quick Tests:</h3>
+        <button onclick="testCurrentSite()">Test Current Site (window.location)</button>
+        <button onclick="testAutonomousWorker()">Test Autonomous Worker</button>
+        <button onclick="testCORS()">Test CORS Issues</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'success') {
+            const div = document.createElement('div')
+            div.className = 'result ' + type
+            div.innerHTML = message
+            document.getElementById('results').insertBefore(div, document.getElementById('results').firstChild)
+            
+            // Keep only last 20 results
+            const results = document.getElementById('results')
+            while (results.children.length > 20) {
+                results.removeChild(results.lastChild)
+            }
+        }
+        
+        async function testEndpoint(endpoint) {
+            const baseUrl = document.getElementById('testUrl').value || window.location.origin
+            const fullUrl = baseUrl + endpoint
+            
+            addResult(`🔍 Testing: ${fullUrl}`, 'success')
+            
+            try {
+                const start = Date.now()
+                const response = await fetch(fullUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                const elapsed = Date.now() - start
+                
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type')
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const data = await response.json()
+                        addResult(`✅ ${endpoint}: SUCCESS (${elapsed}ms)<br>Response: ${JSON.stringify(data, null, 2).substring(0, 200)}...`, 'success')
+                    } else {
+                        const text = await response.text()
+                        addResult(`✅ ${endpoint}: SUCCESS but not JSON (${elapsed}ms)<br>Content-Type: ${contentType}<br>Response: ${text.substring(0, 200)}...`, 'success')
+                    }
+                } else {
+                    const errorText = await response.text()
+                    addResult(`❌ ${endpoint}: HTTP ${response.status} ${response.statusText} (${elapsed}ms)<br>Error: ${errorText.substring(0, 200)}`, 'error')
+                }
+            } catch (error) {
+                addResult(`❌ ${endpoint}: FETCH ERROR<br>Error: ${error.message}<br>This usually means:<br>• CORS blocking the request<br>• Network connectivity issue<br>• Wrong URL/domain<br>• Worker not deployed`, 'error')
+            }
+        }
+        
+        async function testCurrentSite() {
+            addResult('🌐 Testing current site endpoints...', 'success')
+            
+            const endpoints = ['/api/health', '/api/progress', '/api/logs?limit=1']
+            
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint)
+                await new Promise(r => setTimeout(r, 500)) // Small delay
+            }
+        }
+        
+        async function testAutonomousWorker() {
+            const workerUrl = prompt('Enter your autonomous worker URL (e.g., https://krypt-autonomous.yourname.workers.dev):')
+            if (!workerUrl) return
+            
+            addResult(`🤖 Testing autonomous worker: ${workerUrl}`, 'success')
+            
+            // Update the test URL temporarily
+            const originalUrl = document.getElementById('testUrl').value
+            document.getElementById('testUrl').value = workerUrl
+            
+            const endpoints = ['/api/health', '/api/progress', '/api/development/status']
+            
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint)
+                await new Promise(r => setTimeout(r, 500))
+            }
+            
+            // Restore original URL
+            document.getElementById('testUrl').value = originalUrl
+        }
+        
+        async function testCORS() {
+            addResult('🔗 Testing CORS and connectivity...', 'success')
+            
+            // Test different methods and headers
+            const tests = [
+                { name: 'Simple GET', options: { method: 'GET' } },
+                { name: 'GET with headers', options: { method: 'GET', headers: { 'Content-Type': 'application/json' } } },
+                { name: 'OPTIONS preflight', options: { method: 'OPTIONS' } }
+            ]
+            
+            const baseUrl = document.getElementById('testUrl').value || window.location.origin
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(baseUrl + '/api/health', test.options)
+                    addResult(`✅ CORS ${test.name}: HTTP ${response.status}`, 'success')
+                } catch (error) {
+                    addResult(`❌ CORS ${test.name}: ${error.message}`, 'error')
+                }
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = function() {
+            addResult('🔍 Basic endpoint test loaded', 'success')
+            addResult(`📍 Current location: ${window.location.origin}`, 'success')
+            
+            // Test the current site automatically
+            setTimeout(testCurrentSite, 1000)
+        }
+    </script>
+</body>
+</html>

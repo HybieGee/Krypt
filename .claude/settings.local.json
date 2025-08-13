@@ -27,7 +27,9 @@
       "Bash(deploy-worker.bat)",
       "Bash(cmd /c:*)",
       "Bash(node:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(start kickstart-development.html)",
+      "Bash(start fix-kv-namespaces.html)"
     ],
     "deny": []
   }

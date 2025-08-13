@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>✅ Test Routing Fix</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .success { color: #44ff44; background: #003300; padding: 15px; border: 2px solid #44ff44; margin: 20px 0; }
+        .error { color: #ff4444; background: #330000; padding: 15px; border: 2px solid #ff4444; margin: 20px 0; }
+        .warning { color: #ffaa00; background: #332200; padding: 15px; border: 2px solid #ffaa00; margin: 20px 0; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        .test { background: #00ff41; color: #000; font-weight: bold; }
+        .monitor { background: #4444ff; color: white; }
+        .progress-display {
+            background: #111;
+            border: 2px solid #00ff41;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+        .live-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #ff4444;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 1s infinite;
+        }
+        .live-indicator.active {
+            background: #44ff44;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ TEST ROUTING FIX</h1>
+    
+    <div class="success">
+        <h2>🎯 Routing Fix Applied!</h2>
+        <p>Now testing if frontend API calls are going to the autonomous worker...</p>
+    </div>
+
+    <div class="progress-display">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <div class="live-indicator" id="liveIndicator"></div>
+            <strong>LIVE PROGRESS MONITOR</strong>
+        </div>
+        
+        <div style="font-size: 24px; margin: 10px 0;">
+            Components: <span id="componentsDisplay">Loading...</span>
+        </div>
+        
+        <div style="font-size: 16px; margin: 10px 0;">
+            Percentage: <span id="percentageDisplay">Loading...</span>
+        </div>
+        
+        <div style="font-size: 14px; margin: 10px 0;">
+            Last Updated: <span id="lastUpdatedDisplay">Loading...</span>
+        </div>
+        
+        <div style="font-size: 12px; margin: 10px 0; color: #888;">
+            Changes Detected: <span id="changesDisplay">0</span>
+        </div>
+    </div>
+
+    <div>
+        <button class="test" onclick="quickTest()">🚀 QUICK TEST</button>
+        <button class="monitor" onclick="startMonitoring()">📊 START MONITORING</button>
+        <button class="monitor" onclick="stopMonitoring()">⏹️ STOP</button>
+        <button class="test" onclick="forceComponent()">⚡ FORCE COMPONENT</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let monitoring = false
+        let monitorInterval = null
+        let lastProgress = null
+        let changeCount = 0
+        
+        function addResult(message, type = 'success') {
+            const div = document.createElement('div')
+            div.className = type
+            div.innerHTML = message
+            document.getElementById('results').insertBefore(div, document.getElementById('results').firstChild)
+            
+            // Keep only last 10 results
+            const results = document.getElementById('results')
+            while (results.children.length > 10) {
+                results.removeChild(results.lastChild)
+            }
+        }
+        
+        async function quickTest() {
+            addResult('🚀 Running quick routing test...', 'success')
+            
+            try {
+                // Test if frontend API now points to autonomous worker
+                const tests = [
+                    { name: 'Progress API', endpoint: '/api/progress' },
+                    { name: 'Logs API', endpoint: '/api/logs?limit=3' },
+                    { name: 'Development Status', endpoint: '/api/development/status' }
+                ]
+                
+                for (const test of tests) {
+                    try {
+                        const response = await fetch(test.endpoint + '?test=' + Date.now(), {
+                            cache: 'no-cache'
+                        })
+                        
+                        if (response.ok) {
+                            const data = await response.json()
+                            addResult(`✅ ${test.name}: Working (${Object.keys(data).length} fields)`, 'success')
+                        } else {
+                            addResult(`❌ ${test.name}: HTTP ${response.status}`, 'error')
+                        }
+                    } catch (error) {
+                        addResult(`❌ ${test.name}: ${error.message}`, 'error')
+                    }
+                }
+                
+                // Specific test for autonomous worker features
+                try {
+                    const statusResponse = await fetch('/api/development/status?verify=' + Date.now(), {
+                        cache: 'no-cache'
+                    })
+                    
+                    if (statusResponse.ok) {
+                        const statusData = await statusResponse.json()
+                        
+                        if (statusData.isRunning !== undefined) {
+                            addResult('✅ CONFIRMED: Frontend now calling autonomous worker!', 'success')
+                        } else {
+                            addResult('⚠️ Might still be calling enhanced worker', 'warning')
+                        }
+                    }
+                } catch (e) {
+                    addResult('⚠️ Could not verify worker type', 'warning')
+                }
+                
+            } catch (error) {
+                addResult(`❌ Quick test failed: ${error.message}`, 'error')
+            }
+        }
+        
+        async function startMonitoring() {
+            if (monitoring) {
+                addResult('⚠️ Already monitoring', 'warning')
+                return
+            }
+            
+            monitoring = true
+            document.getElementById('liveIndicator').classList.add('active')
+            addResult('📊 Starting live progress monitoring...', 'success')
+            
+            const updateDisplay = async () => {
+                try {
+                    const response = await fetch('/api/progress?live=' + Date.now(), {
+                        cache: 'no-cache'
+                    })
+                    const data = await response.json()
+                    
+                    const components = data.componentsCompleted || 0
+                    const percentage = data.percentComplete || 0
+                    const lastUpdated = new Date(data.lastUpdated || Date.now())
+                    
+                    // Update display
+                    document.getElementById('componentsDisplay').textContent = `${components}/${data.totalComponents || 4500}`
+                    document.getElementById('percentageDisplay').textContent = `${percentage.toFixed(3)}%`
+                    document.getElementById('lastUpdatedDisplay').textContent = lastUpdated.toLocaleTimeString()
+                    
+                    // Detect changes
+                    if (lastProgress !== null && components !== lastProgress) {
+                        changeCount++
+                        document.getElementById('changesDisplay').textContent = changeCount
+                        addResult(`🔥 PROGRESS CHANGE: ${lastProgress} → ${components} (+${components - lastProgress})`, 'success')
+                    }
+                    
+                    lastProgress = components
+                    
+                } catch (error) {
+                    addResult(`❌ Monitor error: ${error.message}`, 'error')
+                }
+            }
+            
+            // Initial update
+            await updateDisplay()
+            
+            // Update every 2 seconds
+            monitorInterval = setInterval(updateDisplay, 2000)
+        }
+        
+        function stopMonitoring() {
+            if (monitorInterval) {
+                clearInterval(monitorInterval)
+                monitorInterval = null
+            }
+            monitoring = false
+            document.getElementById('liveIndicator').classList.remove('active')
+            addResult('⏹️ Monitoring stopped', 'success')
+        }
+        
+        async function forceComponent() {
+            addResult('⚡ Forcing component generation...', 'success')
+            
+            try {
+                const response = await fetch('/api/development/force', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                
+                if (response.ok) {
+                    const result = await response.json()
+                    addResult(`✅ Component forced: ${result.component || 'Generated'}`, 'success')
+                    
+                    // Check if progress updated
+                    setTimeout(async () => {
+                        const checkResponse = await fetch('/api/progress?check=' + Date.now())
+                        const checkData = await checkResponse.json()
+                        addResult(`📊 Progress now: ${checkData.componentsCompleted || 0} components`, 'success')
+                    }, 3000)
+                } else {
+                    throw new Error(`HTTP ${response.status}`)
+                }
+            } catch (error) {
+                addResult(`❌ Force failed: ${error.message}`, 'error')
+            }
+        }
+        
+        // Auto-start quick test
+        window.onload = function() {
+            addResult('🚀 Testing routing fix...', 'success')
+            setTimeout(quickTest, 1000)
+        }
+    </script>
+</body>
+</html>
