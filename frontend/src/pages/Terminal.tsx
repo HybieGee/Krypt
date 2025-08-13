@@ -166,7 +166,7 @@ export default function Terminal() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-20" style={{ minHeight: '700px' }}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ minHeight: '700px' }}>
       <div className="lg:col-span-2 flex flex-col space-y-4">
         <div className="terminal-window flex-1 flex flex-col" style={{ 
           minHeight: '500px',
@@ -216,13 +216,6 @@ export default function Terminal() {
                   title="Jump to bottom"
                 >
                   ↓ Bottom
-                </button>
-                <button
-                  onClick={handleManualReset}
-                  className="px-2 py-1 text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors rounded"
-                  title="Fix terminal layout if corrupted (for dev console bug)"
-                >
-                  🔧 Fix
                 </button>
                 <a
                   href="https://github.com/KryptAI/krypt-blockchain"
