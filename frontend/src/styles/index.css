@@ -34,9 +34,7 @@
 
 @layer components {
   .terminal-window {
-    @apply bg-black/90 border border-terminal-green;
-    padding: 16px 16px 0px 16px; /* Custom padding without bottom */
-    border-radius: 8px 8px 0px 0px; /* Remove bottom border radius */
+    @apply bg-black/90 border border-terminal-green rounded-lg p-4;
   }
 
   .terminal-button {
