@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import MainLayout from './components/layout/MainLayout'
 import Terminal from './pages/Terminal'
 import Documentation from './pages/Documentation'
@@ -46,6 +47,31 @@ function App() {
   
   // Initialize airdrop notifications
   const { pendingAirdrops, dismissAirdrop } = useAirdropNotifications()
+
+  // Create portal container for notifications
+  useEffect(() => {
+    const notificationPortal = document.createElement('div')
+    notificationPortal.id = 'notification-portal'
+    notificationPortal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `
+    document.body.appendChild(notificationPortal)
+
+    return () => {
+      if (document.body.contains(notificationPortal)) {
+        document.body.removeChild(notificationPortal)
+      }
+    }
+  }, [])
 
 
   // Auto-create wallet for token functionality with persistent device fingerprinting
@@ -329,20 +355,10 @@ function App() {
         </Routes>
       </Router>
       
-      {/* Airdrop Notifications - Using portal-style positioning */}
-      {pendingAirdrops.length > 0 && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center pointer-events-none"
-          style={{ 
-            zIndex: 2147483647, // Maximum safe z-index value
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0
-          }}
-        >
-          <div className="space-y-4">
+      {/* Airdrop Notifications - Using React Portal for guaranteed top-level rendering */}
+      {pendingAirdrops.length > 0 && document.getElementById('notification-portal') && 
+        createPortal(
+          <div className="space-y-4" style={{ pointerEvents: 'auto' }}>
             {pendingAirdrops.map((airdrop, index) => (
               <MilestoneNotification
                 key={airdrop.airdropId}
@@ -351,9 +367,10 @@ function App() {
                 delay={index * 200} // Stagger animations
               />
             ))}
-          </div>
-        </div>
-      )}
+          </div>,
+          document.getElementById('notification-portal')!
+        )
+      }
     </>
   )
 }

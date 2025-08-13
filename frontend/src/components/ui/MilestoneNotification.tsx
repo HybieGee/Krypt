@@ -41,11 +41,9 @@ export default function MilestoneNotification({ airdrop, onDismiss, delay = 0 }:
       isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
     }`}>
       <div 
-        className="bg-black/98 border-2 border-terminal-green shadow-2xl rounded-lg p-4 max-w-sm relative overflow-hidden backdrop-blur-sm" 
+        className="bg-black border-2 border-terminal-green shadow-2xl rounded-lg p-4 max-w-sm relative overflow-hidden" 
         style={{ 
-          boxShadow: '0 0 50px rgba(0, 255, 0, 0.5), 0 0 100px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 255, 0, 0.1)',
-          zIndex: 2147483647,
-          position: 'relative'
+          boxShadow: '0 0 50px rgba(0, 255, 0, 0.8), 0 0 100px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 255, 0, 0.2)',
         }}
       >
         {/* Animated background effect */}
