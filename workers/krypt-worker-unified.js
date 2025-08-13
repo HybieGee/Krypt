@@ -1248,7 +1248,7 @@ async function processComponentDevelopment(env, componentNumber) {
     }
   };
   
-  // Log component development
+  // Log component development  
   const compLog = {
     id: `comp-${componentNumber}-${Date.now()}`,
     type: 'system',
