@@ -92,24 +92,22 @@ export default function Terminal() {
   const forceLayoutReset = () => {
     console.log('🔧 Forcing terminal layout reset...')
     
+    // Reset window height to current value
+    setWindowHeight(window.innerHeight)
+    
     // Force complete re-render
     setForceRerender(prev => prev + 1)
     
     // Wait for DOM update then fix layout
     setTimeout(() => {
-      const body = document.body
-      const originalOverflow = body.style.overflow
-      
-      // Force browser to recalculate everything
-      body.style.overflow = 'hidden'
-      body.offsetHeight // Force reflow
-      body.style.overflow = originalOverflow
-      
-      // Reset terminal specific elements
+      // Remove any stuck inline styles
       const terminalElements = document.querySelectorAll('.terminal-window')
       terminalElements.forEach((element) => {
         const htmlElement = element as HTMLElement
-        htmlElement.style.cssText = htmlElement.style.cssText // Force style recalculation
+        // Reset to default styles
+        htmlElement.style.minHeight = '400px'
+        htmlElement.style.maxHeight = '600px'
+        htmlElement.style.height = 'auto'
       })
       
       console.log('✅ Terminal layout reset complete')
@@ -164,11 +162,12 @@ export default function Terminal() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20" style={{ minHeight: Math.max(500, windowHeight - 200) }}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20" style={{ minHeight: Math.min(600, Math.max(500, windowHeight - 200)) }}>
       <div className="lg:col-span-2 flex flex-col space-y-4">
         <div className="terminal-window flex-1 flex flex-col" style={{ 
           minHeight: '400px',
-          maxHeight: Math.max(600, windowHeight - 300),
+          maxHeight: '600px', // Fixed max height instead of dynamic
+          height: 'auto',
           contain: 'layout'
         }}>
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
