@@ -21,6 +21,7 @@ class ChatService {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private baseUrl: string
+  private currentMessages: ChatMessage[] = []
 
   constructor(options: ChatServiceOptions) {
     this.options = options
@@ -56,8 +57,34 @@ class ChatService {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          if (data.type === 'messages' && data.messages) {
-            this.options.onMessage(data.messages)
+          console.log('📩 WebSocket message received:', data.type, data)
+          
+          // Handle initial chat history
+          if (data.type === 'history' && data.messages) {
+            this.currentMessages = data.messages || []
+            this.options.onMessage(this.currentMessages)
+          }
+          // Handle new messages broadcast
+          else if (data.type === 'new_message' && data.message) {
+            console.log('🆕 New message broadcast:', data.message)
+            // Add the new message to current messages
+            this.currentMessages.push(data.message)
+            // Keep only last 100 messages
+            if (this.currentMessages.length > 100) {
+              this.currentMessages = this.currentMessages.slice(-100)
+            }
+            // Notify parent with updated message list
+            this.options.onMessage([...this.currentMessages])
+          }
+          // Handle bulk messages (fallback format)
+          else if (data.type === 'messages' && data.messages) {
+            this.currentMessages = data.messages || []
+            this.options.onMessage(this.currentMessages)
+          }
+          // Handle errors
+          else if (data.type === 'error') {
+            console.error('Chat error from server:', data.message)
+            this.options.onError?.(data.message)
           }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error)
@@ -139,7 +166,29 @@ class ChatService {
     setInterval(poll, 2000)
   }
 
+
   async sendMessage(message: string, username: string, walletAddress?: string): Promise<{ success: boolean; message?: string }> {
+    // Try WebSocket first if connected
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        const messageData = {
+          type: 'message',
+          message: message.trim(),
+          username,
+          walletAddress
+        }
+        
+        console.log('📤 Sending via WebSocket:', messageData)
+        this.ws.send(JSON.stringify(messageData))
+        
+        return { success: true, message: 'Message sent via WebSocket' }
+      } catch (error) {
+        console.error('WebSocket send failed:', error)
+        // Fall through to HTTP as backup
+      }
+    }
+    
+    // Fallback to HTTP if WebSocket is not available
     try {
       const apiUrl = this.baseUrl.replace(/^wss?:\/\//, 'https://')
       const response = await fetch(`${apiUrl}/api/chat/send`, {
