@@ -4,7 +4,8 @@
 
 // ===== CONSTANTS & CONFIGURATION =====
 const BLOCKCHAIN_COMPONENTS = 4500;
-const DEVELOPMENT_INTERVAL = 5000; // 5 seconds per component
+const DEVELOPMENT_INTERVAL = 15000; // 15 seconds per component
+const COMPONENTS_PER_CRON = 20; // Generate 20 components every 5 minutes for continuous flow
 const MAX_LOGS = 10000;
 const MAX_CODE_BLOCKS = 50;
 const MAX_LEADERBOARD = 10;
@@ -171,6 +172,8 @@ export default {
           return handleForceDevelopment(env);
         case url.pathname === '/api/development/reset' && request.method === 'POST':
           return handleResetDevelopment(env);
+        case url.pathname === '/api/development/seed' && request.method === 'POST':
+          return handleSeedDevelopment(env);
 
         // User & Leaderboard endpoints
         case url.pathname === '/api/user/balance' && request.method === 'POST':
@@ -712,22 +715,49 @@ async function handleResetDevelopment(env) {
   }
 }
 
+async function handleSeedDevelopment(env) {
+  try {
+    await seedInitialDevelopment(env);
+    
+    // Generate first 10 components to populate the terminal
+    for (let i = 0; i < 10; i++) {
+      await generateNextComponent(env);
+    }
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Development seeded with initial data and 10 components' 
+    }), { headers: JSON_HEADERS });
+  } catch (error) {
+    console.error('Seed development error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to seed development' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
 // ===== COMPONENT GENERATION =====
 async function generateNextComponent(env) {
   try {
-    const progress = await kvGetJSON(env, 'dev_progress', 0);
-    const componentIndex = Math.floor(progress * BLOCKCHAIN_COMPONENTS / 100);
-    const componentName = getComponentName(componentIndex);
+    const currentProgress = await kvGetJSON(env, 'dev_progress', 0);
+    const componentName = getComponentName(currentProgress);
     
     // Generate code snippet
     const codeSnippet = generateCodeSnippet(componentName);
     
-    // Add log entry
+    // Add realistic log entry with proper format
     const logEntry = {
+      id: `comp-${currentProgress}-${Date.now()}`,
       ts: Date.now(),
-      level: 'info',
+      level: 'code',
       msg: `✅ ${componentName} component developed`,
-      details: { componentName, progress, codeSnippet: codeSnippet.slice(0, 200) }
+      details: { 
+        componentName, 
+        progress: currentProgress,
+        codeSnippet: codeSnippet.slice(0, 200),
+        linesAdded: Math.floor(Math.random() * 150) + 50
+      }
     };
     
     const logs = await kvGetJSON(env, 'dev_logs', []);
@@ -743,9 +773,17 @@ async function generateNextComponent(env) {
       codeBlocks.splice(0, codeBlocks.length - MAX_CODE_BLOCKS);
     }
     
-    // Update progress
-    const increment = 100 / BLOCKCHAIN_COMPONENTS;
-    const newProgress = Math.min(100, progress + increment);
+    // Update progress (increment by 1)
+    const newProgress = currentProgress + 1;
+    
+    // Update stats
+    const stats = await kvGetJSON(env, 'stats', {});
+    const updatedStats = {
+      ...stats,
+      total_lines_of_code: { value: (stats.total_lines_of_code?.value || 0) + logEntry.details.linesAdded, lastUpdated: new Date().toISOString() },
+      total_commits: { value: (stats.total_commits?.value || 0) + 1, lastUpdated: new Date().toISOString() },
+      total_tests_run: { value: (stats.total_tests_run?.value || 0) + Math.floor(Math.random() * 5) + 1, lastUpdated: new Date().toISOString() }
+    };
     
     // Update last tick time
     const now = Date.now();
@@ -755,6 +793,7 @@ async function generateNextComponent(env) {
       kvPutJSON(env, 'dev_logs', logs),
       kvPutJSON(env, 'dev_code', codeBlocks),
       kvPutJSON(env, 'dev_progress', newProgress),
+      kvPutJSON(env, 'stats', updatedStats),
       kvPutJSON(env, 'last_dev_tick', now)
     ]);
     
@@ -763,6 +802,54 @@ async function generateNextComponent(env) {
     console.error('Generate component error:', error);
     throw error;
   }
+}
+
+async function seedInitialDevelopment(env) {
+  const initialLogs = [
+    {
+      id: 'init-1',
+      ts: Date.now() - 600000,
+      level: 'system',
+      msg: '🚀 Krypt --init blockchain',
+      details: null
+    },
+    {
+      id: 'init-2', 
+      ts: Date.now() - 580000,
+      level: 'system',
+      msg: 'Initializing Krypt Blockchain Development Environment...',
+      details: null
+    },
+    {
+      id: 'init-3',
+      ts: Date.now() - 560000,
+      level: 'system',
+      msg: 'Loading blockchain infrastructure across 4 phases...',
+      details: null
+    },
+    {
+      id: 'init-4',
+      ts: Date.now() - 540000,
+      level: 'system',
+      msg: 'Starting autonomous development process...',
+      details: null
+    }
+  ];
+
+  const initialStats = {
+    total_users: { value: 1, lastUpdated: new Date().toISOString() },
+    early_access_users: { value: 1, lastUpdated: new Date().toISOString() },
+    total_lines_of_code: { value: 0, lastUpdated: new Date().toISOString() },
+    total_commits: { value: 0, lastUpdated: new Date().toISOString() },
+    total_tests_run: { value: 0, lastUpdated: new Date().toISOString() }
+  };
+
+  await Promise.all([
+    kvPutJSON(env, 'dev_logs', initialLogs),
+    kvPutJSON(env, 'dev_progress', 0),
+    kvPutJSON(env, 'stats', initialStats),
+    kvPutJSON(env, 'last_dev_tick', Date.now())
+  ]);
 }
 
 function getComponentName(index) {
@@ -1231,20 +1318,36 @@ async function handleNuclearResetCheck(env) {
 // ===== AUTONOMOUS DEVELOPMENT =====
 async function runAutonomousDevelopment(env) {
   try {
-    const progress = await kvGetJSON(env, 'dev_progress', 0);
+    console.log('🔄 Running autonomous development...');
+
+    // Seed initial development data if empty
+    const currentProgress = await kvGetJSON(env, 'dev_progress', 0);
+    const logs = await kvGetJSON(env, 'dev_logs', []);
     
-    if (progress >= 100) {
-      console.log('Development completed');
+    if (logs.length === 0) {
+      await seedInitialDevelopment(env);
+      console.log('🌱 Seeded initial development data');
+      return;
+    }
+    
+    // Check if development is complete
+    if (currentProgress >= BLOCKCHAIN_COMPONENTS) {
+      console.log('✅ Blockchain development completed');
       return;
     }
 
-    const lastTick = await kvGetJSON(env, 'last_dev_tick', 0);
-    const timeSinceLastTick = Date.now() - lastTick;
+    // Generate multiple components to maintain continuous flow
+    const componentsToGenerate = Math.min(COMPONENTS_PER_CRON, BLOCKCHAIN_COMPONENTS - currentProgress);
     
-    if (timeSinceLastTick >= DEVELOPMENT_INTERVAL) {
+    for (let i = 0; i < componentsToGenerate; i++) {
       await generateNextComponent(env);
-      console.log('Autonomous development tick completed');
+      // Small delay between components for realistic timing
+      if (i < componentsToGenerate - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
+    
+    console.log(`✅ Generated ${componentsToGenerate} components. Progress: ${currentProgress + componentsToGenerate}/${BLOCKCHAIN_COMPONENTS}`);
   } catch (error) {
     console.error('Autonomous development error:', error);
   }
