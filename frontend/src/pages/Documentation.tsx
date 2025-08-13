@@ -12,30 +12,6 @@ export default function Documentation() {
           </p>
         </div>
 
-        {/* Quick Launch Controls */}
-        <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-terminal-green/30 rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-terminal-green mb-4">🚀 Launch Controls</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="text-yellow-400 font-semibold mb-3">🎮 Development Controls</h4>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li><strong>Start Development:</strong> <code className="bg-gray-800 px-2 py-1 rounded">npx wrangler secret put CLAUDE_API_KEY</code></li>
-                <li><strong>Pause Development:</strong> <code className="bg-gray-800 px-2 py-1 rounded">npx wrangler secret delete CLAUDE_API_KEY</code></li>
-                <li><strong>Admin Reset:</strong> Run <code className="bg-gray-800 px-2 py-1 rounded">admin-commands.bat</code></li>
-                <li><strong>Deploy Updates:</strong> <code className="bg-gray-800 px-2 py-1 rounded">git push</code> (auto-deploys)</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-green-400 font-semibold mb-3">💰 Token Launch</h4>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li><strong>Edit:</strong> <code className="bg-gray-800 px-2 py-1 rounded">frontend/src/config/token-config.ts</code></li>
-                <li><strong>Set:</strong> <code className="bg-gray-800 px-2 py-1 rounded">showContractAddress: true</code></li>
-                <li><strong>Add:</strong> <code className="bg-gray-800 px-2 py-1 rounded">pumpfun: "your-pump-fun-url"</code></li>
-                <li><strong>Result:</strong> Buy buttons appear immediately</li>
-              </ul>
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Platform Transparency */}
