@@ -16,15 +16,11 @@ interface Props {
 export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: Props) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [currentTyping, setCurrentTyping] = useState('')
-  const [isUserScrolledUp, setIsUserScrolledUp] = useState(false)
 
-  // Check if user is scrolled up from bottom
+  // Check if user is scrolled up from bottom (for potential future use)
   const checkScrollPosition = () => {
-    if (terminalRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = terminalRef.current
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
-      setIsUserScrolledUp(!isAtBottom)
-    }
+    // Currently just prevents scroll events from causing issues
+    // Could be used for scroll indicators in the future
   }
 
   // Auto-scroll to bottom only if user is already at bottom when new logs arrive

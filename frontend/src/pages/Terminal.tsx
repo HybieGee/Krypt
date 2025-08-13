@@ -9,7 +9,6 @@ export default function Terminal() {
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true) // Start with true to auto-scroll on page load
-  const [isLogsScrolledUp, setIsLogsScrolledUp] = useState(false)
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
@@ -20,13 +19,10 @@ export default function Terminal() {
     setTimeout(() => setShouldAutoScroll(false), 200) // Reset after initial scroll
   }, []) // Empty dependency array = only run once on mount
 
-  // Check if user is scrolled up in logs view
+  // Check if user is scrolled up in logs view (for potential future use)
   const checkLogsScrollPosition = () => {
-    if (logsViewRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = logsViewRef.current
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
-      setIsLogsScrolledUp(!isAtBottom)
-    }
+    // Currently just prevents scroll events from causing issues
+    // Could be used for scroll indicators in the future
   }
 
   // Auto-scroll logs view when new logs arrive (only if at bottom)
