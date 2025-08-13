@@ -953,15 +953,34 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 3. Code Generation
+    // 3. Generate code snippet first
     const codeSnippet = generateCodeSnippet(componentName);
     const actualLineCount = codeSnippet.split('\n').length;
+    const commitHash = Math.random().toString(16).substring(2, 8);
     
+    // 4. Component completion (show right after AI response)
+    developmentLogs.push({
+      id: `comp-${currentProgress}-${baseTime}`,
+      ts: baseTime - 35000, // 35 seconds ago (right after AI response)
+      level: 'system',
+      msg: `✅ ${componentName} component developed (${actualLineCount} lines coded)`,
+      details: {
+        component: componentName,
+        progress: currentProgress + 1,
+        totalComponents: 4500,
+        linesAdded: actualLineCount,
+        commitHash,
+        // Only send full code - frontend will show first 8 lines in Live View
+        code: codeSnippet // Full code for both views
+      }
+    });
+    
+    // 5. Code Generation (show after completion)
     developmentLogs.push({
       id: `code-gen-${currentProgress}-${baseTime}`,
       ts: baseTime - 30000, // 30 seconds ago
       level: 'code',
-      msg: `Generating ${componentName} implementation...`,
+      msg: `📄 Code Generated:`,
       details: {
         component: componentName,
         codeSnippet: codeSnippet.slice(0, 200) + '...',
@@ -969,7 +988,7 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 4. Testing
+    // 6. Testing
     const testsRun = Math.floor(Math.random() * 8) + 3;
     developmentLogs.push({
       id: `test-${currentProgress}-${baseTime}`,
@@ -985,35 +1004,17 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 5. Git Commit
-    const commitHash = Math.random().toString(16).substring(2, 8);
+    // 7. Git Commit
     developmentLogs.push({
       id: `commit-${currentProgress}-${baseTime}`,
       ts: baseTime - 5000, // 5 seconds ago
       level: 'commit',
-      msg: `✅ Committed to Github`,
+      msg: `✅ Committed to GitHub`,
       details: {
         component: componentName,
         hash: commitHash,
         linesAdded: actualLineCount,
         filesChanged: Math.floor(Math.random() * 3) + 1
-      }
-    });
-    
-    // 6. Final completion with code snippet
-    developmentLogs.push({
-      id: `comp-${currentProgress}-${baseTime}`,
-      ts: baseTime,
-      level: 'system',
-      msg: `✅ ${componentName} component developed (${actualLineCount} lines coded)`,
-      details: {
-        component: componentName,
-        progress: currentProgress + 1,
-        totalComponents: 4500,
-        linesAdded: actualLineCount,
-        commitHash,
-        // Only send full code - frontend will show first 8 lines in Live View
-        code: codeSnippet // Full code for both views
       }
     });
     
