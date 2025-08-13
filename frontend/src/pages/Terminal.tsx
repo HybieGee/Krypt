@@ -108,10 +108,10 @@ export default function Terminal() {
           htmlElement.style.overflow = 'hidden'
         } else {
           // Progress bar window
-          htmlElement.style.minHeight = '200px'
-          htmlElement.style.maxHeight = '200px'
-          htmlElement.style.height = '200px'
-          htmlElement.style.overflow = 'hidden'
+          htmlElement.style.minHeight = '280px'
+          htmlElement.style.maxHeight = '280px'
+          htmlElement.style.height = '280px'
+          htmlElement.style.overflow = 'auto'
         }
       })
       
@@ -351,10 +351,10 @@ export default function Terminal() {
         </div>
 
         <div className="terminal-window" style={{ 
-          minHeight: '200px',
-          maxHeight: '200px',
-          height: '200px',
-          overflow: 'hidden'
+          minHeight: '280px',
+          maxHeight: '280px',
+          height: '280px',
+          overflow: 'auto'
         }}>
           <h3 className="text-sm font-bold text-terminal-green mb-3">
             Blockchain Development Progress
