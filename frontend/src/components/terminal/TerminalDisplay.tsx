@@ -115,13 +115,14 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
   return (
     <div 
       ref={terminalRef}
-      className="h-96 overflow-y-auto bg-black p-4 font-mono text-xs leading-relaxed custom-scrollbar terminal-scroll"
+      className="h-96 overflow-y-auto bg-black font-mono text-xs leading-relaxed custom-scrollbar terminal-scroll"
       style={{
         scrollbarWidth: 'thin',
         scrollbarColor: '#00ff41 #1a1a1a',
         minHeight: '384px', // Ensure consistent height (h-96 = 24rem = 384px)
         contain: 'layout style',
-        willChange: 'scroll-position'
+        willChange: 'scroll-position',
+        padding: '16px 16px 0px 16px' // Remove bottom padding
       }}
       onScroll={checkScrollPosition}
     >
