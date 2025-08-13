@@ -262,7 +262,7 @@ export const useStore = create<StoreState>()(
       }),
       {
         name: 'krypt-terminal-ui-prefs',
-        partialize: (state) => ({
+        partialize: () => ({
           // Only persist UI preferences, not state of record
           // All critical data (user, logs, progress) must come from APIs
         }),
