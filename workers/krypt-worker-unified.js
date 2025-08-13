@@ -314,17 +314,17 @@ export default {
         case url.pathname === '/api/dev/code/stream' && request.method === 'GET':
           return handleCodeStream(env);
 
-        // Development Tick (for 15-second generation)
+        // Development Tick - DISABLED (simulation endpoints removed)
         case url.pathname === '/api/development/tick' && request.method === 'POST':
-          return handleDevelopmentTick(env);
+          return new Response(JSON.stringify({ error: 'Simulation disabled - only real Krypt AI data' }), { status: 403, headers: JSON_HEADERS });
         case url.pathname === '/api/development/status' && request.method === 'GET':
-          return handleDevelopmentStatus(env);
+          return new Response(JSON.stringify({ error: 'Simulation disabled - only real Krypt AI data' }), { status: 403, headers: JSON_HEADERS });
         case url.pathname === '/api/development/force' && request.method === 'POST':
-          return handleForceDevelopment(env);
+          return new Response(JSON.stringify({ error: 'Simulation disabled - only real Krypt AI data' }), { status: 403, headers: JSON_HEADERS });
         case url.pathname === '/api/development/reset' && request.method === 'POST':
-          return handleResetDevelopment(env);
+          return new Response(JSON.stringify({ error: 'Simulation disabled - only real Krypt AI data' }), { status: 403, headers: JSON_HEADERS });
         case url.pathname === '/api/development/seed' && request.method === 'POST':
-          return handleSeedDevelopment(env);
+          return new Response(JSON.stringify({ error: 'Simulation disabled - only real Krypt AI data' }), { status: 403, headers: JSON_HEADERS });
 
         // Real-time chat endpoints (Durable Objects)
         case url.pathname === '/api/chat/ws' && request.headers.get('Upgrade') === 'websocket':

@@ -36,7 +36,8 @@
       "Bash(grep:*)",
       "Bash(git checkout:*)",
       "Bash(cp:*)",
-      "Bash(npx wrangler triggers:*)"
+      "Bash(npx wrangler triggers:*)",
+      "Bash(npx wrangler:*)"
     ],
     "deny": []
   }
