@@ -16,13 +16,29 @@ interface Props {
 export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: Props) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [currentTyping, setCurrentTyping] = useState('')
+  const [isUserScrolledUp, setIsUserScrolledUp] = useState(false)
 
-  // Auto-scroll to bottom when shouldScrollToBottom prop changes or new logs arrive
-  useEffect(() => {
-    if (shouldScrollToBottom && terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+  // Check if user is scrolled up from bottom
+  const checkScrollPosition = () => {
+    if (terminalRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = terminalRef.current
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      setIsUserScrolledUp(!isAtBottom)
     }
-  }, [shouldScrollToBottom, logs.length]) // Trigger on prop change or new logs
+  }
+
+  // Auto-scroll to bottom only if user is already at bottom when new logs arrive
+  useEffect(() => {
+    if (terminalRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = terminalRef.current
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      
+      // Only auto-scroll if user is at bottom or shouldScrollToBottom is explicitly true
+      if ((isAtBottom && !isUserScrolledUp) || shouldScrollToBottom) {
+        terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+      }
+    }
+  }, [logs.length, shouldScrollToBottom, isUserScrolledUp])
 
   // Smooth typing animation system
   useEffect(() => {
@@ -103,6 +119,7 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
         scrollbarWidth: 'thin',
         scrollbarColor: '#00ff41 #1a1a1a'
       }}
+      onScroll={checkScrollPosition}
     >
       <div className="space-y-1">
         <div className="text-terminal-green">

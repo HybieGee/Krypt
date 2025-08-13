@@ -9,6 +9,7 @@ export default function Terminal() {
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true) // Start with true to auto-scroll on page load
+  const [isLogsScrolledUp, setIsLogsScrolledUp] = useState(false)
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
@@ -19,16 +20,31 @@ export default function Terminal() {
     setTimeout(() => setShouldAutoScroll(false), 200) // Reset after initial scroll
   }, []) // Empty dependency array = only run once on mount
 
-  // Auto-scroll logs view to bottom when switching to logs tab
-  useEffect(() => {
-    if (activeTab === 'logs' && shouldAutoScroll && logsViewRef.current) {
-      setTimeout(() => {
-        if (logsViewRef.current) {
-          logsViewRef.current.scrollTop = logsViewRef.current.scrollHeight
-        }
-      }, 50) // Small delay to ensure DOM has updated
+  // Check if user is scrolled up in logs view
+  const checkLogsScrollPosition = () => {
+    if (logsViewRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = logsViewRef.current
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      setIsLogsScrolledUp(!isAtBottom)
     }
-  }, [activeTab, shouldAutoScroll])
+  }
+
+  // Auto-scroll logs view when new logs arrive (only if at bottom)
+  useEffect(() => {
+    if (activeTab === 'logs' && logsViewRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = logsViewRef.current
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
+      
+      // Only auto-scroll if user is at bottom or shouldAutoScroll is explicitly true (tab switch)
+      if ((isAtBottom && !isLogsScrolledUp) || shouldAutoScroll) {
+        setTimeout(() => {
+          if (logsViewRef.current) {
+            logsViewRef.current.scrollTop = logsViewRef.current.scrollHeight
+          }
+        }, 50)
+      }
+    }
+  }, [activeTab, shouldAutoScroll, terminalLogs.length, isLogsScrolledUp])
 
   // Filter logs based on selected filter
   const filteredLogs = terminalLogs.filter(log => {
@@ -143,7 +159,7 @@ export default function Terminal() {
                   </div>
                 </div>
 
-                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar" ref={logsViewRef}>
+                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar" ref={logsViewRef} onScroll={checkLogsScrollPosition}>
                   {filteredLogs.map((log) => (
                   <div key={log.id} className="border-l-2 border-terminal-green/20 pl-3">
                     {/* Log Header */}

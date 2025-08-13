@@ -810,7 +810,7 @@ async function generateNextComponent(env) {
       id: `commit-${currentProgress}-${baseTime}`,
       ts: baseTime - 5000, // 5 seconds ago
       level: 'commit',
-      msg: `✅ [${commitHash}] feat: implement ${componentName} with enhanced security`,
+      msg: `✅ Committed to Github`,
       details: {
         component: componentName,
         hash: commitHash,
