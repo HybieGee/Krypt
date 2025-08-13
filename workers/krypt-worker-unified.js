@@ -794,7 +794,7 @@ async function generateNextComponent(env) {
       id: `test-${currentProgress}-${baseTime}`,
       ts: baseTime - 15000, // 15 seconds ago
       level: 'test',
-      msg: `Running ${testsRun} tests for ${componentName}...`,
+      msg: `Running tests for ${componentName}...`,
       details: {
         component: componentName,
         testsRun,
@@ -810,7 +810,7 @@ async function generateNextComponent(env) {
       id: `commit-${currentProgress}-${baseTime}`,
       ts: baseTime - 5000, // 5 seconds ago
       level: 'commit',
-      msg: `git commit -m "feat: implement ${componentName} with enhanced security"`,
+      msg: `[${commitHash}] feat: implement ${componentName} with enhanced security`,
       details: {
         component: componentName,
         hash: commitHash,
@@ -819,18 +819,21 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 6. Final completion
+    // 6. Final completion with code snippet
+    const shortCodeSnippet = generateShortCodeSnippet(componentName);
     developmentLogs.push({
       id: `comp-${currentProgress}-${baseTime}`,
       ts: baseTime,
       level: 'system',
-      msg: `✅ ${componentName} component developed`,
+      msg: `✅ ${componentName} component developed (${linesAdded} lines coded)`,
       details: {
         component: componentName,
         progress: currentProgress + 1,
         totalComponents: 4500,
         linesAdded,
-        commitHash
+        commitHash,
+        codeSnippet: shortCodeSnippet,
+        fullCode: codeSnippet // Full code for scrollable box in dev logs
       }
     });
     
@@ -931,6 +934,53 @@ function getComponentName(index) {
     'PerformanceOptimizer', 'DataStorage', 'APIGateway'
   ];
   return names[index % names.length] + (index >= names.length ? `_v${Math.floor(index / names.length) + 1}` : '');
+}
+
+function generateShortCodeSnippet(componentName) {
+  const snippets = [
+    `class ${componentName} {
+  constructor(config) {
+    this.config = config;
+    this.initialized = false;
+  }
+  
+  async initialize() {
+    // Implementation here
+    this.initialized = true;
+  }
+}`,
+    `const ${componentName} = {
+  async process(data) {
+    const validated = await this.validate(data);
+    return this.transform(validated);
+  }
+};`,
+    `interface I${componentName} {
+  id: string;
+  timestamp: number;
+  data: any;
+}
+
+export class ${componentName} implements I${componentName} {
+  constructor(id: string) {
+    this.id = id;
+    this.timestamp = Date.now();
+  }
+}`,
+    `export default class ${componentName} {
+  private state: Map<string, any> = new Map();
+  
+  setState(key: string, value: any): void {
+    this.state.set(key, value);
+  }
+  
+  getState(key: string): any {
+    return this.state.get(key);
+  }
+}`
+  ];
+  
+  return snippets[Math.floor(Math.random() * snippets.length)];
 }
 
 function generateCodeSnippet(componentName) {
