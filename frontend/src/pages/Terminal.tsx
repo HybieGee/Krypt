@@ -100,14 +100,23 @@ export default function Terminal() {
     
     // Wait for DOM update then fix layout
     setTimeout(() => {
-      // Remove any stuck inline styles
+      // Remove any stuck inline styles from all terminal windows
       const terminalElements = document.querySelectorAll('.terminal-window')
-      terminalElements.forEach((element) => {
+      terminalElements.forEach((element, index) => {
         const htmlElement = element as HTMLElement
-        // Reset to default styles
-        htmlElement.style.minHeight = '400px'
-        htmlElement.style.maxHeight = '600px'
-        htmlElement.style.height = 'auto'
+        if (index === 0) {
+          // Main terminal window
+          htmlElement.style.minHeight = '500px'
+          htmlElement.style.maxHeight = '500px'
+          htmlElement.style.height = '500px'
+          htmlElement.style.overflow = 'hidden'
+        } else {
+          // Progress bar window
+          htmlElement.style.minHeight = '200px'
+          htmlElement.style.maxHeight = '200px'
+          htmlElement.style.height = '200px'
+          htmlElement.style.overflow = 'hidden'
+        }
       })
       
       console.log('✅ Terminal layout reset complete')
@@ -162,13 +171,13 @@ export default function Terminal() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20" style={{ minHeight: Math.min(600, Math.max(500, windowHeight - 200)) }}>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-20" style={{ minHeight: '700px' }}>
       <div className="lg:col-span-2 flex flex-col space-y-4">
         <div className="terminal-window flex-1 flex flex-col" style={{ 
-          minHeight: '400px',
-          maxHeight: '600px', // Fixed max height instead of dynamic
-          height: 'auto',
-          contain: 'layout'
+          minHeight: '500px',
+          maxHeight: '500px', // Completely fixed height
+          height: '500px',
+          overflow: 'hidden'
         }}>
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
             <h2 className="text-lg font-bold text-terminal-green">
@@ -346,7 +355,12 @@ export default function Terminal() {
           </div>
         </div>
 
-        <div className="terminal-window">
+        <div className="terminal-window" style={{ 
+          minHeight: '200px',
+          maxHeight: '200px',
+          height: '200px',
+          overflow: 'hidden'
+        }}>
           <h3 className="text-sm font-bold text-terminal-green mb-3">
             Blockchain Development Progress
           </h3>
