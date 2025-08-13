@@ -113,7 +113,7 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="terminal-window h-full flex flex-col">
+    <div className="terminal-window h-full flex flex-col max-h-[600px]">
       <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
         <h2 className="text-lg font-bold text-terminal-green">
           Krypt Chat
@@ -128,7 +128,7 @@ export default function ChatInterface() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
+      <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2 custom-scrollbar min-h-0">
         {messages.length === 0 ? (
           <div className="text-terminal-green/40 text-sm">
             <p>Welcome to Krypt Global Chat!</p>
