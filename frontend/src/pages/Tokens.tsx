@@ -3,7 +3,7 @@ import { useStore } from '@/store/useStore'
 import ApiService from '@/services/api'
 
 export default function Tokens() {
-  const { user, updateUserWallet, updateUserMintedAmount, toggleMining, addStake } = useStore()
+  const { user, updateUserWallet, updateUserMintedAmount, toggleMining, addStake, setUser } = useStore()
   const [activeTab, setActiveTab] = useState<'wallet' | 'mint' | 'mine' | 'stake'>('wallet')
   const [mintAmount, setMintAmount] = useState('')
   const [stakeAmount, setStakeAmount] = useState('')
@@ -23,6 +23,54 @@ export default function Tokens() {
     setTimeout(() => setNotification(null), 5000) // Auto-dismiss after 5 seconds
   }
   
+  // Sync staked amount from backend on page load
+  useEffect(() => {
+    const syncUserData = async () => {
+      if (!user?.walletAddress) return
+      
+      try {
+        const apiService = ApiService.getInstance()
+        const backendUserData = await apiService.getUserData(user.walletAddress)
+        
+        if (backendUserData && backendUserData.stakedAmount > 0) {
+          const currentFrontendStaked = user.stakes?.reduce((total, stake) => total + stake.amount, 0) || 0
+          
+          // If backend has staked amount but frontend doesn't, sync it
+          if (backendUserData.stakedAmount !== currentFrontendStaked) {
+            console.log(`🔄 Syncing staked amount: Backend=${backendUserData.stakedAmount}, Frontend=${currentFrontendStaked}`)
+            
+            // For now, create a single synthetic stake entry to represent the total staked amount
+            // This is a simple solution until we store individual stakes in the backend
+            const syntheticStake = {
+              id: 'synced-' + Date.now(),
+              amount: backendUserData.stakedAmount,
+              startDate: new Date(),
+              duration: 7, // Default to 7 days
+              dailyReturn: backendUserData.stakedAmount * 0.008 // 0.8% daily for 7 days
+            }
+            
+            // Clear existing stakes and add the synthetic one
+            updateUserWallet(user.walletAddress, backendUserData.balance || user.balance || 0)
+            // Reset stakes array and add synthetic stake
+            const updatedUser = {
+              ...user,
+              stakes: [syntheticStake],
+              balance: backendUserData.balance || user.balance || 0,
+              mintedAmount: backendUserData.mintedAmount || user.mintedAmount || 0
+            }
+            setUser(updatedUser)
+            
+            console.log('✅ Staked amount synced from backend!')
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync user data from backend:', error)
+      }
+    }
+    
+    syncUserData()
+  }, [user?.walletAddress]) // Only run when wallet address changes
+
   // Stable leaderboard management with user persistence
   useEffect(() => {
     const apiService = ApiService.getInstance()

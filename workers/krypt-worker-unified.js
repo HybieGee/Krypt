@@ -325,6 +325,8 @@ export default {
         // User & Leaderboard endpoints
         case url.pathname === '/api/user/balance' && request.method === 'POST':
           return handleUpdateUserBalance(request, env);
+        case url.pathname.startsWith('/api/user/data/') && request.method === 'GET':
+          return handleGetUserData(request, env, url);
         case url.pathname === '/api/leaderboard' && request.method === 'GET':
           return handleGetLeaderboard(env);
         
@@ -1906,6 +1908,64 @@ async function handleUpdateUserBalance(request, env) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Failed to update balance' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleGetUserData(request, env, url) {
+  try {
+    // Extract wallet address from URL path: /api/user/data/{walletAddress}
+    const pathParts = url.pathname.split('/');
+    const walletAddress = pathParts[4]; // /api/user/data/{walletAddress}
+    
+    if (!walletAddress) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Wallet address required' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Validate Ethereum address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid wallet address format' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    const normalizedAddress = walletAddress.toLowerCase();
+    const userKey = `user:${normalizedAddress}`;
+    
+    // Get user data from KV storage
+    const userData = await kvGetJSON(env, userKey, null);
+    
+    if (!userData) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'User not found',
+        userData: null
+      }), { status: 404, headers: JSON_HEADERS });
+    }
+
+    // Return complete user data from backend
+    return new Response(JSON.stringify({ 
+      success: true,
+      userData: {
+        address: userData.address,
+        balance: userData.balance || 0,
+        mintedAmount: userData.mintedAmount || 0,
+        stakedAmount: userData.stakedAmount || 0,
+        isMining: userData.isMining || false,
+        firstSeen: userData.firstSeen,
+        lastUpdated: userData.lastUpdated
+      }
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Get user data error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to get user data' 
     }), { status: 500, headers: JSON_HEADERS });
   }
 }

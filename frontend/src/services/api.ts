@@ -269,6 +269,18 @@ class ApiService {
     return response.json()
   }
 
+  async getUserData(walletAddress: string): Promise<{ balance: number; mintedAmount: number; stakedAmount: number; isMining: boolean } | null> {
+    const response = await fetch(`${API_BASE_URL}/user/data/${walletAddress}`)
+    if (response.status === 404) {
+      return null
+    }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user data: ${response.statusText}`)
+    }
+    const result = await response.json()
+    return result.success ? result.userData : null
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,
