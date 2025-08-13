@@ -37,10 +37,10 @@ export default function MilestoneNotification({ airdrop, onDismiss, delay = 0 }:
   if (!isVisible) return null
 
   return (
-    <div className={`transition-all duration-300 transform ${
+    <div className={`transition-all duration-300 transform pointer-events-auto ${
       isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
     }`}>
-      <div className="bg-black border-2 border-terminal-green shadow-lg rounded-lg p-4 max-w-sm relative overflow-hidden">
+      <div className="bg-black/95 border-2 border-terminal-green shadow-2xl rounded-lg p-4 max-w-sm relative overflow-hidden backdrop-blur-sm" style={{ boxShadow: '0 0 50px rgba(0, 255, 0, 0.3), 0 0 100px rgba(0, 0, 0, 0.8)' }}>
         {/* Animated background effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-terminal-green/5 to-terminal-green/10 animate-pulse"></div>
         

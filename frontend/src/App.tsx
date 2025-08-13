@@ -330,7 +330,7 @@ function App() {
       </Router>
       
       {/* Airdrop Notifications */}
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 space-y-4">
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] space-y-4 pointer-events-none">
         {pendingAirdrops.map((airdrop, index) => (
           <MilestoneNotification
             key={airdrop.airdropId}
