@@ -937,8 +937,8 @@ async function generateNextComponent(env) {
     const lastGenTime = await kvGetJSON(env, 'last_component_gen_time', 0);
     const timeSinceLastGen = Date.now() - lastGenTime;
     
-    // Don't generate if less than 55 seconds since last generation (full sequence takes ~45 seconds)
-    if (timeSinceLastGen < 55000) {
+    // Don't generate if less than 40 seconds since last generation (full sequence takes ~35 seconds)
+    if (timeSinceLastGen < 40000) {
       console.log(`⏸️ Rate limited: ${timeSinceLastGen}ms since last generation`);
       return {
         componentName: getComponentName(currentProgress - 1),
@@ -953,14 +953,17 @@ async function generateNextComponent(env) {
     const componentName = getComponentName(currentProgress);
     const logs = await kvGetJSON(env, 'dev_logs', []);
     
-    // Generate realistic development sequence
+    // Generate realistic development sequence with random intervals (3-8 seconds)
     const baseTime = Date.now();
     const developmentLogs = [];
+    const getRandomInterval = () => Math.floor(Math.random() * 6000) + 3000; // 3000-8999ms
+    
+    let currentDelay = 0;
     
     // 1. AI Request (appears immediately)
     developmentLogs.push({
       id: `ai-req-${currentProgress}-${baseTime}`,
-      ts: baseTime, // now
+      ts: baseTime + currentDelay,
       level: 'api',
       msg: `Sending request to Krypt AI...`,
       details: { 
@@ -969,10 +972,11 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 2. AI Response (appears 5 seconds later)
+    // 2. AI Response (random delay 3-8s after previous)
+    currentDelay += getRandomInterval();
     developmentLogs.push({
       id: `ai-resp-${currentProgress}-${baseTime}`,
-      ts: baseTime + 5000, // 5 seconds from now
+      ts: baseTime + currentDelay,
       level: 'api',
       msg: `✅ Krypt AI response received (${Math.floor(Math.random() * 500) + 200}ms)`,
       details: { 
@@ -986,10 +990,11 @@ async function generateNextComponent(env) {
     const actualLineCount = codeSnippet.split('\n').length;
     const commitHash = Math.random().toString(16).substring(2, 8);
     
-    // 3. Component completion (appears 10 seconds later)
+    // 3. Component completion (random delay 3-8s after previous)
+    currentDelay += getRandomInterval();
     developmentLogs.push({
       id: `comp-${currentProgress}-${baseTime}`,
-      ts: baseTime + 10000, // 10 seconds from now
+      ts: baseTime + currentDelay,
       level: 'system',
       msg: `✅ ${componentName} component developed (${actualLineCount} lines coded)`,
       details: {
@@ -1003,11 +1008,12 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 4. Testing (appears 25 seconds later)
+    // 4. Testing (random delay 3-8s after previous)
+    currentDelay += getRandomInterval();
     const testsRun = Math.floor(Math.random() * 8) + 3;
     developmentLogs.push({
       id: `test-${currentProgress}-${baseTime}`,
-      ts: baseTime + 25000, // 25 seconds from now
+      ts: baseTime + currentDelay,
       level: 'test',
       msg: `Running tests for ${componentName}...`,
       details: {
@@ -1019,10 +1025,11 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 5. Git Commit (appears 35 seconds later)
+    // 5. Git Commit (random delay 3-8s after previous)
+    currentDelay += getRandomInterval();
     developmentLogs.push({
       id: `commit-${currentProgress}-${baseTime}`,
-      ts: baseTime + 35000, // 35 seconds from now
+      ts: baseTime + currentDelay,
       level: 'commit',
       msg: `✅ Committed to GitHub`,
       details: {
