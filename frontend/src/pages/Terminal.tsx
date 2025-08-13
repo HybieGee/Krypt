@@ -11,7 +11,6 @@ export default function Terminal() {
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true) // Start with true to auto-scroll on page load
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
-  const [windowHeight, setWindowHeight] = useState(window.innerHeight)
   const [forceRerender, setForceRerender] = useState(0)
 
   // Filter logs based on selected filter AND timestamp (only show logs whose time has passed)
@@ -92,9 +91,6 @@ export default function Terminal() {
   const forceLayoutReset = () => {
     console.log('🔧 Forcing terminal layout reset...')
     
-    // Reset window height to current value
-    setWindowHeight(window.innerHeight)
-    
     // Force complete re-render
     setForceRerender(prev => prev + 1)
     
@@ -141,7 +137,6 @@ export default function Terminal() {
           forceLayoutReset()
         }
         
-        setWindowHeight(currentHeight)
         lastHeight = currentHeight
         
         // Reset scroll positions
