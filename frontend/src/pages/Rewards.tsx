@@ -127,21 +127,8 @@ export default function Rewards() {
     loadRaffleData()
   }, [user?.walletAddress])
 
-  // Auto-refresh raffle data every 2 seconds when on raffles tab
-  useEffect(() => {
-    if (activeTab !== 'raffles' || !user?.walletAddress) return
-    
-    console.log('🔄 Starting auto-refresh every 2 seconds for raffles tab')
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refreshing raffle data...')
-      loadRaffleData()
-    }, 2000)
-    
-    return () => {
-      console.log('🛑 Stopping raffle auto-refresh')
-      clearInterval(interval)
-    }
-  }, [activeTab, user?.walletAddress])
+  // Disabled auto-refresh to prevent overwriting optimistic updates
+  // Only use delayed refreshes after raffle entries
 
   // Handle raffle entry
   const handleRaffleEntry = async (raffleType: string, ticketCost: number) => {
