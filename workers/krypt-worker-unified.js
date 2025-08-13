@@ -2236,6 +2236,32 @@ async function handleRegisterWalletFingerprint(request, env) {
       }), { status: 409, headers: JSON_HEADERS });
     }
     
+    // CRITICAL: Check for wallet address collision
+    // Search all existing fingerprints to ensure no wallet address collision
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'fingerprint:' });
+    for (const key of listResult.keys) {
+      try {
+        const existingFingerprintData = await kvGetJSON(env, key.name, null);
+        if (existingFingerprintData && existingFingerprintData.address) {
+          if (existingFingerprintData.address.toLowerCase() === walletAddress.toLowerCase()) {
+            console.error('🚨 WALLET COLLISION DETECTED:', {
+              newFingerprint: fingerprint.substring(0, 8) + '...',
+              existingFingerprint: existingFingerprintData.fingerprint.substring(0, 8) + '...',
+              duplicateAddress: walletAddress
+            });
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'CRITICAL: Wallet address collision detected. Please refresh and try again.' 
+            }), { status: 409, headers: JSON_HEADERS });
+          }
+        }
+      } catch (error) {
+        console.warn('Error checking fingerprint collision:', error);
+      }
+    }
+    
+    console.log('✅ Wallet address verified unique:', walletAddress, 'for fingerprint:', fingerprint.substring(0, 8) + '...');
+    
     // Register fingerprint -> wallet mapping
     const fingerprintData = {
       address: walletAddress.toLowerCase(),

@@ -25,6 +25,20 @@ function App() {
       safeStorage.clearAll();
       location.reload();
     };
+    // Emergency wallet collision reset
+    (window as any).resetKryptWallet = () => {
+      console.warn('🔄 Forcing complete wallet reset...')
+      safeStorage.del('krypt-device-fingerprint')
+      safeStorage.set('krypt-force-new-wallet', 'true')
+      location.reload()
+    };
+    // Create completely fresh user
+    (window as any).createFreshUser = () => {
+      console.warn('🆕 Creating completely fresh user...')
+      safeStorage.clearAll()
+      safeStorage.set('krypt-force-new-wallet', 'true')
+      location.reload()
+    };
   }, [clearTerminalLogs])
   
   // Initialize early access visitor tracking
@@ -40,32 +54,102 @@ function App() {
       const forceNewWallet = safeStorage.get('krypt-force-new-wallet')
       
       if (!user?.walletAddress || forceNewWallet) {
-        // Generate persistent device fingerprint
+        // Generate persistent device fingerprint with high uniqueness
         const generateDeviceFingerprint = () => {
+          // Check for existing unique ID first
+          let storedFingerprint = safeStorage.get('krypt-device-fingerprint')
+          if (storedFingerprint && !forceNewWallet) {
+            return storedFingerprint
+          }
+          
+          // Generate enhanced fingerprint with more unique characteristics
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d')
-          ctx!.textBaseline = 'top'
-          ctx!.font = '14px Arial'
-          ctx!.fillText('Device fingerprint', 2, 2)
+          if (ctx) {
+            ctx.textBaseline = 'top'
+            ctx.font = '14px Arial'
+            ctx.fillText('Krypt fingerprint test', 2, 2)
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'
+            ctx.fillRect(0, 0, 100, 50)
+          }
+          
+          // Get WebGL fingerprint
+          let webglFingerprint = ''
+          try {
+            const gl = document.createElement('canvas').getContext('webgl')
+            if (gl) {
+              const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
+              webglFingerprint = gl.getParameter(debugInfo?.UNMASKED_RENDERER_WEBGL || gl.RENDERER) || ''
+            }
+          } catch (e) {
+            webglFingerprint = 'webgl-error'
+          }
+          
+          // Get audio context fingerprint
+          let audioFingerprint = ''
+          try {
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+            const oscillator = audioContext.createOscillator()
+            audioFingerprint = oscillator.toString()
+            audioContext.close()
+          } catch (e) {
+            audioFingerprint = 'audio-error'
+          }
+          
+          const timestamp = Date.now()
+          const random1 = Math.random().toString(36)
+          const random2 = Math.random().toString(36)
           
           const fingerprint = [
-            navigator.userAgent,
-            navigator.language,
+            navigator.userAgent || '',
+            navigator.language || '',
+            navigator.languages?.join(',') || '',
             screen.width + 'x' + screen.height,
+            screen.colorDepth || '',
             new Date().getTimezoneOffset(),
             canvas.toDataURL(),
+            webglFingerprint,
+            audioFingerprint,
             navigator.hardwareConcurrency || 'unknown',
-            navigator.platform
+            navigator.platform || '',
+            navigator.cookieEnabled ? 'cookies' : 'no-cookies',
+            navigator.doNotTrack || 'no-dnt',
+            window.devicePixelRatio || 1,
+            navigator.maxTouchPoints || 0,
+            timestamp, // Ensures uniqueness even with identical devices
+            random1,   // Additional randomness
+            random2,   // More randomness
+            window.screen.availHeight || '',
+            window.screen.availWidth || '',
+            (navigator as any).connection?.effectiveType || 'unknown',
+            document.documentElement.clientWidth || '',
+            document.documentElement.clientHeight || ''
           ].join('|')
           
-          // Create hash from fingerprint
+          // Create secure hash from fingerprint using multiple hash rounds
           let hash = 0
           for (let i = 0; i < fingerprint.length; i++) {
             const char = fingerprint.charCodeAt(i)
             hash = ((hash << 5) - hash) + char
             hash = hash & hash // Convert to 32-bit integer
           }
-          return Math.abs(hash).toString(16)
+          
+          // Additional hash round for better distribution
+          let hash2 = hash
+          const hashStr = hash.toString()
+          for (let i = 0; i < hashStr.length; i++) {
+            const char = hashStr.charCodeAt(i)
+            hash2 = ((hash2 << 7) - hash2) + char
+            hash2 = hash2 & hash2
+          }
+          
+          const finalFingerprint = Math.abs(hash2).toString(16) + Math.abs(hash).toString(16)
+          
+          // Store for persistence
+          safeStorage.set('krypt-device-fingerprint', finalFingerprint)
+          console.log('🔒 Generated unique device fingerprint:', finalFingerprint.substring(0, 8) + '...')
+          
+          return finalFingerprint
         }
 
         const deviceFingerprint = generateDeviceFingerprint()
@@ -83,16 +167,46 @@ function App() {
             }
             console.log('🔄 Restored existing wallet for device:', existingWallet.address)
           } else {
-            // Generate proper 40-character Ethereum address format
+            // Generate proper 40-character Ethereum address format with collision detection
             const generateWalletAddress = () => {
               const chars = '0123456789abcdef'
               let address = '0x'
-              for (let i = 0; i < 40; i++) {
-                address += chars[Math.floor(Math.random() * chars.length)]
+              
+              // Use crypto.getRandomValues for stronger randomness if available
+              if (window.crypto && window.crypto.getRandomValues) {
+                const randomBytes = new Uint8Array(20)
+                window.crypto.getRandomValues(randomBytes)
+                for (let i = 0; i < 20; i++) {
+                  address += chars[randomBytes[i] >> 4] + chars[randomBytes[i] & 15]
+                }
+              } else {
+                // Fallback to Math.random with timestamp mixing
+                const timestamp = Date.now().toString(16)
+                for (let i = 0; i < 40; i++) {
+                  const randomValue = Math.floor(Math.random() * chars.length)
+                  const timestampInfluence = parseInt(timestamp[i % timestamp.length] || '0', 16)
+                  const finalIndex = (randomValue + timestampInfluence) % chars.length
+                  address += chars[finalIndex]
+                }
               }
+              
+              // Add additional uniqueness by mixing in device fingerprint
+              const fingerprintInfluence = deviceFingerprint.substring(0, 8)
+              for (let i = 0; i < 8; i++) {
+                const pos = 2 + (i * 5) // Positions 2, 7, 12, 17, 22, 27, 32, 37
+                if (pos < address.length) {
+                  const originalChar = address[pos]
+                  const fingerprintChar = fingerprintInfluence[i]
+                  const combined = (parseInt(originalChar, 16) + parseInt(fingerprintChar, 16)) % 16
+                  address = address.substring(0, pos) + chars[combined] + address.substring(pos + 1)
+                }
+              }
+              
               return address
             }
             const generatedAddress = generateWalletAddress()
+            
+            console.log('🆕 Generated new wallet address:', generatedAddress, 'for fingerprint:', deviceFingerprint.substring(0, 8) + '...')
             
             if (forceNewWallet) {
               console.log('🔄 Forcing complete wallet reset including staking and minting data')
@@ -102,7 +216,19 @@ function App() {
             }
             
             // Register wallet with device fingerprint
-            await apiService.registerWalletFingerprint?.(generatedAddress, deviceFingerprint)
+            try {
+              await apiService.registerWalletFingerprint?.(generatedAddress, deviceFingerprint)
+            } catch (error: any) {
+              console.error('Wallet registration error:', error)
+              // If there's a collision, clear the stored fingerprint and generate a new one
+              if (error.message?.includes('collision') || error.message?.includes('CRITICAL')) {
+                console.warn('🚨 Wallet collision detected, clearing fingerprint and retrying...')
+                safeStorage.del('krypt-device-fingerprint')
+                // Force page reload to generate completely new fingerprint and wallet
+                window.location.reload()
+                return
+              }
+            }
           }
           
         } catch (error) {
