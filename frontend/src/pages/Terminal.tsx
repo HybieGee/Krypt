@@ -11,6 +11,7 @@ export default function Terminal() {
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true) // Start with true to auto-scroll on page load
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight)
 
   // Filter logs based on selected filter AND timestamp (only show logs whose time has passed)
   const filteredLogs = terminalLogs.filter(log => {
@@ -86,10 +87,82 @@ export default function Terminal() {
     }
   }
 
+  // Handle window resize - fixes developer console open/close bug
+  useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout
+
+    const handleResize = () => {
+      // Clear previous timeout
+      clearTimeout(resizeTimeout)
+      
+      // Debounce resize to avoid too many updates
+      resizeTimeout = setTimeout(() => {
+        setWindowHeight(window.innerHeight)
+        
+        // Force re-render of terminal components
+        const terminalElements = document.querySelectorAll('.terminal-window')
+        terminalElements.forEach((element) => {
+          const htmlElement = element as HTMLElement
+          // Trigger a reflow
+          htmlElement.style.display = 'none'
+          htmlElement.offsetHeight // Force reflow
+          htmlElement.style.display = ''
+        })
+        
+        // Reset scroll positions if needed
+        if (activeTab === 'terminal') {
+          setTimeout(jumpToBottomLiveView, 100)
+        } else {
+          setTimeout(jumpToBottomLogs, 100)
+        }
+      }, 100)
+    }
+
+    window.addEventListener('resize', handleResize)
+    
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      clearTimeout(resizeTimeout)
+    }
+  }, [activeTab])
+
+  // Handle developer console detection
+  useEffect(() => {
+    const detectDevTools = () => {
+      const threshold = 160
+      const devtools = {
+        open: window.outerHeight - window.innerHeight > threshold ||
+              window.outerWidth - window.innerWidth > threshold
+      }
+      
+      if (devtools.open) {
+        // Developer console opened - force layout refresh
+        setTimeout(() => {
+          const terminalElements = document.querySelectorAll('.terminal-window')
+          terminalElements.forEach((element) => {
+            const htmlElement = element as HTMLElement
+            htmlElement.style.transform = 'translateZ(0)' // Force GPU acceleration
+            setTimeout(() => {
+              htmlElement.style.transform = ''
+            }, 50)
+          })
+        }, 200)
+      }
+    }
+
+    const interval = setInterval(detectDevTools, 500)
+    
+    return () => clearInterval(interval)
+  }, [])
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20" style={{ minHeight: Math.max(500, windowHeight - 200) }}>
       <div className="lg:col-span-2 flex flex-col space-y-4">
-        <div className="terminal-window flex-1 flex flex-col">
+        <div className="terminal-window flex-1 flex flex-col" style={{ 
+          minHeight: '400px',
+          maxHeight: Math.max(600, windowHeight - 300),
+          contain: 'layout'
+        }}>
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
             <h2 className="text-lg font-bold text-terminal-green">
               Krypt Development Terminal
