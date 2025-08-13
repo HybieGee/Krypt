@@ -139,7 +139,8 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
           Starting autonomous development process...
         </div>
 
-        {logs.length > 0 ? logs.map((log) => (
+        <div style={{ display: 'flex', flexDirection: 'column-reverse' }}>
+          {logs.length > 0 ? logs.slice().reverse().map((log) => (
           <div key={log.id} className="flex flex-col space-y-1">
             <div className="flex items-start">
               <span className="text-terminal-green/60 mr-2">
@@ -181,6 +182,7 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
             </div>
           </div>
         )}
+        </div>
 
         {/* AI typing simulation */}
         {logs.length > 0 && !logs.some(log => log.type === 'warning' && log.message.includes('halted')) && (
