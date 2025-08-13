@@ -281,6 +281,23 @@ class ApiService {
     return result.success ? result.userData : null
   }
 
+  async transferTokens(fromAddress: string, toAddress: string, amount: number): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/user/transfer`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ fromAddress, toAddress, amount })
+    })
+    
+    const result = await response.json()
+    
+    if (!response.ok) {
+      return { success: false, message: result.error || 'Failed to transfer tokens' }
+    }
+    return result
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

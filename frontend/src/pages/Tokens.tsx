@@ -289,19 +289,28 @@ export default function Tokens() {
         throw new Error('Insufficient balance')
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call real transfer API
+      const apiService = ApiService.getInstance()
+      const result = await apiService.transferTokens(user.walletAddress, transferAddress, amount)
       
-      // Update balance (this would normally be handled by the backend)
-      updateUserWallet(user.walletAddress, (user.balance || 0) - amount)
-      
-      setTransferStatus('success')
-      setTransferAmount('')
-      setTransferAddress('')
-      
-      setTimeout(() => setTransferStatus('idle'), 3000)
-    } catch (error) {
+      if (result.success) {
+        // Update sender's balance with backend response
+        updateUserWallet(user.walletAddress, result.newBalance)
+        
+        setTransferStatus('success')
+        setTransferAmount('')
+        setTransferAddress('')
+        
+        showNotification('success', `🎉 Successfully transferred ${amount} KRYPT tokens to ${transferAddress.slice(0, 6)}...${transferAddress.slice(-4)}`)
+        
+        setTimeout(() => setTransferStatus('idle'), 3000)
+      } else {
+        throw new Error(result.message || 'Transfer failed')
+      }
+    } catch (error: any) {
+      console.error('Transfer failed:', error)
       setTransferStatus('error')
+      showNotification('error', error.message || 'Transfer failed. Please try again.')
       setTimeout(() => setTransferStatus('idle'), 3000)
     }
   }

@@ -327,6 +327,8 @@ export default {
           return handleUpdateUserBalance(request, env);
         case url.pathname.startsWith('/api/user/data/') && request.method === 'GET':
           return handleGetUserData(request, env, url);
+        case url.pathname === '/api/user/transfer' && request.method === 'POST':
+          return handleTransferTokens(request, env);
         case url.pathname === '/api/leaderboard' && request.method === 'GET':
           return handleGetLeaderboard(env);
         
@@ -1966,6 +1968,102 @@ async function handleGetUserData(request, env, url) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Failed to get user data' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleTransferTokens(request, env) {
+  try {
+    const body = await request.json();
+    const fromAddress = body.fromAddress;
+    const toAddress = body.toAddress;
+    const amount = parseFloat(body.amount);
+    
+    if (!fromAddress || !toAddress || !amount || amount <= 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Valid from address, to address, and amount required' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Validate both addresses
+    if (!/^0x[a-fA-F0-9]{40}$/.test(fromAddress) || !/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid wallet address format' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Can't transfer to yourself
+    if (fromAddress.toLowerCase() === toAddress.toLowerCase()) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Cannot transfer to yourself' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    const normalizedFromAddress = fromAddress.toLowerCase();
+    const normalizedToAddress = toAddress.toLowerCase();
+    
+    // Get sender's current balance
+    const fromUserKey = `user:${normalizedFromAddress}`;
+    const fromUser = await kvGetJSON(env, fromUserKey, null);
+    
+    if (!fromUser || (fromUser.balance || 0) < amount) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Insufficient balance for transfer' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Get or create recipient
+    const toUserKey = `user:${normalizedToAddress}`;
+    const toUser = await kvGetJSON(env, toUserKey, {
+      address: normalizedToAddress,
+      balance: 0,
+      mintedAmount: 0,
+      stakedAmount: 0,
+      firstSeen: Date.now(),
+      lastUpdated: Date.now()
+    });
+
+    // Perform the transfer
+    const updatedFromUser = {
+      ...fromUser,
+      balance: fromUser.balance - amount,
+      lastUpdated: Date.now()
+    };
+    
+    const updatedToUser = {
+      ...toUser,
+      balance: (toUser.balance || 0) + amount,
+      lastUpdated: Date.now()
+    };
+
+    // Save both users atomically
+    await Promise.all([
+      kvPutJSON(env, fromUserKey, updatedFromUser),
+      kvPutJSON(env, toUserKey, updatedToUser)
+    ]);
+
+    console.log(`💸 Transfer successful: ${amount} KRYPT from ${fromAddress} to ${toAddress}`);
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      transfer: {
+        from: fromAddress,
+        to: toAddress,
+        amount: amount,
+        timestamp: Date.now()
+      },
+      newBalance: updatedFromUser.balance
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Transfer tokens error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to transfer tokens' 
     }), { status: 500, headers: JSON_HEADERS });
   }
 }
