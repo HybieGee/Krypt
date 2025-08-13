@@ -329,17 +329,31 @@ function App() {
         </Routes>
       </Router>
       
-      {/* Airdrop Notifications */}
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999] space-y-4 pointer-events-none">
-        {pendingAirdrops.map((airdrop, index) => (
-          <MilestoneNotification
-            key={airdrop.airdropId}
-            airdrop={airdrop}
-            onDismiss={dismissAirdrop}
-            delay={index * 200} // Stagger animations
-          />
-        ))}
-      </div>
+      {/* Airdrop Notifications - Using portal-style positioning */}
+      {pendingAirdrops.length > 0 && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center pointer-events-none"
+          style={{ 
+            zIndex: 2147483647, // Maximum safe z-index value
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+        >
+          <div className="space-y-4">
+            {pendingAirdrops.map((airdrop, index) => (
+              <MilestoneNotification
+                key={airdrop.airdropId}
+                airdrop={airdrop}
+                onDismiss={dismissAirdrop}
+                delay={index * 200} // Stagger animations
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </>
   )
 }
