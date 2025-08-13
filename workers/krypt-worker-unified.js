@@ -253,6 +253,9 @@ export default {
       // Run autonomous development tick
       await runAutonomousDevelopment(env);
       
+      // Check for missed milestone triggers
+      await checkAndTriggerMilestones(env);
+      
       // Handle automatic raffle draws
       await handleAutomaticRaffleDraws(env);
       
@@ -335,6 +338,9 @@ async function handleEarlyAccessVisit(request, env) {
         timestamp: Date.now(),
         fingerprint
       }), { expirationTtl: Math.floor(VISITOR_DEDUP_TTL / 1000) });
+
+      // Check for milestone triggers after early access count increment
+      await checkAndTriggerMilestones(env);
     }
 
     // Get final count
@@ -638,9 +644,6 @@ async function handleDevelopmentTick(env) {
 
     // Generate next component
     const result = await generateNextComponent(env);
-    
-    // Check for milestone triggers after component generation
-    await checkAndTriggerMilestones(env, result.newProgress);
     
     return new Response(JSON.stringify({
       success: true,
@@ -1405,21 +1408,22 @@ class ConfigurationError extends Error {
 
 // ===== MILESTONE SYSTEM =====
 const MILESTONES = [
-  { id: 'milestone_1', components: 500, reward: 250, name: 'Blockchain Foundation' },
-  { id: 'milestone_2', components: 1000, reward: 500, name: 'Core Infrastructure' },
-  { id: 'milestone_3', components: 1500, reward: 750, name: 'Security Layer' },
-  { id: 'milestone_4', components: 2000, reward: 1000, name: 'Smart Contracts' },
-  { id: 'milestone_5', components: 2500, reward: 1250, name: 'Network Protocol' },
-  { id: 'milestone_6', components: 3000, reward: 1500, name: 'Performance Optimization' },
-  { id: 'milestone_7', components: 3500, reward: 1750, name: 'Advanced Features' },
-  { id: 'milestone_8', components: 4000, reward: 2000, name: 'Final Integration' },
-  { id: 'milestone_9', components: 4500, reward: 2500, name: 'Blockchain Complete' }
+  { id: 'milestone_1', userTarget: 25, reward: 250, name: 'Early Pioneers' },
+  { id: 'milestone_2', userTarget: 125, reward: 350, name: 'Growing Community' },
+  { id: 'milestone_3', userTarget: 500, reward: 500, name: 'Established Base' },
+  { id: 'milestone_4', userTarget: 1500, reward: 1000, name: 'Thriving Ecosystem' },
+  { id: 'milestone_5', userTarget: 5000, reward: 2000, name: 'Massive Adoption' }
 ];
 
-async function checkAndTriggerMilestones(env, currentComponents) {
+async function checkAndTriggerMilestones(env) {
   try {
+    // Get current early access user count
+    const earlyAccessCount = await kvGetJSON(env, 'early_access_count', 0);
+    
     // Get completed milestones
     const completedMilestones = await kvGetJSON(env, 'completed_milestones', []);
+    
+    console.log(`🔍 Checking milestones - Current early access users: ${earlyAccessCount}`);
     
     // Check each milestone
     for (const milestone of MILESTONES) {
@@ -1429,8 +1433,8 @@ async function checkAndTriggerMilestones(env, currentComponents) {
       }
       
       // Check if milestone threshold reached
-      if (currentComponents >= milestone.components) {
-        console.log(`🎯 Milestone triggered: ${milestone.name} at ${milestone.components} components`);
+      if (earlyAccessCount >= milestone.userTarget) {
+        console.log(`🎯 Milestone triggered: ${milestone.name} at ${milestone.userTarget} users`);
         
         // Mark as completed to prevent double-triggering
         completedMilestones.push(milestone.id);
@@ -1447,9 +1451,9 @@ async function checkAndTriggerMilestones(env, currentComponents) {
 
 async function triggerMilestoneAirdrop(env, milestone) {
   try {
-    console.log(`🚀 Triggering airdrop for ${milestone.name} - ${milestone.reward} tokens each`);
+    console.log(`🚀 Triggering early access milestone airdrop for ${milestone.name} - ${milestone.reward} tokens each`);
     
-    // Get all users for leaderboard (first 25 wallets)
+    // Get all users for airdrop (first 25 wallets)
     const listResult = await env.KRYPT_DATA.list({ prefix: 'user:' });
     const eligibleUsers = [];
     
@@ -1548,7 +1552,7 @@ async function triggerMilestoneAirdrop(env, milestone) {
       msg: `🎯 MILESTONE ACHIEVED: ${milestone.name}! 🎉`,
       details: {
         milestone: milestone.name,
-        components: milestone.components,
+        userTarget: milestone.userTarget,
         reward: milestone.reward,
         recipients: distributionResults.length,
         totalDistributed: distributionResults.length * milestone.reward,
