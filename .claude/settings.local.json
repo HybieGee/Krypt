@@ -33,7 +33,8 @@
       "Bash(start raffle-admin.html)",
       "Bash(del:*)",
       "Bash(timeout:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

@@ -343,8 +343,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 90 seconds to allow each component sequence to complete without interruption
-    this.pollInterval = setInterval(poll, 90000)
+    // Poll every 55 seconds to allow each component sequence to complete without interruption
+    this.pollInterval = setInterval(poll, 55000)
   }
 
   stopPolling() {
