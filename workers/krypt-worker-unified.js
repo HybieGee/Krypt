@@ -1124,17 +1124,17 @@ async function runRealAutonomousDevelopment(env) {
       return;
     }
 
-    // Generate 2-3 components per 15-minute cycle (slower but more realistic)
-    const componentsToGenerate = Math.min(3, 4500 - currentProgress);
+    // Generate 5-8 components per 2-minute cycle (rapid development like original)
+    const componentsToGenerate = Math.min(8, 4500 - currentProgress);
     
     console.log(`🔄 Real autonomous development: generating ${componentsToGenerate} components (${currentProgress} → ${currentProgress + componentsToGenerate})`);
     
     for (let i = 0; i < componentsToGenerate; i++) {
       const componentNumber = currentProgress + i + 1;
       
-      // Add small delay between components (1-2 minutes apart)
+      // Add small delay between components (2-5 seconds apart)
       if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 60000 + 60000));
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 2000));
       }
       
       await generateRealComponent(env, componentNumber);
