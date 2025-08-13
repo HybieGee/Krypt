@@ -8,6 +8,7 @@ export default function Rewards() {
   const [raffleTickets, setRaffleTickets] = useState(0)
   const [, setUserMilestones] = useState<any[]>([])
   const [raffleEntries, setRaffleEntries] = useState<any[]>([])
+  const [raffleStatus, setRaffleStatus] = useState<any>({})
 
   // Early Access User Milestones with automatic distribution
   const earlyAccessMilestones = [
@@ -99,22 +100,34 @@ export default function Rewards() {
     setRaffleTickets(tickets)
   }, [userScore.totalScore, user?.raffleTickets])
 
-  // Load raffle entries
-  useEffect(() => {
-    const loadRaffleEntries = async () => {
-      if (!user?.walletAddress) return
-      
-      const apiService = ApiService.getInstance()
-      try {
-        const entries = await apiService.getRaffleEntries(user.walletAddress)
-        setRaffleEntries(entries || [])
-      } catch (error) {
-        console.error('Failed to fetch raffle entries:', error)
-      }
-    }
+  // Load raffle entries and status
+  const loadRaffleData = async () => {
+    if (!user?.walletAddress) return
     
-    loadRaffleEntries()
+    const apiService = ApiService.getInstance()
+    try {
+      const [entries, status] = await Promise.all([
+        apiService.getRaffleEntries(user.walletAddress),
+        apiService.getRaffleStatus()
+      ])
+      setRaffleEntries(entries || [])
+      setRaffleStatus(status || {})
+    } catch (error) {
+      console.error('Failed to fetch raffle data:', error)
+    }
+  }
+
+  useEffect(() => {
+    loadRaffleData()
   }, [user?.walletAddress])
+
+  // Auto-refresh raffle data every 10 seconds when on raffles tab
+  useEffect(() => {
+    if (activeTab !== 'raffles' || !user?.walletAddress) return
+    
+    const interval = setInterval(loadRaffleData, 10000)
+    return () => clearInterval(interval)
+  }, [activeTab, user?.walletAddress])
 
   // Handle raffle entry
   const handleRaffleEntry = async (raffleType: string, ticketCost: number) => {
@@ -125,9 +138,8 @@ export default function Rewards() {
       const result = await apiService.enterRaffle(user.walletAddress, raffleType, ticketCost)
       if (result.success) {
         setRaffleTickets(result.remainingTickets)
-        // Refresh entries
-        const entries = await apiService.getRaffleEntries(user.walletAddress)
-        setRaffleEntries(entries || [])
+        // Immediately refresh all raffle data
+        await loadRaffleData()
         
         // Show success feedback (could add a toast notification here)
         console.log(`Successfully entered ${raffleType} raffle!`)
@@ -336,9 +348,9 @@ export default function Rewards() {
                       <div className="text-terminal-green font-bold">Every hour</div>
                     </div>
                     <div>
-                      <span className="text-gray-400">Your Entries:</span>
+                      <span className="text-gray-400">Entries:</span>
                       <div className="text-terminal-green font-bold">
-                        {raffleEntries.filter(entry => entry.raffleType === 'hourly').length}
+                        {raffleEntries.filter(entry => entry.raffleType === 'hourly').length} / {raffleStatus.hourly?.totalEntries || 0}
                       </div>
                     </div>
                   </div>
@@ -375,9 +387,9 @@ export default function Rewards() {
                       <div className="text-terminal-green font-bold">Every Sunday</div>
                     </div>
                     <div>
-                      <span className="text-gray-400">Your Entries:</span>
+                      <span className="text-gray-400">Entries:</span>
                       <div className="text-terminal-green font-bold">
-                        {raffleEntries.filter(entry => entry.raffleType === 'weekly').length}
+                        {raffleEntries.filter(entry => entry.raffleType === 'weekly').length} / {raffleStatus.weekly?.totalEntries || 0}
                       </div>
                     </div>
                   </div>
@@ -414,9 +426,9 @@ export default function Rewards() {
                       <div className="text-emerald-300 font-bold">Mainnet Launch</div>
                     </div>
                     <div>
-                      <span className="text-emerald-300/60">Your Entries:</span>
+                      <span className="text-emerald-300/60">Entries:</span>
                       <div className="text-emerald-300 font-bold">
-                        {raffleEntries.filter(entry => entry.raffleType === 'genesis').length}
+                        {raffleEntries.filter(entry => entry.raffleType === 'genesis').length} / {raffleStatus.genesis?.totalEntries || 0}
                       </div>
                     </div>
                   </div>
