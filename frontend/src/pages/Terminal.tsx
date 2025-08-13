@@ -24,7 +24,7 @@ export default function Terminal() {
   const checkLogsScrollPosition = () => {
     if (logsViewRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = logsViewRef.current
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
       setIsLogsScrolledUp(!isAtBottom)
     }
   }
@@ -33,18 +33,18 @@ export default function Terminal() {
   useEffect(() => {
     if (activeTab === 'logs' && logsViewRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = logsViewRef.current
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
       
-      // Only auto-scroll if user is at bottom or shouldAutoScroll is explicitly true (tab switch)
-      if ((isAtBottom && !isLogsScrolledUp) || shouldAutoScroll) {
+      // Always auto-scroll if user is at bottom when new content arrives
+      if (isAtBottom || shouldAutoScroll) {
         setTimeout(() => {
           if (logsViewRef.current) {
             logsViewRef.current.scrollTop = logsViewRef.current.scrollHeight
           }
-        }, 50)
+        }, 0)
       }
     }
-  }, [activeTab, shouldAutoScroll, terminalLogs.length, isLogsScrolledUp])
+  }, [activeTab, shouldAutoScroll, terminalLogs.length])
 
   // Filter logs based on selected filter
   const filteredLogs = terminalLogs.filter(log => {

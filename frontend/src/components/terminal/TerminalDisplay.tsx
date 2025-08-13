@@ -22,7 +22,7 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
   const checkScrollPosition = () => {
     if (terminalRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = terminalRef.current
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
       setIsUserScrolledUp(!isAtBottom)
     }
   }
@@ -31,14 +31,19 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
   useEffect(() => {
     if (terminalRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = terminalRef.current
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50 // 50px threshold
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
       
-      // Only auto-scroll if user is at bottom or shouldScrollToBottom is explicitly true
-      if ((isAtBottom && !isUserScrolledUp) || shouldScrollToBottom) {
-        terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+      // Always auto-scroll if user is at bottom when new content arrives
+      if (isAtBottom || shouldScrollToBottom) {
+        // Use setTimeout to ensure DOM has updated with new content
+        setTimeout(() => {
+          if (terminalRef.current) {
+            terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+          }
+        }, 0)
       }
     }
-  }, [logs.length, shouldScrollToBottom, isUserScrolledUp])
+  }, [logs.length, shouldScrollToBottom])
 
   // Smooth typing animation system
   useEffect(() => {
