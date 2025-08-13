@@ -250,6 +250,14 @@ class ApiService {
     return response.json()
   }
 
+  async getRaffleStatus(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/raffle/status`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch raffle status: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

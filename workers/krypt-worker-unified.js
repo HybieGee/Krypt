@@ -2254,6 +2254,7 @@ async function handleRaffleStatus(env) {
       
       status[raffleType] = {
         activeEntries,
+        totalEntries: activeEntries,
         lastWinner,
         lastDrawTime,
         prizePool
