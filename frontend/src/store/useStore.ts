@@ -225,17 +225,11 @@ export const useStore = create<StoreState>()(
           }
         }),
         resetAllData: () => set(() => {
-          // Clear all possible storage locations
-          localStorage.removeItem('krypt-terminal-storage')
-          localStorage.clear()
-          sessionStorage.clear()
+          // DEPRECATED: Only for legacy compatibility
+          // All data should come from APIs, not local storage
+          console.warn('resetAllData is deprecated - use API endpoints instead');
           
-          // Clear cookies
-          document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-          });
-          
-          // Reset to initial state
+          // Reset to initial state without touching storage
           return {
             user: null,
             connectionStatus: 'disconnected',
@@ -258,8 +252,8 @@ export const useStore = create<StoreState>()(
           }
         }),
         clearTerminalLogs: () => set(() => {
-          // Clear persisted state completely
-          localStorage.removeItem('krypt-terminal-storage')
+          // DEPRECATED: Use API /api/logs/clear instead
+          console.warn('clearTerminalLogs is deprecated - use API /api/logs/clear instead');
           
           return {
             terminalLogs: []
@@ -267,11 +261,10 @@ export const useStore = create<StoreState>()(
         }),
       }),
       {
-        name: 'krypt-terminal-storage',
+        name: 'krypt-terminal-ui-prefs',
         partialize: (state) => ({
-          user: state.user,
-          chatMessages: state.chatMessages,
-          // DO NOT persist terminalLogs - they should always come fresh from API
+          // Only persist UI preferences, not state of record
+          // All critical data (user, logs, progress) must come from APIs
         }),
       }
     )

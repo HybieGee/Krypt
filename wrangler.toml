@@ -1,26 +1,23 @@
-name = "krypt-terminal-autonomous"
-main = "cloudflare-worker-autonomous.js"
+name = "krypt-terminal-unified"
+main = "workers/krypt-worker-unified.js"
 compatibility_date = "2024-01-01"
 
-# KV Namespaces
+# KV Namespaces for unified worker
 [[kv_namespaces]]
 binding = "KRYPT_DATA"
 id = "1cfdd55d3f4b4b8f972d54ca074b1da9"
+preview_id = "1cfdd55d3f4b4b8f972d54ca074b1da9"
 
 [[kv_namespaces]]
 binding = "EARLY_ACCESS"
 id = "b465f2964e3d4fb2ad7cd164dee8a343"
+preview_id = "b465f2964e3d4fb2ad7cd164dee8a343"
 
-# Cron Triggers - Run every minute, generate 4 components with spread timestamps
+# Scheduled triggers for autonomous development
 [triggers]
-crons = ["* * * * *"]
+crons = ["*/5 * * * *"]  # Every 5 minutes
 
-# Environment variables (optional)
+# Environment variables
 [vars]
 DEVELOPMENT_MODE = "production"
 COMPONENTS_TOTAL = "4500"
-
-# Routes (optional - if using custom domain)
-# routes = [
-#   { pattern = "kryptterminal.com/api/*", zone_name = "kryptterminal.com" }
-# ]

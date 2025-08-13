@@ -29,7 +29,9 @@
       "Bash(node:*)",
       "Bash(python:*)",
       "Bash(start kickstart-development.html)",
-      "Bash(start fix-kv-namespaces.html)"
+      "Bash(start fix-kv-namespaces.html)",
+      "Bash(start raffle-admin.html)",
+      "Bash(del:*)"
     ],
     "deny": []
   }

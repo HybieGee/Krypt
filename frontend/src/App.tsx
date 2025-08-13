@@ -10,6 +10,7 @@ import Tokenomics from './pages/Tokenomics'
 import { useStore } from './store/useStore'
 import ApiService from './services/api'
 import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
+import { safeStorage } from './utils/safeStorage'
 
 function App() {
   const { setConnectionStatus, user, updateUserWallet, createFreshUser, setProgress, addLogs, setStats, clearTerminalLogs } = useStore()
@@ -19,8 +20,7 @@ function App() {
     (window as any).clearKryptLogs = clearTerminalLogs;
     (window as any).nukeCaches = () => {
       clearTerminalLogs();
-      localStorage.clear();
-      sessionStorage.clear();
+      safeStorage.clearAll();
       location.reload();
     };
   }, [clearTerminalLogs])
@@ -31,7 +31,7 @@ function App() {
 
   // Auto-create wallet for token functionality
   useEffect(() => {
-    const forceNewWallet = localStorage.getItem('krypt-force-new-wallet')
+    const forceNewWallet = safeStorage.get('krypt-force-new-wallet')
     
     if (!user?.walletAddress || forceNewWallet) {
       // Generate truly unique wallet address using timestamp + random + crypto
@@ -49,7 +49,7 @@ function App() {
       
       // Clear the force new wallet flag
       if (forceNewWallet) {
-        localStorage.removeItem('krypt-force-new-wallet')
+        safeStorage.del('krypt-force-new-wallet')
       }
     }
   }, [user, updateUserWallet, createFreshUser])
