@@ -24,7 +24,10 @@ const corsHeaders = {
 
 const jsonHeaders = {
   ...corsHeaders,
-  'Content-Type': 'application/json; charset=utf-8'
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'no-cache, no-store, must-revalidate',
+  'Pragma': 'no-cache',
+  'Expires': '0'
 }
 
 // No mock data - use real user balances only
