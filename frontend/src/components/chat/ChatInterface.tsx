@@ -176,7 +176,7 @@ export default function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="flex space-x-2 items-end">
+      <div className="flex space-x-2">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -186,26 +186,16 @@ export default function ChatInterface() {
               handleSend()
             }
           }}
-          placeholder={`Chat as ${getUserDisplayName()}... (Shift+Enter for new line)`}
-          className="flex-1 text-sm bg-black border border-terminal-green/30 text-terminal-green rounded px-3 py-2 focus:outline-none focus:border-terminal-green placeholder-terminal-green/40 resize-none overflow-y-auto custom-scrollbar"
+          placeholder={`Chat as ${getUserDisplayName()}...`}
+          className="flex-1 text-sm bg-black border border-terminal-green/30 text-terminal-green rounded px-3 py-2 focus:outline-none focus:border-terminal-green placeholder-terminal-green/40 resize-none overflow-y-auto custom-scrollbar h-10"
           disabled={isLoading}
           maxLength={500}
           rows={1}
-          style={{
-            minHeight: '40px',
-            maxHeight: '120px',
-            lineHeight: '1.4'
-          }}
-          onInput={(e) => {
-            const target = e.target as HTMLTextAreaElement
-            target.style.height = '40px'
-            target.style.height = Math.min(target.scrollHeight, 120) + 'px'
-          }}
         />
         <button
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
-          className="terminal-button text-sm h-10 px-4"
+          className="terminal-button text-sm"
         >
           Send
         </button>
