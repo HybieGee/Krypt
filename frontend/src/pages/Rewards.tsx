@@ -122,13 +122,22 @@ export default function Rewards() {
     
     const apiService = ApiService.getInstance()
     try {
-      await apiService.enterRaffle(user.walletAddress, raffleType, ticketCost)
-      setRaffleTickets(prev => prev - ticketCost)
-      // Refresh entries
-      const entries = await apiService.getRaffleEntries(user.walletAddress)
-      setRaffleEntries(entries || [])
+      const result = await apiService.enterRaffle(user.walletAddress, raffleType, ticketCost)
+      if (result.success) {
+        setRaffleTickets(result.remainingTickets)
+        // Refresh entries
+        const entries = await apiService.getRaffleEntries(user.walletAddress)
+        setRaffleEntries(entries || [])
+        
+        // Show success feedback (could add a toast notification here)
+        console.log(`Successfully entered ${raffleType} raffle!`)
+      } else {
+        console.error('Raffle entry failed:', result.message)
+        alert(result.message || 'Failed to enter raffle')
+      }
     } catch (error) {
       console.error('Failed to enter raffle:', error)
+      alert('Failed to enter raffle. Please try again.')
     }
   }
 

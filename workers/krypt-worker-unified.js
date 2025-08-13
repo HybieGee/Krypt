@@ -292,6 +292,8 @@ export default {
           return handleRaffleEntry(request, env);
         case url.pathname === '/api/user/raffle-entries' && request.method === 'GET':
           return handleGetRaffleEntries(request, env);
+        case url.pathname === '/api/user/raffle-tickets' && request.method === 'GET':
+          return handleGetRaffleTickets(request, env);
         case url.pathname === '/api/raffle/draw' && request.method === 'POST':
           return handleRaffleDraw(request, env);
         case url.pathname === '/api/raffle/status' && request.method === 'GET':
@@ -2021,8 +2023,18 @@ async function handleRaffleEntry(request, env) {
       }), { status: 404, headers: JSON_HEADERS });
     }
 
-    // Calculate available tickets (simplified)
-    const availableTickets = Math.floor(user.balance / 100);
+    // Calculate available tickets based on the same formula as frontend
+    const userBalance = user.balance || 0;
+    const userStaked = user.stakedAmount || 0;
+    const userMinted = user.mintedAmount || 0;
+    const isMining = user.isMining || false;
+    const totalScore = userBalance + userStaked + (userMinted * 2) + (isMining ? 100 : 0);
+    const calculatedTickets = Math.floor(totalScore / 100);
+    
+    // Get used tickets count
+    const usedTicketsKey = `raffle_tickets_used:${walletAddress.toLowerCase()}`;
+    const usedTickets = await kvGetJSON(env, usedTicketsKey, 0);
+    const availableTickets = calculatedTickets - usedTickets;
 
     if (availableTickets < ticketCost) {
       return new Response(JSON.stringify({ 
@@ -2032,22 +2044,25 @@ async function handleRaffleEntry(request, env) {
     }
 
     // Create raffle entry
-    const entryId = `${raffleType}_${walletAddress}_${Date.now()}`;
+    const entryId = `${raffleType}_${walletAddress.toLowerCase()}_${Date.now()}`;
     const raffleEntry = {
       id: entryId,
-      walletAddress,
+      walletAddress: walletAddress.toLowerCase(),
       raffleType,
       ticketCost,
       timestamp: new Date().toISOString(),
       status: 'active'
     };
 
+    // Save entry and update used tickets
     await kvPutJSON(env, `raffle_entry:${entryId}`, raffleEntry);
+    await kvPutJSON(env, usedTicketsKey, usedTickets + ticketCost);
 
     return new Response(JSON.stringify({
       success: true,
       message: 'Successfully entered raffle',
-      entry: raffleEntry
+      entry: raffleEntry,
+      remainingTickets: availableTickets - ticketCost
     }), { headers: JSON_HEADERS });
 
   } catch (error) {
@@ -2073,7 +2088,7 @@ async function handleGetRaffleEntries(request, env) {
     
     for (const key of listResult.keys) {
       const entry = await kvGetJSON(env, key.name, null);
-      if (entry && entry.walletAddress === walletAddress && entry.status === 'active') {
+      if (entry && entry.walletAddress === walletAddress.toLowerCase() && entry.status === 'active') {
         entries.push(entry);
       }
     }
@@ -2082,6 +2097,65 @@ async function handleGetRaffleEntries(request, env) {
   } catch (error) {
     console.error('Get raffle entries error:', error);
     return new Response(JSON.stringify([]), { headers: JSON_HEADERS });
+  }
+}
+
+async function handleGetRaffleTickets(request, env) {
+  try {
+    const url = new URL(request.url);
+    const walletAddress = url.searchParams.get('walletAddress');
+    
+    if (!walletAddress) {
+      return new Response(JSON.stringify({ 
+        totalTickets: 0, 
+        usedTickets: 0, 
+        availableTickets: 0 
+      }), { headers: JSON_HEADERS });
+    }
+
+    // Get user data
+    const userKey = `user:${walletAddress.toLowerCase()}`;
+    const user = await kvGetJSON(env, userKey, null);
+    
+    if (!user) {
+      return new Response(JSON.stringify({ 
+        totalTickets: 0, 
+        usedTickets: 0, 
+        availableTickets: 0 
+      }), { headers: JSON_HEADERS });
+    }
+
+    // Calculate tickets using same formula as frontend
+    const userBalance = user.balance || 0;
+    const userStaked = user.stakedAmount || 0;
+    const userMinted = user.mintedAmount || 0;
+    const isMining = user.isMining || false;
+    const totalScore = userBalance + userStaked + (userMinted * 2) + (isMining ? 100 : 0);
+    const totalTickets = Math.floor(totalScore / 100);
+    
+    // Get used tickets
+    const usedTicketsKey = `raffle_tickets_used:${walletAddress.toLowerCase()}`;
+    const usedTickets = await kvGetJSON(env, usedTicketsKey, 0);
+    const availableTickets = totalTickets - usedTickets;
+
+    return new Response(JSON.stringify({
+      totalTickets,
+      usedTickets,
+      availableTickets,
+      breakdown: {
+        fromBalance: Math.floor(userBalance / 100),
+        fromStaked: Math.floor(userStaked / 100),
+        fromMinted: Math.floor((userMinted * 2) / 100),
+        fromMining: isMining ? 1 : 0
+      }
+    }), { headers: JSON_HEADERS });
+  } catch (error) {
+    console.error('Get raffle tickets error:', error);
+    return new Response(JSON.stringify({ 
+      totalTickets: 0, 
+      usedTickets: 0, 
+      availableTickets: 0 
+    }), { status: 500, headers: JSON_HEADERS });
   }
 }
 

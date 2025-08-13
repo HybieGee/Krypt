@@ -176,10 +176,13 @@ class ApiService {
       body: JSON.stringify({ walletAddress, raffleType, ticketCost })
     })
     
+    // Return the response even if not ok, so we can get the error message
+    const result = await response.json()
+    
     if (!response.ok) {
-      throw new Error(`Failed to enter raffle: ${response.statusText}`)
+      return { success: false, message: result.message || 'Failed to enter raffle' }
     }
-    return response.json()
+    return result
   }
 
   async checkNuclearReset(): Promise<{ shouldReset: boolean, resetId: string }> {
