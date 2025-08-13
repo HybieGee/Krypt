@@ -937,8 +937,8 @@ async function generateNextComponent(env) {
     const lastGenTime = await kvGetJSON(env, 'last_component_gen_time', 0);
     const timeSinceLastGen = Date.now() - lastGenTime;
     
-    // Don't generate if less than 10 seconds since last generation
-    if (timeSinceLastGen < 10000) {
+    // Don't generate if less than 60 seconds since last generation (full sequence takes ~45 seconds)
+    if (timeSinceLastGen < 60000) {
       console.log(`⏸️ Rate limited: ${timeSinceLastGen}ms since last generation`);
       return {
         componentName: getComponentName(currentProgress - 1),
@@ -1003,20 +1003,7 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 5. Code Generation (show after completion)
-    developmentLogs.push({
-      id: `code-gen-${currentProgress}-${baseTime}`,
-      ts: baseTime - 30000, // 30 seconds ago
-      level: 'code',
-      msg: `📄 Code Generated:`,
-      details: {
-        component: componentName,
-        codeSnippet: codeSnippet.slice(0, 200) + '...',
-        estimatedLines: actualLineCount
-      }
-    });
-    
-    // 6. Testing
+    // 5. Testing (after completion message)
     const testsRun = Math.floor(Math.random() * 8) + 3;
     developmentLogs.push({
       id: `test-${currentProgress}-${baseTime}`,
@@ -1032,7 +1019,7 @@ async function generateNextComponent(env) {
       }
     });
     
-    // 7. Git Commit
+    // 6. Git Commit (final step)
     developmentLogs.push({
       id: `commit-${currentProgress}-${baseTime}`,
       ts: baseTime - 5000, // 5 seconds ago
