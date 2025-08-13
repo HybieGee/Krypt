@@ -937,8 +937,8 @@ async function generateNextComponent(env) {
     const lastGenTime = await kvGetJSON(env, 'last_component_gen_time', 0);
     const timeSinceLastGen = Date.now() - lastGenTime;
     
-    // Don't generate if less than 60 seconds since last generation (full sequence takes ~45 seconds)
-    if (timeSinceLastGen < 60000) {
+    // Don't generate if less than 90 seconds since last generation (allow full sequence to complete)
+    if (timeSinceLastGen < 90000) {
       console.log(`⏸️ Rate limited: ${timeSinceLastGen}ms since last generation`);
       return {
         componentName: getComponentName(currentProgress - 1),

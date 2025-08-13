@@ -343,8 +343,8 @@ class ApiService {
     // Initial fetch
     poll()
 
-    // Poll every 15 seconds for REAL 15-second component generation
-    this.pollInterval = setInterval(poll, 15000)
+    // Poll every 90 seconds to allow each component sequence to complete without interruption
+    this.pollInterval = setInterval(poll, 90000)
   }
 
   stopPolling() {
