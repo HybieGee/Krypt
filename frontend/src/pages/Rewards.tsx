@@ -127,17 +127,27 @@ export default function Rewards() {
     loadRaffleData()
   }, [user?.walletAddress])
 
-  // Auto-refresh raffle data every 3 seconds when on raffles tab
+  // Auto-refresh raffle data every 2 seconds when on raffles tab
   useEffect(() => {
     if (activeTab !== 'raffles' || !user?.walletAddress) return
     
-    const interval = setInterval(loadRaffleData, 3000)
-    return () => clearInterval(interval)
+    console.log('🔄 Starting auto-refresh every 2 seconds for raffles tab')
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing raffle data...')
+      loadRaffleData()
+    }, 2000)
+    
+    return () => {
+      console.log('🛑 Stopping raffle auto-refresh')
+      clearInterval(interval)
+    }
   }, [activeTab, user?.walletAddress])
 
   // Handle raffle entry
   const handleRaffleEntry = async (raffleType: string, ticketCost: number) => {
     if (!user?.walletAddress || raffleTickets < ticketCost) return
+    
+    console.log(`🎲 Entering ${raffleType} raffle with ${ticketCost} tickets...`)
     
     // Immediate optimistic update for better UX
     setRaffleTickets(prev => prev - ticketCost)
@@ -146,12 +156,27 @@ export default function Rewards() {
     try {
       const result = await apiService.enterRaffle(user.walletAddress, raffleType, ticketCost)
       if (result.success) {
+        console.log(`✅ Raffle entry API success! Remaining tickets: ${result.remainingTickets}`)
+        
         // Update with actual remaining tickets from server
         setRaffleTickets(result.remainingTickets)
-        // Immediately refresh all raffle data
+        
+        // Immediately refresh all raffle data multiple times to ensure it updates
+        console.log('🔄 Immediate refresh #1...')
         await loadRaffleData()
         
-        // Show success feedback
+        // Force a second refresh after a short delay
+        setTimeout(async () => {
+          console.log('🔄 Immediate refresh #2...')
+          await loadRaffleData()
+        }, 500)
+        
+        // Force a third refresh after another delay
+        setTimeout(async () => {
+          console.log('🔄 Immediate refresh #3...')
+          await loadRaffleData()
+        }, 1500)
+        
         console.log(`✅ Successfully entered ${raffleType} raffle!`)
       } else {
         // Revert optimistic update on failure
