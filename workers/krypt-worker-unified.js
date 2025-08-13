@@ -306,6 +306,14 @@ export default {
         case url.pathname === '/api/logs/stream' && request.method === 'GET':
           return handleLogsStream(env);
 
+        // REAL KRYPT AI ENDPOINTS - Rich log format for authentic development data
+        case url.pathname === '/api/krypt/logs/add' && request.method === 'POST':
+          return handleKryptAddLog(request, env);
+        case url.pathname === '/api/krypt/logs/batch' && request.method === 'POST':
+          return handleKryptBatchLogs(request, env);
+        case url.pathname === '/api/krypt/progress/update' && request.method === 'POST':
+          return handleKryptProgressUpdate(request, env);
+
         // Development Code endpoints
         case url.pathname === '/api/dev/code' && request.method === 'GET':
           return handleGetCode(env);
@@ -733,6 +741,161 @@ async function handleClearLogs(env) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Failed to clear logs' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+// ===== KRYPT AI REAL DATA ENDPOINTS =====
+async function handleKryptAddLog(request, env) {
+  try {
+    const logData = await request.json();
+    
+    // Validate required fields for rich log format
+    if (!logData.id || !logData.type || !logData.message) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Required fields: id, type, message' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Create rich log entry with proper format
+    const logEntry = {
+      id: logData.id,
+      timestamp: logData.timestamp || new Date().toISOString(),
+      type: logData.type, // 'api', 'system', 'commit', 'test', etc.
+      message: logData.message,
+      details: logData.details || {}
+    };
+
+    // Add to existing logs
+    const logs = await kvGetJSON(env, 'dev_logs', []);
+    logs.push(logEntry);
+    
+    // Keep only recent logs (prevent unlimited growth)
+    if (logs.length > MAX_LOGS) {
+      logs.splice(0, logs.length - MAX_LOGS);
+    }
+    
+    await kvPutJSON(env, 'dev_logs', logs);
+    
+    console.log(`📝 Real Krypt AI log added: ${logEntry.type} - ${logEntry.message}`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      logId: logEntry.id,
+      totalLogs: logs.length 
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Krypt add log error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to add real log' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleKryptBatchLogs(request, env) {
+  try {
+    const { logs: newLogs } = await request.json();
+    
+    if (!Array.isArray(newLogs)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'logs must be an array' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Validate each log entry
+    const validLogs = newLogs.filter(log => log.id && log.type && log.message);
+    if (validLogs.length !== newLogs.length) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'All logs must have id, type, and message fields' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Normalize log entries
+    const normalizedLogs = validLogs.map(log => ({
+      id: log.id,
+      timestamp: log.timestamp || new Date().toISOString(),
+      type: log.type,
+      message: log.message,
+      details: log.details || {}
+    }));
+
+    // Add to existing logs
+    const existingLogs = await kvGetJSON(env, 'dev_logs', []);
+    const allLogs = [...existingLogs, ...normalizedLogs];
+    
+    // Keep only recent logs
+    if (allLogs.length > MAX_LOGS) {
+      allLogs.splice(0, allLogs.length - MAX_LOGS);
+    }
+    
+    await kvPutJSON(env, 'dev_logs', allLogs);
+    
+    console.log(`📝 Batch: Added ${normalizedLogs.length} real Krypt AI logs`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      addedLogs: normalizedLogs.length,
+      totalLogs: allLogs.length 
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Krypt batch logs error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to add batch logs' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleKryptProgressUpdate(request, env) {
+  try {
+    const { componentsCompleted, additionalData } = await request.json();
+    
+    if (typeof componentsCompleted !== 'number' || componentsCompleted < 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'componentsCompleted must be a non-negative number' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
+    // Update progress
+    await kvPutJSON(env, 'dev_progress', componentsCompleted);
+    
+    // Update additional metrics if provided
+    if (additionalData) {
+      const stats = await kvGetJSON(env, 'stats', {});
+      
+      if (additionalData.linesOfCode) {
+        stats.total_lines_of_code = { value: additionalData.linesOfCode, timestamp: Date.now() };
+      }
+      if (additionalData.commits) {
+        stats.total_commits = { value: additionalData.commits, timestamp: Date.now() };
+      }
+      if (additionalData.testsRun) {
+        stats.total_tests_run = { value: additionalData.testsRun, timestamp: Date.now() };
+      }
+      
+      await kvPutJSON(env, 'stats', stats);
+    }
+    
+    console.log(`🚀 Real Krypt AI progress update: ${componentsCompleted} components`);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      componentsCompleted,
+      message: 'Real progress updated successfully'
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Krypt progress update error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to update real progress' 
     }), { status: 500, headers: JSON_HEADERS });
   }
 }
