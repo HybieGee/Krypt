@@ -299,7 +299,14 @@ class ApiService {
   }
 
   async getChatMessages(): Promise<any[]> {
-    const response = await fetch(`${API_BASE_URL}/chat/messages`)
+    // Add cache-busting parameter to ensure fresh data
+    const cacheParams = `?t=${Date.now()}`
+    const response = await fetch(`${API_BASE_URL}/chat/messages${cacheParams}`, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
     if (!response.ok) {
       throw new Error(`Failed to fetch chat messages: ${response.statusText}`)
     }

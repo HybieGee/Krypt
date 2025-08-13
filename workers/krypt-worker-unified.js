@@ -2903,8 +2903,16 @@ async function handleGetChatMessages(env) {
     
     return new Response(JSON.stringify({
       success: true,
-      messages: recentMessages
-    }), { headers: JSON_HEADERS });
+      messages: recentMessages,
+      timestamp: Date.now() // Add timestamp for debugging
+    }), { 
+      headers: {
+        ...JSON_HEADERS,
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('Get chat messages error:', error);
     return new Response(JSON.stringify({

@@ -35,10 +35,19 @@ export default function ChatInterface() {
 
     loadMessages()
     
-    // Poll for new messages every 3 seconds
-    const interval = setInterval(loadMessages, 3000)
+    // Poll for new messages every 1 second for faster updates
+    const interval = setInterval(loadMessages, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  const refreshMessages = async () => {
+    try {
+      const chatMessages = await apiService.getChatMessages()
+      setMessages(chatMessages)
+    } catch (error) {
+      console.error('Failed to refresh chat messages:', error)
+    }
+  }
 
   const getUserDisplayName = () => {
     if (user?.walletAddress) {
@@ -61,7 +70,10 @@ export default function ChatInterface() {
 
       if (result.success) {
         setInput('')
-        // Message will appear in next poll cycle
+        // Immediately refresh messages after sending
+        setTimeout(() => refreshMessages(), 100)
+        // Also refresh again after a bit in case of KV delays
+        setTimeout(() => refreshMessages(), 1000)
       } else {
         console.error('Failed to send message:', result.message)
       }
