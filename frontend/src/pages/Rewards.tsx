@@ -127,11 +127,11 @@ export default function Rewards() {
     loadRaffleData()
   }, [user?.walletAddress])
 
-  // Auto-refresh raffle data every 10 seconds when on raffles tab
+  // Auto-refresh raffle data every 3 seconds when on raffles tab
   useEffect(() => {
     if (activeTab !== 'raffles' || !user?.walletAddress) return
     
-    const interval = setInterval(loadRaffleData, 10000)
+    const interval = setInterval(loadRaffleData, 3000)
     return () => clearInterval(interval)
   }, [activeTab, user?.walletAddress])
 
@@ -139,21 +139,29 @@ export default function Rewards() {
   const handleRaffleEntry = async (raffleType: string, ticketCost: number) => {
     if (!user?.walletAddress || raffleTickets < ticketCost) return
     
+    // Immediate optimistic update for better UX
+    setRaffleTickets(prev => prev - ticketCost)
+    
     const apiService = ApiService.getInstance()
     try {
       const result = await apiService.enterRaffle(user.walletAddress, raffleType, ticketCost)
       if (result.success) {
+        // Update with actual remaining tickets from server
         setRaffleTickets(result.remainingTickets)
         // Immediately refresh all raffle data
         await loadRaffleData()
         
-        // Show success feedback (could add a toast notification here)
-        console.log(`Successfully entered ${raffleType} raffle!`)
+        // Show success feedback
+        console.log(`✅ Successfully entered ${raffleType} raffle!`)
       } else {
+        // Revert optimistic update on failure
+        setRaffleTickets(prev => prev + ticketCost)
         console.error('Raffle entry failed:', result.message)
         alert(result.message || 'Failed to enter raffle')
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setRaffleTickets(prev => prev + ticketCost)
       console.error('Failed to enter raffle:', error)
       alert('Failed to enter raffle. Please try again.')
     }
