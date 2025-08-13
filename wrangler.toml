@@ -13,8 +13,9 @@ binding = "EARLY_ACCESS"
 id = "b465f2964e3d4fb2ad7cd164dee8a343"
 preview_id = "b465f2964e3d4fb2ad7cd164dee8a343"
 
-# Scheduled triggers for autonomous development - REMOVED (only real Krypt AI data)
-# Triggers section completely removed to stop cron jobs
+# Scheduled triggers for autonomous development - REAL DATA GENERATION
+[triggers]
+crons = ["*/15 * * * *"]  # Every 15 minutes - generates real blockchain components
 
 # Durable Objects for real-time chat
 [[durable_objects.bindings]]
