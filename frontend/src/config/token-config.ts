@@ -3,7 +3,7 @@
 
 export const tokenConfig = {
   // Contract Address - Update this when token is deployed
-  contractAddress: '9i11kWWhMA5w4D2MSpi12XBJxbGTron56mPbhf46sWxh', // Leave empty until launch, then add: '0x...'
+  contractAddress: '', // Leave empty until launch, then add: '0x...'
   
   // Token Details
   tokenSymbol: 'KRYPT',
@@ -15,7 +15,7 @@ export const tokenConfig = {
   chainName: 'Ethereum',
   
   // Display Settings
-  showContractAddress: true, // Set to true when token launches
+  showContractAddress: false, // Set to true when token launches
   explorerUrl: 'https://etherscan.io/token/', // Will append contract address
   
   // Launch Date (for countdown)
@@ -23,7 +23,7 @@ export const tokenConfig = {
   
   // DEX Links (update when available)
   dexLinks: {
-    pumpfun: 'https://pump.fun/coin/9i11kWWhMA5w4D2MSpi12XBJxbGTron56mPbhf46sWxh', // Pump.fun token URL - add this first
+    pumpfun: '', // Pump.fun token URL - add this first
     uniswap: '',
     sushiswap: '',
     pancakeswap: '',
