@@ -781,7 +781,7 @@ async function handleDevelopmentTick(env) {
   try {
     const progress = await kvGetJSON(env, 'dev_progress', 0);
     
-    if (progress >= 100) {
+    if (progress >= BLOCKCHAIN_COMPONENTS) {
       return new Response(JSON.stringify({ 
         success: false, 
         message: 'Development completed',
@@ -827,9 +827,9 @@ async function handleDevelopmentStatus(env) {
     const lastTick = await kvGetJSON(env, 'last_dev_tick', 0);
     
     const nextUpdateIn = Math.max(0, DEVELOPMENT_INTERVAL - (Date.now() - lastTick));
-    const isRunning = progress < 100;
+    const isRunning = progress < BLOCKCHAIN_COMPONENTS;
     const estimatedCompletion = isRunning ? 
-      new Date(Date.now() + ((100 - progress) * DEVELOPMENT_INTERVAL)).toISOString() : null;
+      new Date(Date.now() + ((BLOCKCHAIN_COMPONENTS - progress) * DEVELOPMENT_INTERVAL)).toISOString() : null;
 
     return new Response(JSON.stringify({
       status: isRunning ? 'active' : 'completed',
@@ -854,7 +854,7 @@ async function handleForceDevelopment(env) {
   try {
     const progress = await kvGetJSON(env, 'dev_progress', 0);
     
-    if (progress >= 100) {
+    if (progress >= BLOCKCHAIN_COMPONENTS) {
       return new Response(JSON.stringify({ 
         success: false, 
         message: 'Development already completed' 

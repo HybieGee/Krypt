@@ -325,7 +325,7 @@ export default function Tokens() {
     <div className="min-h-screen bg-black text-white">
       {/* Custom Notification */}
       {notification && (
-        <div className="fixed top-4 right-4 z-50 max-w-md">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 max-w-md">
           <div className={`p-4 rounded-lg border-2 ${
             notification.type === 'success' 
               ? 'bg-terminal-green/10 border-terminal-green text-terminal-green' 
