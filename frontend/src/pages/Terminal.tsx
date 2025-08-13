@@ -12,6 +12,26 @@ export default function Terminal() {
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
+  // Filter logs based on selected filter AND timestamp (only show logs whose time has passed)
+  const filteredLogs = terminalLogs.filter(log => {
+    // Only show logs whose timestamp is in the past or current
+    const logTime = new Date(log.timestamp).getTime()
+    const currentTime = Date.now()
+    const timeHasPassed = logTime <= currentTime
+    
+    // Apply type filter
+    const typeMatches = logFilter === 'all' || log.type === logFilter
+    
+    return timeHasPassed && typeMatches
+  })
+  
+  // Filter logs for Live View (only show current/past logs)
+  const liveViewLogs = terminalLogs.filter(log => {
+    const logTime = new Date(log.timestamp).getTime()
+    const currentTime = Date.now()
+    return logTime <= currentTime
+  })
+
   // Smart auto-scroll: only scroll if user is at bottom
   useEffect(() => {
     if (activeTab === 'terminal' && liveViewRef.current) {
@@ -51,26 +71,6 @@ export default function Terminal() {
       }
     }
   }, [activeTab, shouldAutoScroll, filteredLogs.length])
-
-  // Filter logs based on selected filter AND timestamp (only show logs whose time has passed)
-  const filteredLogs = terminalLogs.filter(log => {
-    // Only show logs whose timestamp is in the past or current
-    const logTime = new Date(log.timestamp).getTime()
-    const currentTime = Date.now()
-    const timeHasPassed = logTime <= currentTime
-    
-    // Apply type filter
-    const typeMatches = logFilter === 'all' || log.type === logFilter
-    
-    return timeHasPassed && typeMatches
-  })
-  
-  // Filter logs for Live View (only show current/past logs)
-  const liveViewLogs = terminalLogs.filter(log => {
-    const logTime = new Date(log.timestamp).getTime()
-    const currentTime = Date.now()
-    return logTime <= currentTime
-  })
 
   // Jump to bottom functions
   const jumpToBottomLiveView = () => {
