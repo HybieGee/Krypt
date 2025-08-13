@@ -162,13 +162,15 @@ export default function Terminal() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ minHeight: '700px' }}>
-      <div className="lg:col-span-2 flex flex-col space-y-4">
+      <div className="lg:col-span-2 flex flex-col" style={{ gap: '16px 0px' }}>
         <div className="terminal-window flex-1 flex flex-col" style={{ 
           minHeight: '500px',
           maxHeight: '500px', // Completely fixed height
           height: '500px',
           overflow: 'hidden',
-          paddingBottom: '0px' // Remove bottom padding
+          paddingBottom: '0px', // Remove bottom padding
+          borderBottom: 'none', // Remove bottom border
+          marginBottom: '0px' // Remove bottom margin
         }}>
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
             <h2 className="text-lg font-bold text-terminal-green">
