@@ -2112,6 +2112,9 @@ async function handleRaffleEntry(request, env) {
     // Save entry and update used tickets
     await kvPutJSON(env, `raffle_entry:${entryId}`, raffleEntry);
     await kvPutJSON(env, usedTicketsKey, usedTickets + ticketCost);
+    
+    // Force immediate consistency by adding a small delay
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     return new Response(JSON.stringify({
       success: true,

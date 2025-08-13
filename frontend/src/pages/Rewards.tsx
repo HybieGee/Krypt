@@ -161,21 +161,31 @@ export default function Rewards() {
         // Update with actual remaining tickets from server
         setRaffleTickets(result.remainingTickets)
         
-        // Immediately refresh all raffle data multiple times to ensure it updates
+        // OPTIMISTIC UPDATE: Add the new entry immediately to avoid waiting for KV consistency
+        if (result.entry) {
+          console.log('🚀 Adding entry optimistically:', result.entry)
+          setRaffleEntries(prev => [...prev, result.entry])
+        }
+        
+        // Still refresh to get the latest data from server, but with longer delays due to KV consistency
         console.log('🔄 Immediate refresh #1...')
         await loadRaffleData()
         
-        // Force a second refresh after a short delay
+        // Force refreshes with longer delays to account for KV eventual consistency  
         setTimeout(async () => {
-          console.log('🔄 Immediate refresh #2...')
+          console.log('🔄 Delayed refresh #2 (5s)...')
           await loadRaffleData()
-        }, 500)
+        }, 5000)
         
-        // Force a third refresh after another delay
         setTimeout(async () => {
-          console.log('🔄 Immediate refresh #3...')
+          console.log('🔄 Delayed refresh #3 (15s)...')
           await loadRaffleData()
-        }, 1500)
+        }, 15000)
+        
+        setTimeout(async () => {
+          console.log('🔄 Delayed refresh #4 (30s)...')
+          await loadRaffleData()
+        }, 30000)
         
         console.log(`✅ Successfully entered ${raffleType} raffle!`)
       } else {
