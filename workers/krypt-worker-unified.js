@@ -1,6 +1,6 @@
 // ===== KRYPT UNIFIED CLOUDFLARE WORKER =====
 // Single unified worker handling all Krypt Terminal functionality
-// Persistent KV storage only - no in-memory caches
+// Real-time chat via Durable Objects + WebSockets
 
 // ===== CONSTANTS & CONFIGURATION =====
 const BLOCKCHAIN_COMPONENTS = 4500;
@@ -326,7 +326,13 @@ export default {
         case url.pathname === '/api/development/seed' && request.method === 'POST':
           return handleSeedDevelopment(env);
 
-        // Chat endpoints
+        // Real-time chat endpoints (Durable Objects)
+        case url.pathname === '/api/chat/ws' && request.headers.get('Upgrade') === 'websocket':
+          return handleChatWebSocket(request, env);
+        case url.pathname === '/api/chat/realtime' && request.method === 'GET':
+          return handleRealtimeChatMessages(request, env);
+          
+        // Legacy chat endpoints (KV-based - for fallback)
         case url.pathname === '/api/chat/messages' && request.method === 'GET':
           return handleGetChatMessages(env);
         case url.pathname === '/api/chat/send' && request.method === 'POST':
@@ -3039,5 +3045,202 @@ async function handleGetLatestMessage(env) {
       success: false,
       error: 'Failed to get latest message'
     }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+// ===== DURABLE OBJECT HANDLERS =====
+async function handleChatWebSocket(request, env) {
+  // Get the Durable Object instance for global chat
+  const id = env.CHAT_ROOM.idFromName('global-chat');
+  const chatRoom = env.CHAT_ROOM.get(id);
+  
+  // Create new request with /chat path for the Durable Object
+  const chatRequest = new Request(new URL('/chat', request.url), {
+    method: request.method,
+    headers: request.headers
+  });
+  
+  return chatRoom.fetch(chatRequest);
+}
+
+async function handleRealtimeChatMessages(request, env) {
+  // Get the Durable Object instance
+  const id = env.CHAT_ROOM.idFromName('global-chat');
+  const chatRoom = env.CHAT_ROOM.get(id);
+  
+  // Create a new request for chat messages
+  const chatRequest = new Request(new URL('/chat/messages', request.url), {
+    method: 'GET',
+    headers: request.headers
+  });
+  
+  return chatRoom.fetch(chatRequest);
+}
+
+// ===== DURABLE OBJECT: REAL-TIME CHAT ROOM =====
+export class ChatRoom {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+    this.sessions = new Set(); // Active WebSocket connections
+    this.messages = []; // In-memory message store
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    
+    // Handle WebSocket upgrade for chat connections
+    if (url.pathname === '/chat' && request.headers.get('Upgrade') === 'websocket') {
+      return this.handleWebSocket(request);
+    }
+    
+    // Handle HTTP requests for chat history
+    if (url.pathname === '/chat/messages' && request.method === 'GET') {
+      return this.getChatHistory();
+    }
+    
+    return new Response('Not found', { status: 404 });
+  }
+
+  async handleWebSocket(request) {
+    const [client, server] = Object.values(new WebSocketPair());
+    
+    // Accept the WebSocket connection
+    server.accept();
+    
+    // Add to active sessions
+    this.sessions.add(server);
+    console.log(`🔗 WebSocket connected. Active sessions: ${this.sessions.size}`);
+    
+    // Send recent chat history to new connection
+    const recentMessages = this.messages.slice(-50);
+    server.send(JSON.stringify({
+      type: 'history',
+      messages: recentMessages,
+      timestamp: Date.now()
+    }));
+    
+    // Handle incoming messages
+    server.addEventListener('message', async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'message') {
+          const chatMessage = {
+            id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+            message: data.message?.trim() || '',
+            username: data.username || 'Anonymous',
+            walletAddress: data.walletAddress || null,
+            timestamp: new Date().toISOString(),
+            type: 'user'
+          };
+          
+          // Validate message
+          if (!chatMessage.message || chatMessage.message.length > 500) {
+            server.send(JSON.stringify({
+              type: 'error',
+              message: 'Invalid message length'
+            }));
+            return;
+          }
+          
+          // Add to message store
+          this.messages.push(chatMessage);
+          
+          // Keep only last 1000 messages in memory
+          if (this.messages.length > 1000) {
+            this.messages.splice(0, this.messages.length - 1000);
+          }
+          
+          console.log(`💬 Chat message: ${chatMessage.username} - "${chatMessage.message}" [DURABLE-OBJECT]`);
+          
+          // Broadcast to all connected clients
+          const broadcastData = JSON.stringify({
+            type: 'new_message',
+            message: chatMessage,
+            timestamp: Date.now()
+          });
+          
+          // Send to all sessions (including sender for confirmation)
+          for (const session of this.sessions) {
+            try {
+              session.send(broadcastData);
+            } catch (error) {
+              // Remove dead connections
+              this.sessions.delete(session);
+            }
+          }
+          
+          // Backup to KV for persistence (async)
+          this.backupToKV().catch(error => {
+            console.error('KV backup failed:', error);
+          });
+        }
+        
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+        server.send(JSON.stringify({
+          type: 'error',
+          message: 'Failed to process message'
+        }));
+      }
+    });
+    
+    // Handle connection close
+    server.addEventListener('close', () => {
+      this.sessions.delete(server);
+      console.log(`🔌 WebSocket disconnected. Active sessions: ${this.sessions.size}`);
+    });
+    
+    server.addEventListener('error', (error) => {
+      console.error('WebSocket error:', error);
+      this.sessions.delete(server);
+    });
+    
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async getChatHistory() {
+    // Return current message history
+    const recentMessages = this.messages.slice(-100);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      messages: recentMessages,
+      count: this.messages.length,
+      activeSessions: this.sessions.size,
+      source: 'durable-object'
+    }), { 
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
+
+  async backupToKV() {
+    // Backup messages to KV for persistence across Durable Object restarts
+    try {
+      await this.env.KRYPT_DATA.put('chat_backup', JSON.stringify({
+        messages: this.messages.slice(-100), // Only backup recent messages
+        timestamp: Date.now()
+      }));
+    } catch (error) {
+      console.error('KV backup error:', error);
+    }
+  }
+
+  async restoreFromKV() {
+    // Restore messages from KV if Durable Object restarts
+    try {
+      const backup = await this.env.KRYPT_DATA.get('chat_backup');
+      if (backup) {
+        const data = JSON.parse(backup);
+        this.messages = data.messages || [];
+        console.log(`📦 Restored ${this.messages.length} messages from KV backup`);
+      }
+    } catch (error) {
+      console.error('KV restore error:', error);
+    }
   }
 }

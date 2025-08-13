@@ -17,6 +17,16 @@ preview_id = "b465f2964e3d4fb2ad7cd164dee8a343"
 [triggers]
 crons = ["*/5 * * * *"]  # Every 5 minutes
 
+# Durable Objects for real-time chat
+[[durable_objects.bindings]]
+name = "CHAT_ROOM"
+class_name = "ChatRoom"
+
+# Durable Objects migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatRoom"]
+
 # Environment variables
 [vars]
 DEVELOPMENT_MODE = "production"

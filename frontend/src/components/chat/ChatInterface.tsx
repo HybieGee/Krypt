@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
-import ApiService from '@/services/api'
+import ChatService, { ChatMessage } from '@/services/chatService'
 
 export default function ChatInterface() {
   const { user } = useStore()
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const apiService = ApiService.getInstance()
+  const chatServiceRef = useRef<ChatService | null>(null)
 
   const scrollToBottom = () => {
     // Scroll only within the chat container, not the entire page
@@ -22,35 +23,59 @@ export default function ChatInterface() {
     scrollToBottom()
   }, [messages])
 
-  // Load chat messages on mount and poll for updates
+  // Initialize WebSocket chat service
   useEffect(() => {
-    const loadMessages = async () => {
-      try {
-        const response = await apiService.getChatMessages()
-        console.log('📨 Chat response:', { 
-          messageCount: response.length, 
+    console.log('🚀 Initializing real-time chat service')
+    
+    chatServiceRef.current = new ChatService({
+      onMessage: (newMessages) => {
+        console.log('📨 Real-time messages received:', { 
+          messageCount: newMessages.length, 
           timestamp: new Date().toLocaleTimeString(),
-          lastMessage: response[response.length - 1]?.message || 'No messages'
+          lastMessage: newMessages[newMessages.length - 1]?.message || 'No messages'
         })
-        setMessages(response)
-      } catch (error) {
-        console.error('Failed to load chat messages:', error)
+        setMessages(newMessages)
+      },
+      onConnected: () => {
+        console.log('✅ Real-time chat connected')
+        setConnectionStatus('connected')
+      },
+      onDisconnected: () => {
+        console.log('🔌 Real-time chat disconnected')
+        setConnectionStatus('disconnected')
+      },
+      onError: (error) => {
+        console.error('❌ Chat error:', error)
+        setConnectionStatus('disconnected')
+      }
+    })
+
+    // Connect to WebSocket
+    chatServiceRef.current.connect()
+
+    // Cleanup on unmount
+    return () => {
+      if (chatServiceRef.current) {
+        chatServiceRef.current.disconnect()
       }
     }
-
-    loadMessages()
-    
-    // Poll for new messages every 1 second for faster updates
-    const interval = setInterval(loadMessages, 1000)
-    return () => clearInterval(interval)
   }, [])
 
-  const refreshMessages = async () => {
-    try {
-      const chatMessages = await apiService.getChatMessages()
-      setMessages(chatMessages)
-    } catch (error) {
-      console.error('Failed to refresh chat messages:', error)
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'text-green-400'
+      case 'connecting': return 'text-yellow-400'
+      case 'disconnected': return 'text-red-400'
+      default: return 'text-terminal-green/60'
+    }
+  }
+
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'Live'
+      case 'connecting': return 'Connecting...'
+      case 'disconnected': return 'Offline'
+      default: return 'Unknown'
     }
   }
 
@@ -62,35 +87,21 @@ export default function ChatInterface() {
   }
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading || !chatServiceRef.current) return
 
     setIsLoading(true)
 
     try {
-      const result = await apiService.sendChatMessage(
+      const result = await chatServiceRef.current.sendMessage(
         input,
         getUserDisplayName(),
         user?.walletAddress
       )
 
       if (result.success) {
-        console.log('✅ Message sent successfully:', result.message)
+        console.log('✅ Message sent successfully via real-time chat')
         setInput('')
-        // Immediately refresh messages after sending
-        setTimeout(() => {
-          console.log('🔄 First refresh attempt...')
-          refreshMessages()
-        }, 100)
-        // Also refresh again after a bit in case of KV delays
-        setTimeout(() => {
-          console.log('🔄 Second refresh attempt...')
-          refreshMessages()
-        }, 1000)
-        // Third attempt for stubborn KV consistency
-        setTimeout(() => {
-          console.log('🔄 Third refresh attempt...')
-          refreshMessages()
-        }, 3000)
+        // WebSocket will automatically receive the updated messages
       } else {
         console.error('Failed to send message:', result.message)
       }
@@ -107,9 +118,14 @@ export default function ChatInterface() {
         <h2 className="text-lg font-bold text-terminal-green">
           Krypt Chat
         </h2>
-        <span className="text-xs text-terminal-green/60">
-          Global Chat ({messages.length})
-        </span>
+        <div className="flex items-center space-x-2">
+          <span className={`text-xs ${getConnectionStatusColor()}`}>
+            ● {getConnectionStatusText()}
+          </span>
+          <span className="text-xs text-terminal-green/60">
+            ({messages.length})
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-2">
@@ -125,7 +141,7 @@ export default function ChatInterface() {
             </ul>
           </div>
         ) : (
-          messages.map((msg: any) => {
+          messages.map((msg: ChatMessage) => {
             const isCurrentUser = msg.walletAddress === user?.walletAddress
             return (
               <div key={msg.id} className={`flex ${
