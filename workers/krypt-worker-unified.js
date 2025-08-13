@@ -5,7 +5,7 @@
 // ===== CONSTANTS & CONFIGURATION =====
 const BLOCKCHAIN_COMPONENTS = 4500;
 const DEVELOPMENT_INTERVAL = 15000; // 15 seconds per component
-const COMPONENTS_PER_CRON = 20; // Generate 20 components every 5 minutes for continuous flow
+const COMPONENTS_PER_CRON = 3; // Generate 3 components every 5 minutes (18 logs total)
 const MAX_LOGS = 10000;
 const MAX_CODE_BLOCKS = 50;
 const MAX_LEADERBOARD = 10;
@@ -719,14 +719,14 @@ async function handleSeedDevelopment(env) {
   try {
     await seedInitialDevelopment(env);
     
-    // Generate first 10 components to populate the terminal
-    for (let i = 0; i < 10; i++) {
+    // Generate first 2 components to populate the terminal (12 rich logs)
+    for (let i = 0; i < 2; i++) {
       await generateNextComponent(env);
     }
     
     return new Response(JSON.stringify({ 
       success: true, 
-      message: 'Development seeded with initial data and 10 components' 
+      message: 'Development seeded with initial data and 2 components' 
     }), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Seed development error:', error);
@@ -742,26 +742,100 @@ async function generateNextComponent(env) {
   try {
     const currentProgress = await kvGetJSON(env, 'dev_progress', 0);
     const componentName = getComponentName(currentProgress);
-    
-    // Generate code snippet
-    const codeSnippet = generateCodeSnippet(componentName);
-    
-    // Add realistic log entry with proper format
-    const logEntry = {
-      id: `comp-${currentProgress}-${Date.now()}`,
-      ts: Date.now(),
-      level: 'code',
-      msg: `✅ ${componentName} component developed`,
-      details: { 
-        componentName, 
-        progress: currentProgress,
-        codeSnippet: codeSnippet.slice(0, 200),
-        linesAdded: Math.floor(Math.random() * 150) + 50
-      }
-    };
-    
     const logs = await kvGetJSON(env, 'dev_logs', []);
-    logs.push(logEntry);
+    
+    // Generate realistic development sequence
+    const baseTime = Date.now();
+    const developmentLogs = [];
+    
+    // 1. AI Request
+    developmentLogs.push({
+      id: `ai-req-${currentProgress}-${baseTime}`,
+      ts: baseTime - 45000, // 45 seconds ago
+      level: 'api',
+      msg: `Sending request to Krypt AI...`,
+      details: { 
+        component: componentName,
+        prompt: `Generate optimized ${componentName} implementation with security features`
+      }
+    });
+    
+    // 2. AI Response
+    developmentLogs.push({
+      id: `ai-resp-${currentProgress}-${baseTime}`,
+      ts: baseTime - 40000, // 40 seconds ago
+      level: 'api',
+      msg: `✅ Krypt AI response received (${Math.floor(Math.random() * 500) + 200}ms)`,
+      details: { 
+        component: componentName,
+        tokensUsed: Math.floor(Math.random() * 2000) + 1000
+      }
+    });
+    
+    // 3. Code Generation
+    const codeSnippet = generateCodeSnippet(componentName);
+    const linesAdded = Math.floor(Math.random() * 150) + 50;
+    
+    developmentLogs.push({
+      id: `code-gen-${currentProgress}-${baseTime}`,
+      ts: baseTime - 30000, // 30 seconds ago
+      level: 'code',
+      msg: `Generating ${componentName} implementation...`,
+      details: {
+        component: componentName,
+        codeSnippet: codeSnippet.slice(0, 200) + '...',
+        estimatedLines: linesAdded
+      }
+    });
+    
+    // 4. Testing
+    const testsRun = Math.floor(Math.random() * 8) + 3;
+    developmentLogs.push({
+      id: `test-${currentProgress}-${baseTime}`,
+      ts: baseTime - 15000, // 15 seconds ago
+      level: 'test',
+      msg: `Running ${testsRun} tests for ${componentName}...`,
+      details: {
+        component: componentName,
+        testsRun,
+        passed: testsRun,
+        failed: 0,
+        coverage: Math.floor(Math.random() * 15) + 85 + '%'
+      }
+    });
+    
+    // 5. Git Commit
+    const commitHash = Math.random().toString(16).substring(2, 8);
+    developmentLogs.push({
+      id: `commit-${currentProgress}-${baseTime}`,
+      ts: baseTime - 5000, // 5 seconds ago
+      level: 'commit',
+      msg: `git commit -m "feat: implement ${componentName} with enhanced security"`,
+      details: {
+        component: componentName,
+        hash: commitHash,
+        linesAdded,
+        filesChanged: Math.floor(Math.random() * 3) + 1
+      }
+    });
+    
+    // 6. Final completion
+    developmentLogs.push({
+      id: `comp-${currentProgress}-${baseTime}`,
+      ts: baseTime,
+      level: 'system',
+      msg: `✅ ${componentName} component developed`,
+      details: {
+        component: componentName,
+        progress: currentProgress + 1,
+        totalComponents: 4500,
+        linesAdded,
+        commitHash
+      }
+    });
+    
+    // Add all logs
+    logs.push(...developmentLogs);
     if (logs.length > MAX_LOGS) {
       logs.splice(0, logs.length - MAX_LOGS);
     }
@@ -773,20 +847,17 @@ async function generateNextComponent(env) {
       codeBlocks.splice(0, codeBlocks.length - MAX_CODE_BLOCKS);
     }
     
-    // Update progress (increment by 1)
+    // Update progress
     const newProgress = currentProgress + 1;
     
     // Update stats
     const stats = await kvGetJSON(env, 'stats', {});
     const updatedStats = {
       ...stats,
-      total_lines_of_code: { value: (stats.total_lines_of_code?.value || 0) + logEntry.details.linesAdded, lastUpdated: new Date().toISOString() },
+      total_lines_of_code: { value: (stats.total_lines_of_code?.value || 0) + linesAdded, lastUpdated: new Date().toISOString() },
       total_commits: { value: (stats.total_commits?.value || 0) + 1, lastUpdated: new Date().toISOString() },
-      total_tests_run: { value: (stats.total_tests_run?.value || 0) + Math.floor(Math.random() * 5) + 1, lastUpdated: new Date().toISOString() }
+      total_tests_run: { value: (stats.total_tests_run?.value || 0) + testsRun, lastUpdated: new Date().toISOString() }
     };
-    
-    // Update last tick time
-    const now = Date.now();
     
     // Save all updates
     await Promise.all([
@@ -794,7 +865,7 @@ async function generateNextComponent(env) {
       kvPutJSON(env, 'dev_code', codeBlocks),
       kvPutJSON(env, 'dev_progress', newProgress),
       kvPutJSON(env, 'stats', updatedStats),
-      kvPutJSON(env, 'last_dev_tick', now)
+      kvPutJSON(env, 'last_dev_tick', Date.now())
     ]);
     
     return { componentName, newProgress };
