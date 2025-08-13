@@ -201,6 +201,59 @@ async function handleTriggerMilestone(request, env) {
   }
 }
 
+// ===== CLEAR USER RAFFLE ENTRIES (ADMIN) =====
+async function handleClearUserRaffleEntries(request, env) {
+  try {
+    const { walletAddress, adminKey } = await request.json();
+    
+    // Admin key check
+    if (adminKey !== 'krypt_admin_test_2024') {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid admin key' 
+      }), { status: 401, headers: JSON_HEADERS });
+    }
+    
+    if (!walletAddress) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Wallet address required' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    const normalizedAddress = walletAddress.toLowerCase();
+    
+    // Clear all raffle entries for this user
+    const entriesResult = await env.KRYPT_DATA.list({ prefix: 'raffle_entry:' });
+    let deletedEntries = 0;
+    
+    for (const key of entriesResult.keys) {
+      const entry = await kvGetJSON(env, key.name, null);
+      if (entry && entry.walletAddress.toLowerCase() === normalizedAddress) {
+        await env.KRYPT_DATA.delete(key.name);
+        deletedEntries++;
+      }
+    }
+    
+    // Clear used tickets counter
+    const usedTicketsKey = `raffle_tickets_used:${normalizedAddress}`;
+    await env.KRYPT_DATA.delete(usedTicketsKey);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      deletedEntries,
+      message: `Cleared ${deletedEntries} raffle entries for ${walletAddress} and reset ticket counter`
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Clear user raffle entries error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to clear user raffle entries' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
 // ===== MAIN WORKER =====
 export default {
   async fetch(request, env, ctx) {
@@ -326,6 +379,8 @@ export default {
           return handleSetEarlyAccessCount(request, env);
         case url.pathname === '/api/admin/trigger-milestone' && request.method === 'POST':
           return handleTriggerMilestone(request, env);
+        case url.pathname === '/api/admin/clear-user-raffle-entries' && request.method === 'POST':
+          return handleClearUserRaffleEntries(request, env);
 
         default:
           return new Response(JSON.stringify({ error: 'Not found' }), { 
