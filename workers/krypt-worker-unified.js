@@ -953,169 +953,14 @@ async function generateNextComponent(env) {
     const componentName = getComponentName(currentProgress);
     const logs = await kvGetJSON(env, 'dev_logs', []);
     
-    // Check for active progressive sequence
-    const activeSequence = await kvGetJSON(env, 'active_sequence', null);
+    // Generate realistic development sequence
+    const baseTime = Date.now();
+    const developmentLogs = [];
     
-    if (activeSequence && activeSequence.componentName === componentName) {
-      // Continue existing sequence - add next stage
-      return await addNextSequenceStage(env, activeSequence, logs);
-    } else {
-      // Start new sequence - add first log only
-      return await startProgressiveSequence(env, componentName, currentProgress, logs);
-    }
-  } catch (error) {
-    console.error('Generate component error:', error);
-    throw error;
-  }
-}
-
-// Start progressive sequence - only add first log
-async function startProgressiveSequence(env, componentName, currentProgress, logs) {
-  const startTime = Date.now();
-  
-  // Create sequence state
-  const sequence = {
-    componentName,
-    currentProgress,
-    startTime,
-    stage: 0,
-    codeSnippet: generateCodeSnippet(componentName),
-    commitHash: Math.random().toString(16).substring(2, 8)
-  };
-  
-  // Store sequence state
-  await kvPutJSON(env, 'active_sequence', sequence);
-  
-  // Add ONLY the first log (AI Request)
-  const firstLog = {
-    id: `ai-req-${currentProgress}-${startTime}`,
-    ts: startTime,
-    level: 'api',
-    msg: `Sending request to Krypt AI...`,
-    details: { 
-      component: componentName,
-      prompt: `Generate optimized ${componentName} implementation with security features`
-    }
-  };
-  
-  logs.push(firstLog);
-  if (logs.length > MAX_LOGS) logs.splice(0, logs.length - MAX_LOGS);
-  await kvPutJSON(env, 'dev_logs', logs);
-  
-  return {
-    componentName,
-    newProgress: currentProgress,
-    stage: 0
-  };
-}
-
-// Add next stage to progressive sequence - only add ONE log per call
-async function addNextSequenceStage(env, sequence, logs) {
-  const elapsed = Date.now() - sequence.startTime;
-  const actualLineCount = sequence.codeSnippet.split('\n').length;
-  let newStage = sequence.stage;
-  let logAdded = false;
-  
-  // Add next log based on elapsed time and current stage
-  if (elapsed >= 5000 && sequence.stage === 0) {
-    // Stage 1: AI Response (after 5 seconds)
-    newStage = 1;
-    logs.push({
-      id: `ai-resp-${sequence.currentProgress}-${sequence.startTime}`,
-      ts: Date.now(),
-      level: 'api',
-      msg: `✅ Krypt AI response received (${Math.floor(Math.random() * 500) + 200}ms)`,
-      details: { 
-        component: sequence.componentName,
-        responseTime: Math.floor(Math.random() * 500) + 200,
-        tokensUsed: Math.floor(Math.random() * 2000) + 1000
-      }
-    });
-    logAdded = true;
-  } else if (elapsed >= 10000 && sequence.stage === 1) {
-    // Stage 2: Component completion (after 10 seconds)
-    newStage = 2;
-    logs.push({
-      id: `comp-${sequence.currentProgress}-${sequence.startTime}`,
-      ts: Date.now(),
-      level: 'system',
-      msg: `✅ ${sequence.componentName} component developed (${actualLineCount} lines coded)`,
-      details: {
-        component: sequence.componentName,
-        progress: sequence.currentProgress + 1,
-        totalComponents: 4500,
-        linesAdded: actualLineCount,
-        commitHash: sequence.commitHash,
-        code: sequence.codeSnippet
-      }
-    });
-    logAdded = true;
-  } else if (elapsed >= 25000 && sequence.stage === 2) {
-    // Stage 3: Testing (after 25 seconds)
-    newStage = 3;
-    const testsRun = Math.floor(Math.random() * 8) + 3;
-    logs.push({
-      id: `test-${sequence.currentProgress}-${sequence.startTime}`,
-      ts: Date.now(),
-      level: 'test',
-      msg: `Running tests for ${sequence.componentName}...`,
-      details: {
-        component: sequence.componentName,
-        testsRun,
-        passed: testsRun,
-        failed: 0,
-        coverage: Math.floor(Math.random() * 15) + 85 + '%'
-      }
-    });
-    logAdded = true;
-  } else if (elapsed >= 35000 && sequence.stage === 3) {
-    // Stage 4: Git commit (after 35 seconds)
-    newStage = 4;
-    logs.push({
-      id: `commit-${sequence.currentProgress}-${sequence.startTime}`,
-      ts: Date.now(),
-      level: 'commit',
-      msg: `✅ Committed to GitHub`,
-      details: {
-        component: sequence.componentName,
-        hash: sequence.commitHash,
-        linesAdded: actualLineCount,
-        filesChanged: Math.floor(Math.random() * 3) + 1
-      }
-    });
-    logAdded = true;
-    
-    // Sequence complete - increment progress and clean up
-    await kvPutJSON(env, 'dev_progress', sequence.currentProgress + 1);
-    await kvPutJSON(env, 'active_sequence', null);
-  }
-  
-  // Update sequence stage if changed
-  if (newStage !== sequence.stage) {
-    sequence.stage = newStage;
-    if (newStage < 4) {
-      await kvPutJSON(env, 'active_sequence', sequence);
-    }
-  }
-  
-  // Save logs if we added one
-  if (logAdded) {
-    if (logs.length > MAX_LOGS) logs.splice(0, logs.length - MAX_LOGS);
-    await kvPutJSON(env, 'dev_logs', logs);
-  }
-  
-  return {
-    componentName: sequence.componentName,
-    newProgress: newStage === 4 ? sequence.currentProgress + 1 : sequence.currentProgress,
-    stage: newStage,
-    sequenceComplete: newStage === 4,
-    logAdded
-  };
-}
-
-// ===== COMPONENT NAME & CODE GENERATION =====
-function getComponentName(index) {
-      ts: baseTime - 45000, // 45 seconds ago
+    // 1. AI Request (appears immediately)
+    developmentLogs.push({
+      id: `ai-req-${currentProgress}-${baseTime}`,
+      ts: baseTime, // now
       level: 'api',
       msg: `Sending request to Krypt AI...`,
       details: { 
@@ -1124,10 +969,10 @@ function getComponentName(index) {
       }
     });
     
-    // 2. AI Response
+    // 2. AI Response (appears 5 seconds later)
     developmentLogs.push({
       id: `ai-resp-${currentProgress}-${baseTime}`,
-      ts: baseTime - 40000, // 40 seconds ago
+      ts: baseTime + 5000, // 5 seconds from now
       level: 'api',
       msg: `✅ Krypt AI response received (${Math.floor(Math.random() * 500) + 200}ms)`,
       details: { 
@@ -1141,10 +986,10 @@ function getComponentName(index) {
     const actualLineCount = codeSnippet.split('\n').length;
     const commitHash = Math.random().toString(16).substring(2, 8);
     
-    // 4. Component completion (show right after AI response)
+    // 3. Component completion (appears 10 seconds later)
     developmentLogs.push({
       id: `comp-${currentProgress}-${baseTime}`,
-      ts: baseTime - 35000, // 35 seconds ago (right after AI response)
+      ts: baseTime + 10000, // 10 seconds from now
       level: 'system',
       msg: `✅ ${componentName} component developed (${actualLineCount} lines coded)`,
       details: {
@@ -1158,11 +1003,11 @@ function getComponentName(index) {
       }
     });
     
-    // 5. Testing (after completion message)
+    // 4. Testing (appears 25 seconds later)
     const testsRun = Math.floor(Math.random() * 8) + 3;
     developmentLogs.push({
       id: `test-${currentProgress}-${baseTime}`,
-      ts: baseTime - 15000, // 15 seconds ago
+      ts: baseTime + 25000, // 25 seconds from now
       level: 'test',
       msg: `Running tests for ${componentName}...`,
       details: {
@@ -1174,10 +1019,10 @@ function getComponentName(index) {
       }
     });
     
-    // 6. Git Commit (final step)
+    // 5. Git Commit (appears 35 seconds later)
     developmentLogs.push({
       id: `commit-${currentProgress}-${baseTime}`,
-      ts: baseTime - 5000, // 5 seconds ago
+      ts: baseTime + 35000, // 35 seconds from now
       level: 'commit',
       msg: `✅ Committed to GitHub`,
       details: {
