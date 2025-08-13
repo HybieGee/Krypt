@@ -11,6 +11,11 @@ const MAX_CODE_BLOCKS = 50;
 const MAX_LEADERBOARD = 10;
 const VISITOR_DEDUP_TTL = 48 * 60 * 60 * 1000; // 48 hours
 
+// ===== IN-MEMORY CHAT STORE =====
+// Simple in-memory storage for chat messages (resets on worker restart)
+let chatMessages = [];
+let lastMessageId = 0;
+
 // ===== HEADERS & CORS =====
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -2901,21 +2906,28 @@ async function automaticRaffleDraw(env, raffleType, prizeAmount) {
 // ===== CHAT HANDLERS =====
 async function handleGetChatMessages(env) {
   try {
-    const messages = await kvGetJSON(env, 'chat_messages', []);
-    console.log(`📨 Chat messages fetch: ${messages.length} messages found`);
+    // If in-memory store is empty, try to load from KV
+    if (chatMessages.length === 0) {
+      console.log('💾 Loading chat messages from KV backup...');
+      const kvMessages = await kvGetJSON(env, 'chat_messages', []);
+      chatMessages = kvMessages;
+      lastMessageId = kvMessages.length > 0 ? Math.max(...kvMessages.map(m => parseInt(m.id.split('_')[1]) || 0)) : 0;
+    }
+    
+    console.log(`📨 Chat messages fetch: ${chatMessages.length} messages found (in-memory)`);
     
     // Return last 100 messages to prevent excessive data
-    const recentMessages = messages.slice(-100);
+    const recentMessages = chatMessages.slice(-100);
     
     return new Response(JSON.stringify({
       success: true,
       messages: recentMessages,
       timestamp: Date.now(),
-      totalMessages: messages.length,
+      totalMessages: chatMessages.length,
       debugInfo: {
-        kvFetch: 'success',
-        messageCount: messages.length,
-        lastMessage: messages.length > 0 ? messages[messages.length - 1] : null
+        source: 'in-memory',
+        messageCount: chatMessages.length,
+        lastMessage: chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null
       }
     }), { 
       headers: {
@@ -2953,8 +2965,9 @@ async function handleSendChatMessage(request, env) {
       }), { status: 400, headers: JSON_HEADERS });
     }
     
+    lastMessageId++;
     const chatMessage = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      id: `msg_${lastMessageId}_${Date.now()}`,
       message: message.trim(),
       username: username || 'Anonymous',
       walletAddress: walletAddress || null,
@@ -2962,34 +2975,32 @@ async function handleSendChatMessage(request, env) {
       type: 'user'
     };
     
-    // Get existing messages and add new one
-    const messages = await kvGetJSON(env, 'chat_messages', []);
-    messages.push(chatMessage);
+    // Add to in-memory store immediately
+    chatMessages.push(chatMessage);
     
-    // Keep only last 1000 messages to prevent storage bloat
-    if (messages.length > 1000) {
-      messages.splice(0, messages.length - 1000);
+    // Keep only last 1000 messages to prevent memory bloat
+    if (chatMessages.length > 1000) {
+      chatMessages.splice(0, chatMessages.length - 1000);
     }
     
-    // Write to KV
-    await kvPutJSON(env, 'chat_messages', messages);
+    console.log(`✅ Chat message sent: ${chatMessage.username} - "${chatMessage.message}" (Total: ${chatMessages.length}) [IN-MEMORY]`);
     
-    // Also store with timestamp for immediate access
-    await kvPutJSON(env, `chat_latest`, {
-      message: chatMessage,
-      timestamp: Date.now(),
-      totalCount: messages.length
-    });
-    
-    console.log(`✅ Chat message sent: ${chatMessage.username} - "${chatMessage.message}" (Total: ${messages.length})`);
+    // Backup to KV asynchronously (fire and forget)
+    try {
+      kvPutJSON(env, 'chat_messages', chatMessages).catch(error => {
+        console.error('KV backup failed:', error);
+      });
+    } catch (error) {
+      console.error('KV backup initiation failed:', error);
+    }
     
     return new Response(JSON.stringify({
       success: true,
       message: chatMessage,
       debugInfo: {
-        totalMessages: messages.length,
-        kvWrite: 'success',
-        latestStored: true
+        totalMessages: chatMessages.length,
+        source: 'in-memory-immediate',
+        backed_up: 'async'
       }
     }), { headers: JSON_HEADERS });
   } catch (error) {
