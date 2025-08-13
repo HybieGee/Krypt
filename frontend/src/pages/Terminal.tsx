@@ -159,11 +159,6 @@ export default function Terminal() {
     }
   }, [activeTab])
 
-  // Add manual reset button function
-  const handleManualReset = () => {
-    console.log('🔄 Manual terminal reset triggered')
-    forceLayoutReset()
-  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ minHeight: '700px' }}>
