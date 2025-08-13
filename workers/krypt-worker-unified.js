@@ -11,10 +11,9 @@ const MAX_CODE_BLOCKS = 50;
 const MAX_LEADERBOARD = 10;
 const VISITOR_DEDUP_TTL = 48 * 60 * 60 * 1000; // 48 hours
 
-// ===== IN-MEMORY CHAT STORE =====
-// Simple in-memory storage for chat messages (resets on worker restart)
-let chatMessages = [];
-let lastMessageId = 0;
+// ===== REAL-TIME CHAT STORE =====
+// Use a single versioned KV key to bypass consistency issues
+const CHAT_KEY = 'realtime_chat_v2';
 
 // ===== HEADERS & CORS =====
 const CORS_HEADERS = {
@@ -2906,28 +2905,30 @@ async function automaticRaffleDraw(env, raffleType, prizeAmount) {
 // ===== CHAT HANDLERS =====
 async function handleGetChatMessages(env) {
   try {
-    // If in-memory store is empty, try to load from KV
-    if (chatMessages.length === 0) {
-      console.log('💾 Loading chat messages from KV backup...');
-      const kvMessages = await kvGetJSON(env, 'chat_messages', []);
-      chatMessages = kvMessages;
-      lastMessageId = kvMessages.length > 0 ? Math.max(...kvMessages.map(m => parseInt(m.id.split('_')[1]) || 0)) : 0;
-    }
+    // Get chat data with version and timestamp
+    const chatData = await kvGetJSON(env, CHAT_KEY, {
+      messages: [],
+      version: 0,
+      lastUpdated: 0
+    });
     
-    console.log(`📨 Chat messages fetch: ${chatMessages.length} messages found (in-memory)`);
+    console.log(`📨 Chat messages fetch: ${chatData.messages.length} messages found (v${chatData.version})`);
     
     // Return last 100 messages to prevent excessive data
-    const recentMessages = chatMessages.slice(-100);
+    const recentMessages = chatData.messages.slice(-100);
     
     return new Response(JSON.stringify({
       success: true,
       messages: recentMessages,
       timestamp: Date.now(),
-      totalMessages: chatMessages.length,
+      totalMessages: chatData.messages.length,
+      version: chatData.version,
       debugInfo: {
-        source: 'in-memory',
-        messageCount: chatMessages.length,
-        lastMessage: chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null
+        source: 'realtime-kv',
+        messageCount: chatData.messages.length,
+        version: chatData.version,
+        lastUpdated: chatData.lastUpdated,
+        lastMessage: chatData.messages.length > 0 ? chatData.messages[chatData.messages.length - 1] : null
       }
     }), { 
       headers: {
@@ -2965,9 +2966,16 @@ async function handleSendChatMessage(request, env) {
       }), { status: 400, headers: JSON_HEADERS });
     }
     
-    lastMessageId++;
+    // Get current chat data
+    const chatData = await kvGetJSON(env, CHAT_KEY, {
+      messages: [],
+      version: 0,
+      lastUpdated: 0
+    });
+    
+    // Create new message
     const chatMessage = {
-      id: `msg_${lastMessageId}_${Date.now()}`,
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
       message: message.trim(),
       username: username || 'Anonymous',
       walletAddress: walletAddress || null,
@@ -2975,32 +2983,29 @@ async function handleSendChatMessage(request, env) {
       type: 'user'
     };
     
-    // Add to in-memory store immediately
-    chatMessages.push(chatMessage);
+    // Add message and increment version
+    chatData.messages.push(chatMessage);
+    chatData.version++;
+    chatData.lastUpdated = Date.now();
     
-    // Keep only last 1000 messages to prevent memory bloat
-    if (chatMessages.length > 1000) {
-      chatMessages.splice(0, chatMessages.length - 1000);
+    // Keep only last 1000 messages
+    if (chatData.messages.length > 1000) {
+      chatData.messages.splice(0, chatData.messages.length - 1000);
     }
     
-    console.log(`✅ Chat message sent: ${chatMessage.username} - "${chatMessage.message}" (Total: ${chatMessages.length}) [IN-MEMORY]`);
+    console.log(`✅ Chat message sent: ${chatMessage.username} - "${chatMessage.message}" (v${chatData.version}) [REALTIME-KV]`);
     
-    // Backup to KV asynchronously (fire and forget)
-    try {
-      kvPutJSON(env, 'chat_messages', chatMessages).catch(error => {
-        console.error('KV backup failed:', error);
-      });
-    } catch (error) {
-      console.error('KV backup initiation failed:', error);
-    }
+    // Write immediately to KV with new version
+    await kvPutJSON(env, CHAT_KEY, chatData);
     
     return new Response(JSON.stringify({
       success: true,
       message: chatMessage,
+      version: chatData.version,
       debugInfo: {
-        totalMessages: chatMessages.length,
-        source: 'in-memory-immediate',
-        backed_up: 'async'
+        totalMessages: chatData.messages.length,
+        version: chatData.version,
+        source: 'realtime-kv-immediate'
       }
     }), { headers: JSON_HEADERS });
   } catch (error) {
