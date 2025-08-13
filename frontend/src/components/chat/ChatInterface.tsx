@@ -176,21 +176,36 @@ export default function ChatInterface() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="flex space-x-2">
-        <input
-          type="text"
+      <div className="flex space-x-2 items-end">
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          placeholder={`Chat as ${getUserDisplayName()}...`}
-          className="flex-1 terminal-input text-sm"
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
+          placeholder={`Chat as ${getUserDisplayName()}... (Shift+Enter for new line)`}
+          className="flex-1 text-sm bg-black border border-terminal-green/30 text-terminal-green rounded px-3 py-2 focus:outline-none focus:border-terminal-green placeholder-terminal-green/40 resize-none overflow-y-auto custom-scrollbar"
           disabled={isLoading}
           maxLength={500}
+          rows={1}
+          style={{
+            minHeight: '40px',
+            maxHeight: '120px',
+            lineHeight: '1.4'
+          }}
+          onInput={(e) => {
+            const target = e.target as HTMLTextAreaElement
+            target.style.height = '40px'
+            target.style.height = Math.min(target.scrollHeight, 120) + 'px'
+          }}
         />
         <button
           onClick={handleSend}
           disabled={isLoading || !input.trim()}
-          className="terminal-button text-sm"
+          className="terminal-button text-sm h-10 px-4"
         >
           Send
         </button>
