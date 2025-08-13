@@ -12,6 +12,7 @@ export default function Terminal() {
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
   const [windowHeight, setWindowHeight] = useState(window.innerHeight)
+  const [forceRerender, setForceRerender] = useState(0)
 
   // Filter logs based on selected filter AND timestamp (only show logs whose time has passed)
   const filteredLogs = terminalLogs.filter(log => {
@@ -87,35 +88,65 @@ export default function Terminal() {
     }
   }
 
+  // Aggressive layout fix function
+  const forceLayoutReset = () => {
+    console.log('🔧 Forcing terminal layout reset...')
+    
+    // Force complete re-render
+    setForceRerender(prev => prev + 1)
+    
+    // Wait for DOM update then fix layout
+    setTimeout(() => {
+      const body = document.body
+      const originalOverflow = body.style.overflow
+      
+      // Force browser to recalculate everything
+      body.style.overflow = 'hidden'
+      body.offsetHeight // Force reflow
+      body.style.overflow = originalOverflow
+      
+      // Reset terminal specific elements
+      const terminalElements = document.querySelectorAll('.terminal-window')
+      terminalElements.forEach((element) => {
+        const htmlElement = element as HTMLElement
+        htmlElement.style.cssText = htmlElement.style.cssText // Force style recalculation
+      })
+      
+      console.log('✅ Terminal layout reset complete')
+    }, 50)
+  }
+
   // Handle window resize - fixes developer console open/close bug
   useEffect(() => {
     let resizeTimeout: NodeJS.Timeout
+    let lastHeight = window.innerHeight
 
     const handleResize = () => {
-      // Clear previous timeout
       clearTimeout(resizeTimeout)
       
-      // Debounce resize to avoid too many updates
       resizeTimeout = setTimeout(() => {
-        setWindowHeight(window.innerHeight)
+        const currentHeight = window.innerHeight
+        const heightDiff = Math.abs(currentHeight - lastHeight)
         
-        // Force re-render of terminal components
-        const terminalElements = document.querySelectorAll('.terminal-window')
-        terminalElements.forEach((element) => {
-          const htmlElement = element as HTMLElement
-          // Trigger a reflow
-          htmlElement.style.display = 'none'
-          htmlElement.offsetHeight // Force reflow
-          htmlElement.style.display = ''
-        })
-        
-        // Reset scroll positions if needed
-        if (activeTab === 'terminal') {
-          setTimeout(jumpToBottomLiveView, 100)
-        } else {
-          setTimeout(jumpToBottomLogs, 100)
+        // Significant height change suggests dev console toggle
+        if (heightDiff > 100) {
+          console.log(`🔍 Detected significant height change: ${lastHeight} → ${currentHeight}`)
+          forceLayoutReset()
         }
-      }, 100)
+        
+        setWindowHeight(currentHeight)
+        lastHeight = currentHeight
+        
+        // Reset scroll positions
+        setTimeout(() => {
+          if (activeTab === 'terminal') {
+            jumpToBottomLiveView()
+          } else {
+            jumpToBottomLogs()
+          }
+        }, 200)
+        
+      }, 150)
     }
 
     window.addEventListener('resize', handleResize)
@@ -126,34 +157,11 @@ export default function Terminal() {
     }
   }, [activeTab])
 
-  // Handle developer console detection
-  useEffect(() => {
-    const detectDevTools = () => {
-      const threshold = 160
-      const devtools = {
-        open: window.outerHeight - window.innerHeight > threshold ||
-              window.outerWidth - window.innerWidth > threshold
-      }
-      
-      if (devtools.open) {
-        // Developer console opened - force layout refresh
-        setTimeout(() => {
-          const terminalElements = document.querySelectorAll('.terminal-window')
-          terminalElements.forEach((element) => {
-            const htmlElement = element as HTMLElement
-            htmlElement.style.transform = 'translateZ(0)' // Force GPU acceleration
-            setTimeout(() => {
-              htmlElement.style.transform = ''
-            }, 50)
-          })
-        }, 200)
-      }
-    }
-
-    const interval = setInterval(detectDevTools, 500)
-    
-    return () => clearInterval(interval)
-  }, [])
+  // Add manual reset button function
+  const handleManualReset = () => {
+    console.log('🔄 Manual terminal reset triggered')
+    forceLayoutReset()
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)] pb-20" style={{ minHeight: Math.max(500, windowHeight - 200) }}>
@@ -206,6 +214,13 @@ export default function Terminal() {
                 >
                   ↓ Bottom
                 </button>
+                <button
+                  onClick={handleManualReset}
+                  className="px-2 py-1 text-xs bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors rounded"
+                  title="Fix terminal layout if corrupted (for dev console bug)"
+                >
+                  🔧 Fix
+                </button>
                 <a
                   href="https://github.com/KryptAI/krypt-blockchain"
                   target="_blank"
@@ -220,9 +235,10 @@ export default function Terminal() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden" ref={liveViewRef}>
+          <div className="flex-1 overflow-hidden" ref={liveViewRef} key={`terminal-container-${forceRerender}`}>
             {activeTab === 'terminal' ? (
               <TerminalDisplay 
+                key={`terminal-display-${forceRerender}`}
                 logs={liveViewLogs.slice(-50)} 
                 shouldScrollToBottom={shouldAutoScroll}
               />
@@ -252,7 +268,7 @@ export default function Terminal() {
                   </div>
                 </div>
 
-                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar" ref={logsViewRef} onScroll={checkLogsScrollPosition}>
+                <div className="h-80 overflow-y-auto space-y-3 pr-2 custom-scrollbar" ref={logsViewRef} onScroll={checkLogsScrollPosition} key={`logs-view-${forceRerender}`}>
                   {filteredLogs.map((log) => (
                   <div key={log.id} className="border-l-2 border-terminal-green/20 pl-3">
                     {/* Log Header */}
