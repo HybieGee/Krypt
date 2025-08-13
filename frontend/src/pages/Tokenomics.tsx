@@ -64,7 +64,7 @@ export default function Tokenomics() {
           
           {/* Buy Buttons when launched */}
           {tokenConfig.showContractAddress && (
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
               {tokenConfig.dexLinks.pumpfun && (
                 <a
                   href={tokenConfig.dexLinks.pumpfun}
