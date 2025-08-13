@@ -11,7 +11,11 @@ export default function ChatInterface() {
   const apiService = ApiService.getInstance()
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Scroll only within the chat container, not the entire page
+    if (messagesEndRef.current && messagesEndRef.current.parentElement) {
+      const chatContainer = messagesEndRef.current.parentElement
+      chatContainer.scrollTop = chatContainer.scrollHeight
+    }
   }
 
   useEffect(() => {
