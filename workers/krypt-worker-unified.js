@@ -2191,6 +2191,16 @@ async function handleGetRaffleTickets(request, env) {
     const userStaked = user.stakedAmount || 0;
     const userMinted = user.mintedAmount || 0;
     const isMining = user.isMining || false;
+    
+    // Debug logging
+    console.log('Raffle tickets calculation for', walletAddress, {
+      userBalance,
+      userStaked, 
+      userMinted,
+      isMining,
+      fullUserData: user
+    });
+    
     const totalScore = userBalance + userStaked + (userMinted * 2) + (isMining ? 100 : 0);
     const totalTickets = Math.floor(totalScore / 100);
     
