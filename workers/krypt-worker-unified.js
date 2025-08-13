@@ -212,6 +212,8 @@ export default {
           return handleNuclearResetCheck(env);
         case url.pathname === '/api/admin/clean-test-wallets' && request.method === 'POST':
           return handleCleanTestWallets(env);
+        case url.pathname === '/api/admin/clean-invalid-wallets' && request.method === 'POST':
+          return handleCleanInvalidWallets(env);
 
         default:
           return new Response(JSON.stringify({ error: 'Not found' }), { 
@@ -1148,6 +1150,14 @@ async function handleUpdateUserBalance(request, env) {
       }), { status: 400, headers: JSON_HEADERS });
     }
 
+    // Validate Ethereum address format (0x + 40 hex characters)
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid wallet address format. Must be 42 characters (0x + 40 hex)' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+
     const normalizedAddress = address.toLowerCase();
     
     // Filter out test/fake wallets - reject if they match test patterns
@@ -1157,7 +1167,13 @@ async function handleUpdateUserBalance(request, env) {
       '0x9876543210fedcba9876543210fedcba98765432',
       '0xtest',
       '0xraffle',
-      '0xfake'
+      '0xfake',
+      // Debug wallets used during testing
+      '0xnewuser1234567890abcdef1234567890abcdef12',
+      '0x5f6e7d8c9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+      '0x7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f',
+      '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12',
+      '0xabc123def456789'
     ];
     
     const isTestWallet = testPatterns.some(pattern => 
@@ -1206,7 +1222,13 @@ async function handleGetLeaderboard(env) {
       '0x9876543210fedcba9876543210fedcba98765432',
       '0xtest',
       '0xraffle',
-      '0xfake'
+      '0xfake',
+      // Debug wallets used during testing
+      '0xnewuser1234567890abcdef1234567890abcdef12',
+      '0x5f6e7d8c9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+      '0x7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f',
+      '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12',
+      '0xabc123def456789'
     ];
     
     for (const key of listResult.keys) {
@@ -1584,7 +1606,13 @@ async function handleCleanTestWallets(env) {
       '0x9876543210fedcba9876543210fedcba98765432',
       '0xtest',
       '0xraffle',
-      '0xfake'
+      '0xfake',
+      // Debug wallets used during testing
+      '0xnewuser1234567890abcdef1234567890abcdef12',
+      '0x5f6e7d8c9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+      '0x7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f',
+      '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12',
+      '0xabc123def456789'
     ];
     
     const listResult = await env.KRYPT_DATA.list({ prefix: 'user:' });
@@ -1614,6 +1642,37 @@ async function handleCleanTestWallets(env) {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Failed to clean test wallets' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleCleanInvalidWallets(env) {
+  try {
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'user:' });
+    let deletedCount = 0;
+    let mergedBalances = 0;
+    
+    for (const key of listResult.keys) {
+      const userData = await kvGetJSON(env, key.name, null);
+      if (userData && userData.address) {
+        // Check if wallet address is not exactly 42 characters (0x + 40 hex chars)
+        if (userData.address.length !== 42) {
+          await env.KRYPT_DATA.delete(key.name);
+          deletedCount++;
+        }
+      }
+    }
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      deletedCount, 
+      message: `Cleaned ${deletedCount} invalid length wallet addresses` 
+    }), { headers: JSON_HEADERS });
+  } catch (error) {
+    console.error('Clean invalid wallets error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to clean invalid wallets' 
     }), { status: 500, headers: JSON_HEADERS });
   }
 }

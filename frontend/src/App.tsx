@@ -34,11 +34,16 @@ function App() {
     const forceNewWallet = safeStorage.get('krypt-force-new-wallet')
     
     if (!user?.walletAddress || forceNewWallet) {
-      // Generate truly unique wallet address using timestamp + random + crypto
-      const timestamp = Date.now().toString(16)
-      const random1 = Math.random().toString(16).substring(2)
-      const random2 = Math.random().toString(16).substring(2)
-      const generatedAddress = `0x${(timestamp + random1 + random2).substring(0, 40)}`
+      // Generate proper 40-character Ethereum address format
+      const generateWalletAddress = () => {
+        const chars = '0123456789abcdef'
+        let address = '0x'
+        for (let i = 0; i < 40; i++) {
+          address += chars[Math.floor(Math.random() * chars.length)]
+        }
+        return address
+      }
+      const generatedAddress = generateWalletAddress()
       
       if (forceNewWallet) {
         console.log('🔄 Forcing complete wallet reset including staking and minting data')
