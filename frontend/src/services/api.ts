@@ -87,13 +87,18 @@ class ApiService {
     return response.json()
   }
 
-  async updateUserBalance(walletAddress: string, balance: number): Promise<any> {
+  async updateUserBalance(walletAddress: string, balance: number, mintedAmount?: number): Promise<any> {
+    const payload: any = { walletAddress, balance }
+    if (mintedAmount !== undefined) {
+      payload.mintedAmount = mintedAmount
+    }
+    
     const response = await fetch(`${API_BASE_URL}/user/balance`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ walletAddress, balance })
+      body: JSON.stringify(payload)
     })
     
     if (!response.ok) {
@@ -173,6 +178,32 @@ class ApiService {
     const response = await fetch(`${API_BASE_URL}/nuclear-reset-check`)
     if (!response.ok) {
       throw new Error(`Failed to check nuclear reset: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  async getWalletByFingerprint(fingerprint: string): Promise<{ address: string; balance: number; mintedAmount: number } | null> {
+    const response = await fetch(`${API_BASE_URL}/wallet/fingerprint/${fingerprint}`)
+    if (response.status === 404) {
+      return null
+    }
+    if (!response.ok) {
+      throw new Error(`Failed to get wallet by fingerprint: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  async registerWalletFingerprint(walletAddress: string, fingerprint: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/wallet/fingerprint`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ walletAddress, fingerprint })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to register wallet fingerprint: ${response.statusText}`)
     }
     return response.json()
   }

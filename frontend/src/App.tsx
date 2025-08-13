@@ -13,7 +13,7 @@ import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
 import { safeStorage } from './utils/safeStorage'
 
 function App() {
-  const { setConnectionStatus, user, updateUserWallet, createFreshUser, setProgress, addLogs, setStats, clearTerminalLogs } = useStore()
+  const { setConnectionStatus, user, updateUserWallet, updateUserMintedAmount, createFreshUser, setProgress, addLogs, setStats, clearTerminalLogs } = useStore()
   
   // Make clear function available globally for console debugging
   useEffect(() => {
@@ -29,34 +29,100 @@ function App() {
   useEarlyAccessTracking()
 
 
-  // Auto-create wallet for token functionality
+  // Auto-create wallet for token functionality with persistent device fingerprinting
   useEffect(() => {
-    const forceNewWallet = safeStorage.get('krypt-force-new-wallet')
-    
-    if (!user?.walletAddress || forceNewWallet) {
-      // Generate proper 40-character Ethereum address format
-      const generateWalletAddress = () => {
-        const chars = '0123456789abcdef'
-        let address = '0x'
-        for (let i = 0; i < 40; i++) {
-          address += chars[Math.floor(Math.random() * chars.length)]
+    const initializeWallet = async () => {
+      const forceNewWallet = safeStorage.get('krypt-force-new-wallet')
+      
+      if (!user?.walletAddress || forceNewWallet) {
+        // Generate persistent device fingerprint
+        const generateDeviceFingerprint = () => {
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          ctx!.textBaseline = 'top'
+          ctx!.font = '14px Arial'
+          ctx!.fillText('Device fingerprint', 2, 2)
+          
+          const fingerprint = [
+            navigator.userAgent,
+            navigator.language,
+            screen.width + 'x' + screen.height,
+            new Date().getTimezoneOffset(),
+            canvas.toDataURL(),
+            navigator.hardwareConcurrency || 'unknown',
+            navigator.platform
+          ].join('|')
+          
+          // Create hash from fingerprint
+          let hash = 0
+          for (let i = 0; i < fingerprint.length; i++) {
+            const char = fingerprint.charCodeAt(i)
+            hash = ((hash << 5) - hash) + char
+            hash = hash & hash // Convert to 32-bit integer
+          }
+          return Math.abs(hash).toString(16)
         }
-        return address
-      }
-      const generatedAddress = generateWalletAddress()
-      
-      if (forceNewWallet) {
-        console.log('🔄 Forcing complete wallet reset including staking and minting data')
-        createFreshUser(generatedAddress)
-      } else {
-        updateUserWallet(generatedAddress, 0)
-      }
-      
-      // Clear the force new wallet flag
-      if (forceNewWallet) {
-        safeStorage.del('krypt-force-new-wallet')
+
+        const deviceFingerprint = generateDeviceFingerprint()
+        
+        try {
+          // Check if this device already has a wallet
+          const apiService = ApiService.getInstance()
+          const existingWallet = await apiService.getWalletByFingerprint?.(deviceFingerprint)
+          
+          if (existingWallet && !forceNewWallet) {
+            // Restore existing wallet with full state
+            updateUserWallet(existingWallet.address, existingWallet.balance)
+            if (existingWallet.mintedAmount > 0) {
+              updateUserMintedAmount(existingWallet.mintedAmount)
+            }
+            console.log('🔄 Restored existing wallet for device:', existingWallet.address)
+          } else {
+            // Generate proper 40-character Ethereum address format
+            const generateWalletAddress = () => {
+              const chars = '0123456789abcdef'
+              let address = '0x'
+              for (let i = 0; i < 40; i++) {
+                address += chars[Math.floor(Math.random() * chars.length)]
+              }
+              return address
+            }
+            const generatedAddress = generateWalletAddress()
+            
+            if (forceNewWallet) {
+              console.log('🔄 Forcing complete wallet reset including staking and minting data')
+              createFreshUser(generatedAddress)
+            } else {
+              updateUserWallet(generatedAddress, 0)
+            }
+            
+            // Register wallet with device fingerprint
+            await apiService.registerWalletFingerprint?.(generatedAddress, deviceFingerprint)
+          }
+          
+        } catch (error) {
+          console.error('Wallet initialization error:', error)
+          // Fallback to local wallet generation
+          const generateWalletAddress = () => {
+            const chars = '0123456789abcdef'
+            let address = '0x'
+            for (let i = 0; i < 40; i++) {
+              address += chars[Math.floor(Math.random() * chars.length)]
+            }
+            return address
+          }
+          const generatedAddress = generateWalletAddress()
+          updateUserWallet(generatedAddress, 0)
+        }
+        
+        // Clear the force new wallet flag
+        if (forceNewWallet) {
+          safeStorage.del('krypt-force-new-wallet')
+        }
       }
     }
+    
+    initializeWallet()
   }, [user, updateUserWallet, createFreshUser])
 
   // Sync wallet balance to backend
@@ -64,10 +130,10 @@ function App() {
     const apiService = ApiService.getInstance()
     
     if (user?.walletAddress && user?.balance !== undefined) {
-      apiService.updateUserBalance(user.walletAddress, user.balance)
+      apiService.updateUserBalance(user.walletAddress, user.balance, user.mintedAmount)
         .catch(console.error)
     }
-  }, [user?.walletAddress, user?.balance])
+  }, [user?.walletAddress, user?.balance, user?.mintedAmount])
 
   useEffect(() => {
     const apiService = ApiService.getInstance()

@@ -180,6 +180,12 @@ export default {
           return handleUpdateUserBalance(request, env);
         case url.pathname === '/api/leaderboard' && request.method === 'GET':
           return handleGetLeaderboard(env);
+        
+        // Wallet fingerprint endpoints
+        case url.pathname.startsWith('/api/wallet/fingerprint/') && request.method === 'GET':
+          return handleGetWalletByFingerprint(request, env, url);
+        case url.pathname === '/api/wallet/fingerprint' && request.method === 'POST':
+          return handleRegisterWalletFingerprint(request, env);
 
         // Raffle endpoints
         case url.pathname === '/api/raffle/enter' && request.method === 'POST':
@@ -1142,6 +1148,7 @@ async function handleUpdateUserBalance(request, env) {
     // Support both 'address' and 'walletAddress' for backward compatibility
     const address = body.address || body.walletAddress;
     const balance = body.balance;
+    const mintedAmount = body.mintedAmount; // Optional field for minting tracking
     
     if (!address || typeof balance !== 'number') {
       return new Response(JSON.stringify({ 
@@ -1189,9 +1196,13 @@ async function handleUpdateUserBalance(request, env) {
 
     const userKey = `user:${normalizedAddress}`;
     
+    // Get existing user data to preserve mintedAmount if not provided
+    const existingUser = await kvGetJSON(env, userKey, null);
+    
     const userData = {
       address: normalizedAddress,
       balance: Math.max(0, balance),
+      mintedAmount: mintedAmount !== undefined ? Math.max(0, mintedAmount) : (existingUser?.mintedAmount || 0),
       lastUpdated: Date.now()
     };
 
@@ -1199,7 +1210,8 @@ async function handleUpdateUserBalance(request, env) {
     
     return new Response(JSON.stringify({ 
       success: true, 
-      balance: userData.balance 
+      balance: userData.balance,
+      mintedAmount: userData.mintedAmount
     }), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Update user balance error:', error);
@@ -1263,6 +1275,98 @@ async function handleGetLeaderboard(env) {
   } catch (error) {
     console.error('Get leaderboard error:', error);
     return new Response(JSON.stringify([]), { headers: JSON_HEADERS });
+  }
+}
+
+// ===== WALLET FINGERPRINT HANDLERS =====
+async function handleGetWalletByFingerprint(request, env, url) {
+  try {
+    const fingerprint = url.pathname.split('/').pop();
+    
+    if (!fingerprint) {
+      return new Response(JSON.stringify({ 
+        error: 'Fingerprint required' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    const fingerprintKey = `fingerprint:${fingerprint}`;
+    const walletData = await kvGetJSON(env, fingerprintKey, null);
+    
+    if (!walletData) {
+      return new Response(JSON.stringify({ 
+        error: 'Wallet not found for fingerprint' 
+      }), { status: 404, headers: JSON_HEADERS });
+    }
+    
+    // Get current balance from user data
+    const userKey = `user:${walletData.address}`;
+    const userData = await kvGetJSON(env, userKey, null);
+    
+    return new Response(JSON.stringify({
+      address: walletData.address,
+      balance: userData?.balance || 0,
+      mintedAmount: userData?.mintedAmount || 0,
+      createdAt: walletData.createdAt
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Get wallet by fingerprint error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to get wallet' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleRegisterWalletFingerprint(request, env) {
+  try {
+    const { walletAddress, fingerprint } = await request.json();
+    
+    if (!walletAddress || !fingerprint) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Wallet address and fingerprint required' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    // Validate wallet format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid wallet address format' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    const fingerprintKey = `fingerprint:${fingerprint}`;
+    
+    // Check if fingerprint already exists
+    const existingWallet = await kvGetJSON(env, fingerprintKey, null);
+    if (existingWallet) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Device already has a wallet registered' 
+      }), { status: 409, headers: JSON_HEADERS });
+    }
+    
+    // Register fingerprint -> wallet mapping
+    const fingerprintData = {
+      address: walletAddress.toLowerCase(),
+      fingerprint,
+      createdAt: new Date().toISOString()
+    };
+    
+    await kvPutJSON(env, fingerprintKey, fingerprintData);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Wallet fingerprint registered successfully' 
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Register wallet fingerprint error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to register wallet fingerprint' 
+    }), { status: 500, headers: JSON_HEADERS });
   }
 }
 
