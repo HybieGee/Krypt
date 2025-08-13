@@ -12,13 +12,22 @@ export default function Terminal() {
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll terminal to bottom on new messages
+  // Smart auto-scroll: only scroll if user is at bottom
   useEffect(() => {
-    if (liveViewLogs.length > 0) {
-      setShouldAutoScroll(true)
-      setTimeout(() => setShouldAutoScroll(false), 100) // Reset after scroll
+    if (activeTab === 'terminal' && liveViewRef.current) {
+      const terminalElement = liveViewRef.current.querySelector('.terminal-scroll')
+      if (terminalElement) {
+        const { scrollTop, scrollHeight, clientHeight } = terminalElement
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 10
+        
+        // Only auto-scroll if user is at bottom
+        if (isAtBottom) {
+          setShouldAutoScroll(true)
+          setTimeout(() => setShouldAutoScroll(false), 100)
+        }
+      }
     }
-  }, [liveViewLogs.length]) // Trigger when new logs arrive
+  }, [liveViewLogs.length, activeTab]) // Trigger when new logs arrive
 
   // Check if user is scrolled up in logs view (for potential future use)
   const checkLogsScrollPosition = () => {
@@ -26,13 +35,13 @@ export default function Terminal() {
     // Could be used for scroll indicators in the future
   }
 
-  // Auto-scroll logs view when new logs arrive (only if at bottom)
+  // Smart auto-scroll for logs view: only scroll if user is at bottom
   useEffect(() => {
     if (activeTab === 'logs' && logsViewRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = logsViewRef.current
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
       
-      // Always auto-scroll if user is at bottom when new content arrives
+      // Auto-scroll if user is at bottom OR if explicitly requested (like tab switch)
       if (isAtBottom || shouldAutoScroll) {
         setTimeout(() => {
           if (logsViewRef.current) {
@@ -41,7 +50,7 @@ export default function Terminal() {
         }, 0)
       }
     }
-  }, [activeTab, shouldAutoScroll, terminalLogs.length])
+  }, [activeTab, shouldAutoScroll, filteredLogs.length])
 
   // Filter logs based on selected filter AND timestamp (only show logs whose time has passed)
   const filteredLogs = terminalLogs.filter(log => {

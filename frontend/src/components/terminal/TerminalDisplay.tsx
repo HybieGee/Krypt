@@ -23,13 +23,13 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
     // Could be used for scroll indicators in the future
   }
 
-  // Auto-scroll to bottom only if user is already at bottom when new logs arrive
+  // Smart auto-scroll: only scroll if user is at bottom or explicitly requested
   useEffect(() => {
     if (terminalRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = terminalRef.current
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 10 // Tighter threshold
       
-      // Always auto-scroll if user is at bottom when new content arrives
+      // Auto-scroll if user is at bottom OR if explicitly requested (like tab switch)
       if (isAtBottom || shouldScrollToBottom) {
         // Use setTimeout to ensure DOM has updated with new content
         setTimeout(() => {
