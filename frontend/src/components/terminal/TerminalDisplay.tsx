@@ -125,7 +125,7 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
                 [{new Date(log.timestamp).toLocaleTimeString()}]
               </span>
               <span className={`flex-1 ${
-                log.type === 'commit' ? 'text-yellow-400' :
+                log.type === 'commit' ? 'text-red-400' :
                 log.type === 'phase' ? 'text-blue-400' :
                 log.type === 'system' ? 'text-red-400' :
                 log.type === 'api' ? 'text-cyan-400' :

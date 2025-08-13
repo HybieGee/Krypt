@@ -810,7 +810,7 @@ async function generateNextComponent(env) {
       id: `commit-${currentProgress}-${baseTime}`,
       ts: baseTime - 5000, // 5 seconds ago
       level: 'commit',
-      msg: `[${commitHash}] feat: implement ${componentName} with enhanced security`,
+      msg: `✅ [${commitHash}] feat: implement ${componentName} with enhanced security`,
       details: {
         component: componentName,
         hash: commitHash,
@@ -832,8 +832,8 @@ async function generateNextComponent(env) {
         totalComponents: 4500,
         linesAdded,
         commitHash,
-        codeSnippet: shortCodeSnippet,
-        fullCode: codeSnippet // Full code for scrollable box in dev logs
+        snippet: shortCodeSnippet, // For terminal display
+        code: codeSnippet // Full code for development logs
       }
     });
     
