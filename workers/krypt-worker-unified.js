@@ -424,18 +424,16 @@ export default {
     }
   },
 
-  // ===== SCHEDULED HANDLER =====
+  // ===== SCHEDULED HANDLER - DISABLED (only real Krypt AI data) =====
   async scheduled(event, env, ctx) {
     try {
-      console.log('⏰ Scheduled trigger activated at', new Date().toISOString());
+      console.log('⏰ Scheduled trigger disabled - only showing real Krypt AI development data');
       
-      // Run autonomous development tick
-      await runAutonomousDevelopment(env);
+      // SIMULATION DISABLED - Only show real data from Krypt AI
+      // await runAutonomousDevelopment(env);
       
-      // Check for missed milestone triggers
+      // Keep milestone and raffle checks for real user interactions
       await checkAndTriggerMilestones(env);
-      
-      // Handle automatic raffle draws
       await handleAutomaticRaffleDraws(env);
       
     } catch (error) {

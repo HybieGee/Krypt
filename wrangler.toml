@@ -13,9 +13,9 @@ binding = "EARLY_ACCESS"
 id = "b465f2964e3d4fb2ad7cd164dee8a343"
 preview_id = "b465f2964e3d4fb2ad7cd164dee8a343"
 
-# Scheduled triggers for autonomous development
-[triggers]
-crons = ["*/5 * * * *"]  # Every 5 minutes
+# Scheduled triggers for autonomous development - DISABLED (only real Krypt AI data)
+# [triggers]
+# crons = ["*/5 * * * *"]  # Every 5 minutes
 
 # Durable Objects for real-time chat
 [[durable_objects.bindings]]
