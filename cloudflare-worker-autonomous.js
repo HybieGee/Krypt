@@ -106,6 +106,23 @@ export default {
       return handleLeaderboard(env, jsonHeaders)
     }
 
+    // Raffle System Endpoints
+    if (url.pathname === '/api/raffle/enter' && request.method === 'POST') {
+      return handleRaffleEntry(request, env, jsonHeaders)
+    }
+
+    if (url.pathname === '/api/user/raffle-entries' && request.method === 'GET') {
+      return handleGetRaffleEntries(request, env, jsonHeaders)
+    }
+
+    if (url.pathname === '/api/raffle/draw' && request.method === 'POST') {
+      return handleRaffleDraw(request, env, jsonHeaders)
+    }
+
+    if (url.pathname === '/api/raffle/status' && request.method === 'GET') {
+      return handleRaffleStatus(env, jsonHeaders)
+    }
+
     // Default 404
     return new Response(JSON.stringify({ error: 'Not found' }), {
       status: 404,
@@ -119,6 +136,9 @@ export default {
     
     // Run continuous development
     await continuousDevelopment(env)
+    
+    // Handle automatic raffle draws
+    await handleAutomaticRaffleDraws(env)
   }
 }
 
@@ -715,5 +735,388 @@ async function handleLeaderboard(env, headers) {
       status: 500, 
       headers 
     })
+  }
+}
+
+// ===== RAFFLE SYSTEM =====
+
+async function handleRaffleEntry(request, env, headers) {
+  try {
+    const { walletAddress, raffleType, ticketCost } = await request.json()
+    
+    if (!walletAddress || !raffleType || !ticketCost) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Missing required fields' 
+      }), { status: 400, headers })
+    }
+
+    // Get user's current raffle tickets
+    const userKey = `user_balance_${walletAddress}`
+    const userData = await env.KRYPT_DATA.get(userKey)
+    const user = userData ? JSON.parse(userData) : null
+    
+    if (!user) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'User not found' 
+      }), { status: 404, headers })
+    }
+
+    // Calculate user's raffle tickets (based on activity)
+    const balance = user.balance || 0
+    const staked = user.stakes?.reduce((total, stake) => total + stake.amount, 0) || 0
+    const minted = user.mintedAmount || 0
+    const miningBonus = user.isMining ? 100 : 0
+    const totalScore = balance + staked + (minted * 2) + miningBonus
+    const availableTickets = Math.floor(totalScore / 100) + (user.raffleTickets || 0)
+
+    if (availableTickets < ticketCost) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: `Insufficient tickets. Need ${ticketCost}, have ${availableTickets}` 
+      }), { status: 400, headers })
+    }
+
+    // Create raffle entry
+    const entryId = `${raffleType}_${walletAddress}_${Date.now()}`
+    const raffleEntry = {
+      id: entryId,
+      walletAddress,
+      raffleType,
+      ticketCost,
+      timestamp: new Date().toISOString(),
+      status: 'active'
+    }
+
+    // Store raffle entry
+    await env.KRYPT_DATA.put(`raffle_entry_${entryId}`, JSON.stringify(raffleEntry))
+
+    // Update user's raffle tickets (deduct used tickets)
+    user.raffleTickets = (user.raffleTickets || 0) - ticketCost
+    await env.KRYPT_DATA.put(userKey, JSON.stringify(user))
+
+    // Update raffle stats
+    const raffleStatsKey = `raffle_stats_${raffleType}`
+    const statsData = await env.KRYPT_DATA.get(raffleStatsKey)
+    const stats = statsData ? JSON.parse(statsData) : {
+      totalEntries: 0,
+      totalTickets: 0,
+      participants: 0,
+      lastUpdated: new Date().toISOString()
+    }
+    
+    stats.totalEntries += 1
+    stats.totalTickets += ticketCost
+    stats.lastUpdated = new Date().toISOString()
+    await env.KRYPT_DATA.put(raffleStatsKey, JSON.stringify(stats))
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Successfully entered raffle',
+      entry: raffleEntry,
+      remainingTickets: user.raffleTickets
+    }), { headers })
+
+  } catch (error) {
+    console.error('Raffle entry error:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Failed to enter raffle' 
+    }), { status: 500, headers })
+  }
+}
+
+async function handleGetRaffleEntries(request, env, headers) {
+  try {
+    const url = new URL(request.url)
+    const walletAddress = url.searchParams.get('walletAddress')
+    
+    if (!walletAddress) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Wallet address required' 
+      }), { status: 400, headers })
+    }
+
+    // Get all raffle entries for this user
+    const entries = []
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'raffle_entry_' })
+    
+    for (const key of listResult.keys) {
+      const entryData = await env.KRYPT_DATA.get(key.name)
+      if (entryData) {
+        const entry = JSON.parse(entryData)
+        if (entry.walletAddress === walletAddress && entry.status === 'active') {
+          entries.push(entry)
+        }
+      }
+    }
+
+    return new Response(JSON.stringify(entries), { headers })
+
+  } catch (error) {
+    console.error('Get raffle entries error:', error)
+    return new Response(JSON.stringify([]), { headers })
+  }
+}
+
+async function handleRaffleDraw(request, env, headers) {
+  try {
+    const { raffleType, adminKey } = await request.json()
+    
+    // Simple admin key check (you should use a proper auth system)
+    if (adminKey !== 'krypt_raffle_admin_2024') {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Unauthorized' 
+      }), { status: 401, headers })
+    }
+
+    if (!raffleType) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Raffle type required' 
+      }), { status: 400, headers })
+    }
+
+    // Get all entries for this raffle type
+    const entries = []
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'raffle_entry_' })
+    
+    for (const key of listResult.keys) {
+      const entryData = await env.KRYPT_DATA.get(key.name)
+      if (entryData) {
+        const entry = JSON.parse(entryData)
+        if (entry.raffleType === raffleType && entry.status === 'active') {
+          entries.push(entry)
+        }
+      }
+    }
+
+    if (entries.length === 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'No entries found for this raffle' 
+      }), { status: 404, headers })
+    }
+
+    // Create weighted array (more tickets = more chances)
+    const weightedEntries = []
+    entries.forEach(entry => {
+      for (let i = 0; i < entry.ticketCost; i++) {
+        weightedEntries.push(entry)
+      }
+    })
+
+    // Select random winner
+    const randomIndex = Math.floor(Math.random() * weightedEntries.length)
+    const winnerEntry = weightedEntries[randomIndex]
+
+    // Determine prize based on raffle type
+    const prizes = {
+      'hourly': 1000,
+      'weekly': 25000,
+      'genesis': 100000
+    }
+    const prizeAmount = prizes[raffleType] || 1000
+
+    // Update winner's balance
+    const userKey = `user_balance_${winnerEntry.walletAddress}`
+    const userData = await env.KRYPT_DATA.get(userKey)
+    const user = userData ? JSON.parse(userData) : { 
+      balance: 0, 
+      walletAddress: winnerEntry.walletAddress 
+    }
+    
+    user.balance = (user.balance || 0) + prizeAmount
+    await env.KRYPT_DATA.put(userKey, JSON.stringify(user))
+
+    // Mark all entries for this raffle as completed
+    for (const entry of entries) {
+      entry.status = 'completed'
+      entry.winnerAddress = winnerEntry.walletAddress
+      entry.prizeAmount = prizeAmount
+      entry.drawnAt = new Date().toISOString()
+      await env.KRYPT_DATA.put(`raffle_entry_${entry.id}`, JSON.stringify(entry))
+    }
+
+    // Store draw result
+    const drawResult = {
+      id: `draw_${raffleType}_${Date.now()}`,
+      raffleType,
+      winnerAddress: winnerEntry.walletAddress,
+      prizeAmount,
+      totalEntries: entries.length,
+      totalTickets: weightedEntries.length,
+      drawnAt: new Date().toISOString()
+    }
+    
+    await env.KRYPT_DATA.put(`raffle_draw_${drawResult.id}`, JSON.stringify(drawResult))
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Raffle drawn successfully',
+      winner: winnerEntry.walletAddress,
+      prizeAmount,
+      totalEntries: entries.length,
+      drawResult
+    }), { headers })
+
+  } catch (error) {
+    console.error('Raffle draw error:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Failed to draw raffle' 
+    }), { status: 500, headers })
+  }
+}
+
+async function handleRaffleStatus(env, headers) {
+  try {
+    const raffleTypes = ['hourly', 'weekly', 'genesis']
+    const status = {}
+
+    for (const raffleType of raffleTypes) {
+      // Get raffle stats
+      const statsData = await env.KRYPT_DATA.get(`raffle_stats_${raffleType}`)
+      const stats = statsData ? JSON.parse(statsData) : {
+        totalEntries: 0,
+        totalTickets: 0,
+        participants: 0,
+        lastUpdated: new Date().toISOString()
+      }
+
+      // Get recent winner
+      const listResult = await env.KRYPT_DATA.list({ prefix: `raffle_draw_draw_${raffleType}` })
+      let lastWinner = null
+      let lastDrawTime = null
+      
+      if (listResult.keys.length > 0) {
+        // Get most recent draw
+        const sortedKeys = listResult.keys.sort((a, b) => b.name.localeCompare(a.name))
+        const lastDrawData = await env.KRYPT_DATA.get(sortedKeys[0].name)
+        if (lastDrawData) {
+          const draw = JSON.parse(lastDrawData)
+          lastWinner = draw.winnerAddress
+          lastDrawTime = draw.drawnAt
+        }
+      }
+
+      status[raffleType] = {
+        ...stats,
+        lastWinner,
+        lastDrawTime,
+        prizePool: raffleType === 'hourly' ? 1000 : raffleType === 'weekly' ? 25000 : 100000
+      }
+    }
+
+    return new Response(JSON.stringify(status), { headers })
+
+  } catch (error) {
+    console.error('Raffle status error:', error)
+    return new Response(JSON.stringify({}), { headers })
+  }
+}
+
+// ===== AUTOMATIC RAFFLE DRAWS =====
+
+async function handleAutomaticRaffleDraws(env) {
+  try {
+    const now = new Date()
+    const currentMinute = now.getMinutes()
+    const currentHour = now.getHours()
+    const currentDay = now.getDay() // 0 = Sunday
+    
+    // Hourly raffle (every hour at :00)
+    if (currentMinute === 0) {
+      console.log('🎲 Running hourly raffle draw...')
+      await automaticRaffleDraw(env, 'hourly', 1000)
+    }
+    
+    // Weekly raffle (every Sunday at midnight)
+    if (currentDay === 0 && currentHour === 0 && currentMinute === 0) {
+      console.log('🎲 Running weekly raffle draw...')
+      await automaticRaffleDraw(env, 'weekly', 25000)
+    }
+    
+  } catch (error) {
+    console.error('Automatic raffle draw error:', error)
+  }
+}
+
+async function automaticRaffleDraw(env, raffleType, prizeAmount) {
+  try {
+    // Get all entries for this raffle type
+    const entries = []
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'raffle_entry_' })
+    
+    for (const key of listResult.keys) {
+      const entryData = await env.KRYPT_DATA.get(key.name)
+      if (entryData) {
+        const entry = JSON.parse(entryData)
+        if (entry.raffleType === raffleType && entry.status === 'active') {
+          entries.push(entry)
+        }
+      }
+    }
+
+    if (entries.length === 0) {
+      console.log(`No entries found for ${raffleType} raffle`)
+      return
+    }
+
+    // Create weighted array (more tickets = more chances)
+    const weightedEntries = []
+    entries.forEach(entry => {
+      for (let i = 0; i < entry.ticketCost; i++) {
+        weightedEntries.push(entry)
+      }
+    })
+
+    // Select random winner
+    const randomIndex = Math.floor(Math.random() * weightedEntries.length)
+    const winnerEntry = weightedEntries[randomIndex]
+
+    // Update winner's balance
+    const userKey = `user_balance_${winnerEntry.walletAddress}`
+    const userData = await env.KRYPT_DATA.get(userKey)
+    const user = userData ? JSON.parse(userData) : { 
+      balance: 0, 
+      walletAddress: winnerEntry.walletAddress 
+    }
+    
+    user.balance = (user.balance || 0) + prizeAmount
+    await env.KRYPT_DATA.put(userKey, JSON.stringify(user))
+
+    // Mark all entries for this raffle as completed
+    for (const entry of entries) {
+      entry.status = 'completed'
+      entry.winnerAddress = winnerEntry.walletAddress
+      entry.prizeAmount = prizeAmount
+      entry.drawnAt = new Date().toISOString()
+      await env.KRYPT_DATA.put(`raffle_entry_${entry.id}`, JSON.stringify(entry))
+    }
+
+    // Store draw result
+    const drawResult = {
+      id: `draw_${raffleType}_${Date.now()}`,
+      raffleType,
+      winnerAddress: winnerEntry.walletAddress,
+      prizeAmount,
+      totalEntries: entries.length,
+      totalTickets: weightedEntries.length,
+      drawnAt: new Date().toISOString(),
+      automatic: true
+    }
+    
+    await env.KRYPT_DATA.put(`raffle_draw_${drawResult.id}`, JSON.stringify(drawResult))
+
+    console.log(`🎉 ${raffleType} raffle drawn! Winner: ${winnerEntry.walletAddress}, Prize: ${prizeAmount} KRYPT`)
+    
+    return drawResult
+
+  } catch (error) {
+    console.error(`Automatic ${raffleType} raffle draw error:`, error)
   }
 }

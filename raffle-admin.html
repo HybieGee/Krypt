@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎲 KRYPT Raffle Admin</title>
+    <style>
+        body { font-family: monospace; background: #000; color: #00ff41; padding: 20px; }
+        .admin { color: #44ff44; background: #003300; padding: 15px; border: 2px solid #44ff44; margin: 20px 0; }
+        .raffle { color: #ffaa00; background: #332200; padding: 15px; border: 2px solid #ffaa00; margin: 20px 0; }
+        .danger { color: #ff4444; background: #330000; padding: 15px; border: 2px solid #ff4444; margin: 20px 0; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+        .test { background: #00ff41; color: #000; font-weight: bold; }
+        .draw { background: #ff4444; color: white; font-weight: bold; }
+        .status { background: #4444ff; color: white; }
+        input { padding: 10px; background: #222; color: #00ff41; border: 1px solid #00ff41; margin: 5px; }
+        .stats { background: #111; padding: 15px; margin: 10px 0; border-left: 3px solid #00ff41; }
+    </style>
+</head>
+<body>
+    <h1>🎲 KRYPT RAFFLE ADMIN PANEL</h1>
+    
+    <div class="admin">
+        <h2>🔧 Admin Functions</h2>
+        <p><strong>Admin Key:</strong> krypt_raffle_admin_2024</p>
+        <p>Use this panel to test and manage the raffle system.</p>
+    </div>
+
+    <div>
+        <h2>📊 Raffle Status</h2>
+        <button class="status" onclick="getRaffleStatus()">📊 GET RAFFLE STATUS</button>
+        <div id="statusResults"></div>
+    </div>
+
+    <div>
+        <h2>🎫 Test User Entry</h2>
+        <input type="text" id="testWallet" placeholder="Wallet Address (0x...)" style="width: 400px;">
+        <input type="number" id="testBalance" placeholder="Test Balance (for tickets)" value="1000">
+        <br>
+        <button class="test" onclick="createTestUser()">👤 CREATE TEST USER</button>
+        <button class="test" onclick="enterHourlyRaffle()">🎯 ENTER HOURLY (1 ticket)</button>
+        <button class="test" onclick="enterWeeklyRaffle()">💎 ENTER WEEKLY (5 tickets)</button>
+        <button class="test" onclick="enterGenesisRaffle()">🚀 ENTER GENESIS (10 tickets)</button>
+    </div>
+
+    <div>
+        <h2>🎲 Manual Draws</h2>
+        <button class="draw" onclick="drawRaffle('hourly')">🎯 DRAW HOURLY RAFFLE</button>
+        <button class="draw" onclick="drawRaffle('weekly')">💎 DRAW WEEKLY RAFFLE</button>
+        <button class="draw" onclick="drawRaffle('genesis')">🚀 DRAW GENESIS RAFFLE</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'admin') {
+            const div = document.createElement('div')
+            div.className = type
+            div.innerHTML = message
+            document.getElementById('results').insertBefore(div, document.getElementById('results').firstChild)
+            
+            // Keep only last 10 results
+            const results = document.getElementById('results')
+            while (results.children.length > 10) {
+                results.removeChild(results.lastChild)
+            }
+        }
+
+        async function createTestUser() {
+            const wallet = document.getElementById('testWallet').value
+            const balance = parseInt(document.getElementById('testBalance').value) || 1000
+            
+            if (!wallet) {
+                addResult('❌ Please enter a wallet address', 'danger')
+                return
+            }
+
+            try {
+                const response = await fetch('/api/user/balance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress: wallet, balance })
+                })
+
+                if (response.ok) {
+                    const result = await response.json()
+                    addResult(`✅ Test user created: ${wallet} with ${balance} KRYPT balance`, 'admin')
+                } else {
+                    throw new Error(`HTTP ${response.status}`)
+                }
+            } catch (error) {
+                addResult(`❌ Failed to create test user: ${error.message}`, 'danger')
+            }
+        }
+
+        async function enterHourlyRaffle() {
+            const wallet = document.getElementById('testWallet').value
+            if (!wallet) {
+                addResult('❌ Please enter a wallet address first', 'danger')
+                return
+            }
+
+            await enterRaffle(wallet, 'hourly', 1)
+        }
+
+        async function enterWeeklyRaffle() {
+            const wallet = document.getElementById('testWallet').value
+            if (!wallet) {
+                addResult('❌ Please enter a wallet address first', 'danger')
+                return
+            }
+
+            await enterRaffle(wallet, 'weekly', 5)
+        }
+
+        async function enterGenesisRaffle() {
+            const wallet = document.getElementById('testWallet').value
+            if (!wallet) {
+                addResult('❌ Please enter a wallet address first', 'danger')
+                return
+            }
+
+            await enterRaffle(wallet, 'genesis', 10)
+        }
+
+        async function enterRaffle(walletAddress, raffleType, ticketCost) {
+            try {
+                const response = await fetch('/api/raffle/enter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ walletAddress, raffleType, ticketCost })
+                })
+
+                const result = await response.json()
+                
+                if (result.success) {
+                    addResult(`✅ Entered ${raffleType} raffle: ${ticketCost} tickets used. Remaining: ${result.remainingTickets}`, 'raffle')
+                } else {
+                    addResult(`❌ Failed to enter ${raffleType} raffle: ${result.message}`, 'danger')
+                }
+            } catch (error) {
+                addResult(`❌ Error entering raffle: ${error.message}`, 'danger')
+            }
+        }
+
+        async function drawRaffle(raffleType) {
+            if (!confirm(`Draw ${raffleType} raffle? This will select a winner and end current entries.`)) {
+                return
+            }
+
+            try {
+                const response = await fetch('/api/raffle/draw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        raffleType, 
+                        adminKey: 'krypt_raffle_admin_2024' 
+                    })
+                })
+
+                const result = await response.json()
+                
+                if (result.success) {
+                    addResult(`🎉 ${raffleType.toUpperCase()} RAFFLE DRAWN!<br>
+                        Winner: ${result.winner}<br>
+                        Prize: ${result.prizeAmount.toLocaleString()} KRYPT<br>
+                        Total Entries: ${result.totalEntries}`, 'raffle')
+                } else {
+                    addResult(`❌ Failed to draw ${raffleType} raffle: ${result.message}`, 'danger')
+                }
+            } catch (error) {
+                addResult(`❌ Error drawing raffle: ${error.message}`, 'danger')
+            }
+        }
+
+        async function getRaffleStatus() {
+            try {
+                const response = await fetch('/api/raffle/status')
+                const status = await response.json()
+                
+                let statusHtml = '<h3>📊 RAFFLE STATUS:</h3>'
+                
+                Object.entries(status).forEach(([raffleType, data]) => {
+                    statusHtml += `
+                        <div class="stats">
+                            <strong>${raffleType.toUpperCase()} RAFFLE:</strong><br>
+                            Prize Pool: ${data.prizePool?.toLocaleString() || 'Unknown'} KRYPT<br>
+                            Total Entries: ${data.totalEntries || 0}<br>
+                            Total Tickets: ${data.totalTickets || 0}<br>
+                            Last Winner: ${data.lastWinner || 'None'}<br>
+                            Last Draw: ${data.lastDrawTime ? new Date(data.lastDrawTime).toLocaleString() : 'Never'}<br>
+                            Last Updated: ${data.lastUpdated ? new Date(data.lastUpdated).toLocaleString() : 'Never'}
+                        </div>
+                    `
+                })
+                
+                document.getElementById('statusResults').innerHTML = statusHtml
+                
+                addResult('✅ Raffle status updated', 'admin')
+            } catch (error) {
+                addResult(`❌ Error getting raffle status: ${error.message}`, 'danger')
+            }
+        }
+
+        // Auto-load status on page load
+        window.onload = function() {
+            addResult('🎲 Raffle admin panel loaded', 'admin')
+            getRaffleStatus()
+        }
+    </script>
+</body>
+</html>
