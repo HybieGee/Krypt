@@ -107,6 +107,100 @@ function createSSEStream(env, makePayload, pollMs = 3000) {
   }), { headers: SSE_HEADERS });
 }
 
+// ===== ADMIN TESTING HANDLERS =====
+async function handleSetEarlyAccessCount(request, env) {
+  try {
+    const { count, adminKey } = await request.json();
+    
+    // Simple admin key check (you can modify this)
+    if (adminKey !== 'krypt_admin_test_2024') {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid admin key' 
+      }), { status: 401, headers: JSON_HEADERS });
+    }
+    
+    if (!Number.isInteger(count) || count < 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Count must be a non-negative integer' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    // Set the early access count
+    await kvPutJSON(env, 'early_access_count', count);
+    
+    // Check for milestone triggers
+    await checkAndTriggerMilestones(env);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      count,
+      message: `Early access count set to ${count}. Milestone checks triggered.`
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Set early access count error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to set count' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleTriggerMilestone(request, env) {
+  try {
+    const { milestoneId, adminKey } = await request.json();
+    
+    // Simple admin key check
+    if (adminKey !== 'krypt_admin_test_2024') {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid admin key' 
+      }), { status: 401, headers: JSON_HEADERS });
+    }
+    
+    // Find the milestone
+    const milestone = MILESTONES.find(m => m.id === milestoneId);
+    if (!milestone) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Milestone not found' 
+      }), { status: 404, headers: JSON_HEADERS });
+    }
+    
+    // Check if already completed
+    const completedMilestones = await kvGetJSON(env, 'completed_milestones', []);
+    if (completedMilestones.includes(milestone.id)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Milestone already completed' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    // Mark as completed and trigger airdrop
+    completedMilestones.push(milestone.id);
+    await kvPutJSON(env, 'completed_milestones', completedMilestones);
+    
+    const distributionResults = await triggerMilestoneAirdrop(env, milestone);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      milestone: milestone.name,
+      recipients: distributionResults.length,
+      totalDistributed: distributionResults.length * milestone.reward,
+      message: `Milestone "${milestone.name}" triggered manually. ${distributionResults.length} users received ${milestone.reward} tokens each.`
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Trigger milestone error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to trigger milestone' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
 // ===== MAIN WORKER =====
 export default {
   async fetch(request, env, ctx) {
@@ -226,6 +320,10 @@ export default {
           return handleCleanTestWallets(env);
         case url.pathname === '/api/admin/clean-invalid-wallets' && request.method === 'POST':
           return handleCleanInvalidWallets(env);
+        case url.pathname === '/api/admin/set-early-access-count' && request.method === 'POST':
+          return handleSetEarlyAccessCount(request, env);
+        case url.pathname === '/api/admin/trigger-milestone' && request.method === 'POST':
+          return handleTriggerMilestone(request, env);
 
         default:
           return new Response(JSON.stringify({ error: 'Not found' }), { 
