@@ -227,6 +227,26 @@ class ApiService {
     return response.json()
   }
 
+  async getUserAirdrops(walletAddress: string): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/user/airdrops/${walletAddress}`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user airdrops: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  async markAirdropSeen(walletAddress: string, airdropId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/user/airdrops/mark-seen`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress, airdropId })
+    })
+    if (!response.ok) {
+      throw new Error(`Failed to mark airdrop as seen: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
   startPolling(
     onProgress: (progress: ProgressData) => void,
     onLogs: (logs: LogEntry[]) => void,

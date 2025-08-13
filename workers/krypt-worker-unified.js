@@ -186,6 +186,12 @@ export default {
           return handleGetWalletByFingerprint(request, env, url);
         case url.pathname === '/api/wallet/fingerprint' && request.method === 'POST':
           return handleRegisterWalletFingerprint(request, env);
+        
+        // Airdrop/Milestone endpoints
+        case url.pathname.startsWith('/api/user/airdrops/') && request.method === 'GET':
+          return handleGetUserAirdrops(request, env, url);
+        case url.pathname === '/api/user/airdrops/mark-seen' && request.method === 'POST':
+          return handleMarkAirdropSeen(request, env);
 
         // Raffle endpoints
         case url.pathname === '/api/raffle/enter' && request.method === 'POST':
@@ -632,6 +638,9 @@ async function handleDevelopmentTick(env) {
 
     // Generate next component
     const result = await generateNextComponent(env);
+    
+    // Check for milestone triggers after component generation
+    await checkAndTriggerMilestones(env, result.newProgress);
     
     return new Response(JSON.stringify({
       success: true,
@@ -1394,6 +1403,269 @@ class ConfigurationError extends Error {
   return templates[Math.floor(Math.random() * templates.length)];
 }
 
+// ===== MILESTONE SYSTEM =====
+const MILESTONES = [
+  { id: 'milestone_1', components: 500, reward: 250, name: 'Blockchain Foundation' },
+  { id: 'milestone_2', components: 1000, reward: 500, name: 'Core Infrastructure' },
+  { id: 'milestone_3', components: 1500, reward: 750, name: 'Security Layer' },
+  { id: 'milestone_4', components: 2000, reward: 1000, name: 'Smart Contracts' },
+  { id: 'milestone_5', components: 2500, reward: 1250, name: 'Network Protocol' },
+  { id: 'milestone_6', components: 3000, reward: 1500, name: 'Performance Optimization' },
+  { id: 'milestone_7', components: 3500, reward: 1750, name: 'Advanced Features' },
+  { id: 'milestone_8', components: 4000, reward: 2000, name: 'Final Integration' },
+  { id: 'milestone_9', components: 4500, reward: 2500, name: 'Blockchain Complete' }
+];
+
+async function checkAndTriggerMilestones(env, currentComponents) {
+  try {
+    // Get completed milestones
+    const completedMilestones = await kvGetJSON(env, 'completed_milestones', []);
+    
+    // Check each milestone
+    for (const milestone of MILESTONES) {
+      // Skip if already completed
+      if (completedMilestones.includes(milestone.id)) {
+        continue;
+      }
+      
+      // Check if milestone threshold reached
+      if (currentComponents >= milestone.components) {
+        console.log(`🎯 Milestone triggered: ${milestone.name} at ${milestone.components} components`);
+        
+        // Mark as completed to prevent double-triggering
+        completedMilestones.push(milestone.id);
+        await kvPutJSON(env, 'completed_milestones', completedMilestones);
+        
+        // Trigger milestone airdrop
+        await triggerMilestoneAirdrop(env, milestone);
+      }
+    }
+  } catch (error) {
+    console.error('Milestone check error:', error);
+  }
+}
+
+async function triggerMilestoneAirdrop(env, milestone) {
+  try {
+    console.log(`🚀 Triggering airdrop for ${milestone.name} - ${milestone.reward} tokens each`);
+    
+    // Get all users for leaderboard (first 25 wallets)
+    const listResult = await env.KRYPT_DATA.list({ prefix: 'user:' });
+    const eligibleUsers = [];
+    
+    // Test patterns to filter out
+    const testPatterns = [
+      '0x1234567890abcdef1234567890abcdef12345678',
+      '0xabcdef1234567890abcdef1234567890abcdef12', 
+      '0x9876543210fedcba9876543210fedcba98765432',
+      '0xtest', '0xraffle', '0xfake',
+      '0xnewuser1234567890abcdef1234567890abcdef12',
+      '0x5f6e7d8c9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+      '0x7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f',
+      '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12',
+      '0xabc123def456789'
+    ];
+    
+    // Collect all valid users
+    for (const key of listResult.keys) {
+      const userData = await kvGetJSON(env, key.name, null);
+      if (userData && userData.address) {
+        // Filter out test wallets
+        const isTestWallet = testPatterns.some(pattern => 
+          userData.address.toLowerCase().startsWith(pattern.toLowerCase())
+        );
+        
+        if (!isTestWallet) {
+          eligibleUsers.push(userData);
+        }
+      }
+    }
+    
+    // Sort by registration time (earliest first) and take first 25
+    const sortedUsers = eligibleUsers
+      .sort((a, b) => (a.firstSeen || a.lastUpdated || 0) - (b.firstSeen || b.lastUpdated || 0))
+      .slice(0, 25);
+    
+    console.log(`📊 Distributing to ${sortedUsers.length} eligible users (first 25 wallets)`);
+    
+    // Create airdrop record for tracking
+    const airdropId = `airdrop_${milestone.id}_${Date.now()}`;
+    const airdropRecord = {
+      id: airdropId,
+      milestoneId: milestone.id,
+      milestoneName: milestone.name,
+      reward: milestone.reward,
+      timestamp: Date.now(),
+      recipients: sortedUsers.map(u => u.address),
+      totalDistributed: sortedUsers.length * milestone.reward
+    };
+    
+    // Save airdrop record
+    await kvPutJSON(env, `airdrop:${airdropId}`, airdropRecord);
+    
+    // Update each user's balance and create individual airdrop records
+    const distributionPromises = sortedUsers.map(async (user) => {
+      const userKey = `user:${user.address}`;
+      const updatedUser = {
+        ...user,
+        balance: (user.balance || 0) + milestone.reward,
+        lastUpdated: Date.now()
+      };
+      
+      // Create individual airdrop notification record
+      const userAirdropKey = `user_airdrop:${user.address}:${airdropId}`;
+      const userAirdropRecord = {
+        airdropId,
+        milestoneId: milestone.id,
+        milestoneName: milestone.name,
+        reward: milestone.reward,
+        timestamp: Date.now(),
+        claimed: false, // User hasn't seen notification yet
+        walletAddress: user.address
+      };
+      
+      await Promise.all([
+        kvPutJSON(env, userKey, updatedUser),
+        kvPutJSON(env, userAirdropKey, userAirdropRecord)
+      ]);
+      
+      return {
+        address: user.address,
+        oldBalance: user.balance || 0,
+        newBalance: updatedUser.balance,
+        reward: milestone.reward
+      };
+    });
+    
+    const distributionResults = await Promise.all(distributionPromises);
+    
+    // Add milestone completion log
+    const logs = await kvGetJSON(env, 'dev_logs', []);
+    logs.push({
+      id: `milestone-${milestone.id}-${Date.now()}`,
+      ts: Date.now(),
+      level: 'phase',
+      msg: `🎯 MILESTONE ACHIEVED: ${milestone.name}! 🎉`,
+      details: {
+        milestone: milestone.name,
+        components: milestone.components,
+        reward: milestone.reward,
+        recipients: distributionResults.length,
+        totalDistributed: distributionResults.length * milestone.reward,
+        airdropId: airdropId
+      }
+    });
+    
+    // Add individual airdrop notification log
+    logs.push({
+      id: `airdrop-${airdropId}-${Date.now()}`,
+      ts: Date.now() + 1000,
+      level: 'system',
+      msg: `💰 Airdrop distributed to ${distributionResults.length} early supporters!`,
+      details: {
+        milestone: milestone.name,
+        tokensPerUser: milestone.reward,
+        totalUsers: distributionResults.length,
+        airdropId: airdropId
+      }
+    });
+    
+    // Trim logs if needed
+    if (logs.length > MAX_LOGS) {
+      logs.splice(0, logs.length - MAX_LOGS);
+    }
+    
+    await kvPutJSON(env, 'dev_logs', logs);
+    
+    console.log(`✅ Milestone airdrop completed: ${distributionResults.length} users received ${milestone.reward} tokens each`);
+    
+    return distributionResults;
+  } catch (error) {
+    console.error('Milestone airdrop error:', error);
+    throw error;
+  }
+}
+
+// ===== AIRDROP NOTIFICATION HANDLERS =====
+async function handleGetUserAirdrops(request, env, url) {
+  try {
+    const walletAddress = url.pathname.split('/').pop();
+    
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid wallet address' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    const normalizedAddress = walletAddress.toLowerCase();
+    
+    // Get all airdrop records for this user
+    const listResult = await env.KRYPT_DATA.list({ prefix: `user_airdrop:${normalizedAddress}:` });
+    const airdrops = [];
+    
+    for (const key of listResult.keys) {
+      const airdropData = await kvGetJSON(env, key.name, null);
+      if (airdropData) {
+        airdrops.push(airdropData);
+      }
+    }
+    
+    // Sort by timestamp (newest first)
+    airdrops.sort((a, b) => b.timestamp - a.timestamp);
+    
+    return new Response(JSON.stringify(airdrops), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Get user airdrops error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to get airdrops' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleMarkAirdropSeen(request, env) {
+  try {
+    const { walletAddress, airdropId } = await request.json();
+    
+    if (!walletAddress || !airdropId) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Wallet address and airdrop ID required' 
+      }), { status: 400, headers: JSON_HEADERS });
+    }
+    
+    const normalizedAddress = walletAddress.toLowerCase();
+    const userAirdropKey = `user_airdrop:${normalizedAddress}:${airdropId}`;
+    
+    // Get existing airdrop record
+    const airdropData = await kvGetJSON(env, userAirdropKey, null);
+    
+    if (!airdropData) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Airdrop record not found' 
+      }), { status: 404, headers: JSON_HEADERS });
+    }
+    
+    // Mark as seen/claimed
+    airdropData.claimed = true;
+    airdropData.claimedAt = Date.now();
+    
+    await kvPutJSON(env, userAirdropKey, airdropData);
+    
+    return new Response(JSON.stringify({ 
+      success: true 
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Mark airdrop seen error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Failed to mark airdrop as seen' 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
 // ===== USER & LEADERBOARD HANDLERS =====
 async function handleUpdateUserBalance(request, env) {
   try {
@@ -1456,6 +1728,7 @@ async function handleUpdateUserBalance(request, env) {
       address: normalizedAddress,
       balance: Math.max(0, balance),
       mintedAmount: mintedAmount !== undefined ? Math.max(0, mintedAmount) : (existingUser?.mintedAmount || 0),
+      firstSeen: existingUser?.firstSeen || Date.now(), // Track when user first registered
       lastUpdated: Date.now()
     };
 

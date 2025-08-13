@@ -10,7 +10,9 @@ import Tokenomics from './pages/Tokenomics'
 import { useStore } from './store/useStore'
 import ApiService from './services/api'
 import { useEarlyAccessTracking } from './hooks/useEarlyAccessTracking'
+import { useAirdropNotifications } from './hooks/useAirdropNotifications'
 import { safeStorage } from './utils/safeStorage'
+import MilestoneNotification from './components/ui/MilestoneNotification'
 
 function App() {
   const { setConnectionStatus, user, updateUserWallet, updateUserMintedAmount, createFreshUser, setProgress, addLogs, setStats, clearTerminalLogs } = useStore()
@@ -27,6 +29,9 @@ function App() {
   
   // Initialize early access visitor tracking
   useEarlyAccessTracking()
+  
+  // Initialize airdrop notifications
+  const { pendingAirdrops, dismissAirdrop } = useAirdropNotifications()
 
 
   // Auto-create wallet for token functionality with persistent device fingerprinting
@@ -184,18 +189,32 @@ function App() {
   }, [user?.isMining, user?.walletAddress, user?.balance, updateUserWallet])
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Terminal />} />
-          <Route path="wallet" element={<Tokens />} />
-          <Route path="rewards" element={<Rewards />} />
-          <Route path="roadmap" element={<Roadmap />} />
-          <Route path="docs" element={<Documentation />} />
-          <Route path="tokenomics" element={<Tokenomics />} />
-        </Route>
-      </Routes>
-    </Router>
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Terminal />} />
+            <Route path="wallet" element={<Tokens />} />
+            <Route path="rewards" element={<Rewards />} />
+            <Route path="roadmap" element={<Roadmap />} />
+            <Route path="docs" element={<Documentation />} />
+            <Route path="tokenomics" element={<Tokenomics />} />
+          </Route>
+        </Routes>
+      </Router>
+      
+      {/* Airdrop Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-4">
+        {pendingAirdrops.map((airdrop, index) => (
+          <MilestoneNotification
+            key={airdrop.airdropId}
+            airdrop={airdrop}
+            onDismiss={dismissAirdrop}
+            delay={index * 200} // Stagger animations
+          />
+        ))}
+      </div>
+    </>
   )
 }
 
