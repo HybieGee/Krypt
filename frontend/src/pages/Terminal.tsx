@@ -12,12 +12,13 @@ export default function Terminal() {
   const liveViewRef = useRef<HTMLDivElement>(null)
   const logsViewRef = useRef<HTMLDivElement>(null)
 
-  // Force scroll to top on component mount and auto-scroll terminal
+  // Auto-scroll terminal to bottom on new messages
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
-    // Auto-scroll terminal to bottom on page load
-    setTimeout(() => setShouldAutoScroll(false), 200) // Reset after initial scroll
-  }, []) // Empty dependency array = only run once on mount
+    if (liveViewLogs.length > 0) {
+      setShouldAutoScroll(true)
+      setTimeout(() => setShouldAutoScroll(false), 100) // Reset after scroll
+    }
+  }, [liveViewLogs.length]) // Trigger when new logs arrive
 
   // Check if user is scrolled up in logs view (for potential future use)
   const checkLogsScrollPosition = () => {
@@ -90,7 +91,7 @@ export default function Terminal() {
                   onClick={() => {
                     setActiveTab('terminal')
                     setShouldAutoScroll(true)
-                    setTimeout(() => setShouldAutoScroll(false), 100)
+                    setTimeout(() => setShouldAutoScroll(false), 200)
                   }}
                   className={`px-3 py-1 text-sm transition-colors ${
                     activeTab === 'terminal'
@@ -104,7 +105,7 @@ export default function Terminal() {
                   onClick={() => {
                     setActiveTab('logs')
                     setShouldAutoScroll(true)
-                    setTimeout(() => setShouldAutoScroll(false), 100)
+                    setTimeout(() => setShouldAutoScroll(false), 200)
                   }}
                   className={`px-3 py-1 text-sm transition-colors ${
                     activeTab === 'logs'
