@@ -62,6 +62,34 @@ export default function Tokenomics() {
             </div>
           )}
           
+          {/* Buy Buttons when launched */}
+          {tokenConfig.showContractAddress && (
+            <div className="mt-6 flex flex-wrap gap-3">
+              {tokenConfig.dexLinks.pumpfun && (
+                <a
+                  href={tokenConfig.dexLinks.pumpfun}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <span>🚀</span>
+                  <span>Buy on Pump.fun</span>
+                </a>
+              )}
+              {tokenConfig.dexLinks.uniswap && (
+                <a
+                  href={tokenConfig.dexLinks.uniswap}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+                >
+                  <span>🦄</span>
+                  <span>Buy on Uniswap</span>
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Coming Soon Badge if no contract */}
           {!tokenConfig.showContractAddress && (
             <div className="mt-6 inline-block bg-terminal-gray/20 border border-terminal-green/30 rounded-lg px-6 py-3">

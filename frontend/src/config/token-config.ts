@@ -23,6 +23,7 @@ export const tokenConfig = {
   
   // DEX Links (update when available)
   dexLinks: {
+    pumpfun: '', // Pump.fun token URL - add this first
     uniswap: '',
     sushiswap: '',
     pancakeswap: '',
