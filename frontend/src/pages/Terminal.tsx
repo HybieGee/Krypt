@@ -167,7 +167,8 @@ export default function Terminal() {
           minHeight: '500px',
           maxHeight: '500px', // Completely fixed height
           height: '500px',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          paddingBottom: '0px' // Remove bottom padding
         }}>
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-terminal-green/30">
             <h2 className="text-lg font-bold text-terminal-green">
