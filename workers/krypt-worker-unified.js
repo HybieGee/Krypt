@@ -784,7 +784,7 @@ async function generateNextComponent(env) {
     
     // 3. Code Generation
     const codeSnippet = generateCodeSnippet(componentName);
-    const linesAdded = Math.floor(Math.random() * 150) + 50;
+    const actualLineCount = codeSnippet.split('\n').length;
     
     developmentLogs.push({
       id: `code-gen-${currentProgress}-${baseTime}`,
@@ -794,7 +794,7 @@ async function generateNextComponent(env) {
       details: {
         component: componentName,
         codeSnippet: codeSnippet.slice(0, 200) + '...',
-        estimatedLines: linesAdded
+        estimatedLines: actualLineCount
       }
     });
     
@@ -824,13 +824,12 @@ async function generateNextComponent(env) {
       details: {
         component: componentName,
         hash: commitHash,
-        linesAdded,
+        linesAdded: actualLineCount,
         filesChanged: Math.floor(Math.random() * 3) + 1
       }
     });
     
     // 6. Final completion with code snippet
-    const actualLineCount = codeSnippet.split('\n').length;
     developmentLogs.push({
       id: `comp-${currentProgress}-${baseTime}`,
       ts: baseTime,
@@ -840,7 +839,7 @@ async function generateNextComponent(env) {
         component: componentName,
         progress: currentProgress + 1,
         totalComponents: 4500,
-        linesAdded: actualLineCount, // Use actual line count
+        linesAdded: actualLineCount,
         commitHash,
         // Only send full code - frontend will show first 8 lines in Live View
         code: codeSnippet // Full code for both views
@@ -867,7 +866,7 @@ async function generateNextComponent(env) {
     const stats = await kvGetJSON(env, 'stats', {});
     const updatedStats = {
       ...stats,
-      total_lines_of_code: { value: (stats.total_lines_of_code?.value || 0) + linesAdded, lastUpdated: new Date().toISOString() },
+      total_lines_of_code: { value: (stats.total_lines_of_code?.value || 0) + actualLineCount, lastUpdated: new Date().toISOString() },
       total_commits: { value: (stats.total_commits?.value || 0) + 1, lastUpdated: new Date().toISOString() },
       total_tests_run: { value: (stats.total_tests_run?.value || 0) + testsRun, lastUpdated: new Date().toISOString() }
     };
@@ -949,6 +948,170 @@ function getComponentName(index) {
 
 function generateCodeSnippet(componentName) {
   const templates = [
+    // Short template (45-60 lines)
+    `export class ${componentName} {
+  private config: ChainConfig
+  private isActive: boolean = false
+  
+  constructor(config: ChainConfig) {
+    this.config = config
+  }
+  
+  async initialize(): Promise<void> {
+    console.log(\`Initializing \${componentName}...\`)
+    await this.validateConfig()
+    this.isActive = true
+    console.log(\`\${componentName} ready\`)
+  }
+  
+  private async validateConfig(): Promise<void> {
+    if (!this.config) {
+      throw new Error('Configuration required')
+    }
+  }
+  
+  public async process(data: any): Promise<any> {
+    if (!this.isActive) {
+      throw new Error('Component not initialized')
+    }
+    return this.transform(data)
+  }
+  
+  private transform(data: any): any {
+    return {
+      ...data,
+      processed: true,
+      timestamp: Date.now()
+    }
+  }
+  
+  public getStatus(): boolean {
+    return this.isActive
+  }
+  
+  public shutdown(): void {
+    this.isActive = false
+    console.log(\`\${componentName} shutdown\`)
+  }
+}
+
+interface ChainConfig {
+  network: string
+  security: any
+}`,
+
+    // Medium template (75-95 lines)  
+    `export class ${componentName} {
+  private readonly version = '1.0.0'
+  private state: BlockchainState
+  private config: ChainConfig
+  private isInitialized: boolean = false
+  private eventHandlers: Map<string, Function[]> = new Map()
+  
+  constructor(config: ChainConfig) {
+    this.config = config
+    this.state = new BlockchainState(config)
+    this.initialize()
+  }
+  
+  async initialize(): Promise<void> {
+    try {
+      console.log(\`Initializing \${componentName}...\`)
+      await this.validateConfiguration()
+      await this.setupEventHandlers()
+      this.isInitialized = true
+      console.log(\`\${componentName} initialized successfully\`)
+    } catch (error) {
+      console.error(\`Failed to initialize \${componentName}:\`, error)
+      throw new Error(\`\${componentName} startup failed\`)
+    }
+  }
+  
+  private async validateConfiguration(): Promise<void> {
+    if (!this.config.network) {
+      throw new Error('Network configuration required')
+    }
+    if (!this.config.security) {
+      throw new Error('Security configuration required')
+    }
+  }
+  
+  private async setupEventHandlers(): Promise<void> {
+    this.on('data', this.handleDataEvent.bind(this))
+    this.on('error', this.handleErrorEvent.bind(this))
+    this.on('shutdown', this.handleShutdownEvent.bind(this))
+  }
+  
+  public on(event: string, handler: Function): void {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, [])
+    }
+    this.eventHandlers.get(event)!.push(handler)
+  }
+  
+  public emit(event: string, data?: any): void {
+    const handlers = this.eventHandlers.get(event) || []
+    handlers.forEach(handler => handler(data))
+  }
+  
+  private handleDataEvent(data: any): void {
+    console.log('Data received:', data.size || 0, 'bytes')
+  }
+  
+  private handleErrorEvent(error: Error): void {
+    console.error(\`\${componentName} error:\`, error)
+  }
+  
+  private handleShutdownEvent(): void {
+    this.cleanup()
+  }
+  
+  public async process(data: any): Promise<ProcessedData> {
+    if (!this.isInitialized) {
+      throw new Error(\`\${componentName} not initialized\`)
+    }
+    
+    try {
+      const validated = await this.validate(data)
+      const processed = await this.transform(validated)
+      return processed
+    } catch (error) {
+      this.emit('error', error)
+      throw error
+    }
+  }
+  
+  private async validate(data: any): Promise<any> {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid data format')
+    }
+    return data
+  }
+  
+  private async transform(data: any): Promise<ProcessedData> {
+    return {
+      ...data,
+      processed: true,
+      timestamp: Date.now(),
+      component: componentName,
+      version: this.version
+    }
+  }
+  
+  private cleanup(): void {
+    this.eventHandlers.clear()
+    console.log(\`\${componentName} cleaned up\`)
+  }
+}
+
+interface ProcessedData {
+  processed: boolean
+  timestamp: number
+  component: string
+  version: string
+}`,
+
+    // Large template (120-150 lines)
     `export class ${componentName} {
   private readonly version = '1.0.0'
   private state: BlockchainState
@@ -956,6 +1119,7 @@ function generateCodeSnippet(componentName) {
   private isInitialized: boolean = false
   private eventHandlers: Map<string, Function[]> = new Map()
   private metrics: ComponentMetrics
+  private connections: Set<string> = new Set()
   
   constructor(config: ChainConfig) {
     this.config = config
@@ -970,6 +1134,7 @@ function generateCodeSnippet(componentName) {
       await this.validateConfiguration()
       await this.setupEventHandlers()
       await this.initializeConnections()
+      await this.startHealthChecks()
       this.isInitialized = true
       this.metrics.recordInitialization()
       console.log(\`\${componentName} initialized successfully\`)
@@ -986,17 +1151,29 @@ function generateCodeSnippet(componentName) {
     if (!this.config.security) {
       throw new ConfigurationError('Security configuration required')
     }
+    if (!this.config.peers) {
+      throw new ConfigurationError('Peer configuration required')
+    }
   }
   
   private async setupEventHandlers(): Promise<void> {
     this.on('data', this.handleDataEvent.bind(this))
     this.on('error', this.handleErrorEvent.bind(this))
     this.on('shutdown', this.handleShutdownEvent.bind(this))
+    this.on('peer_connected', this.handlePeerConnected.bind(this))
+    this.on('peer_disconnected', this.handlePeerDisconnected.bind(this))
   }
   
   private async initializeConnections(): Promise<void> {
     await this.state.connect()
     await this.establishPeerConnections()
+    await this.setupNetworkProtocols()
+  }
+  
+  private async startHealthChecks(): Promise<void> {
+    setInterval(() => {
+      this.performHealthCheck()
+    }, 30000) // Every 30 seconds
   }
   
   public on(event: string, handler: Function): void {
@@ -1008,20 +1185,39 @@ function generateCodeSnippet(componentName) {
   
   public emit(event: string, data?: any): void {
     const handlers = this.eventHandlers.get(event) || []
-    handlers.forEach(handler => handler(data))
+    handlers.forEach(handler => {
+      try {
+        handler(data)
+      } catch (error) {
+        console.error('Event handler error:', error)
+      }
+    })
   }
   
   private handleDataEvent(data: any): void {
     this.metrics.recordDataProcessed(data.size || 0)
+    console.log(\`\${componentName} processed data:\`, data.size || 0, 'bytes')
   }
   
   private handleErrorEvent(error: Error): void {
     this.metrics.recordError(error)
     console.error(\`\${componentName} error:\`, error)
+    this.attemptRecovery(error)
   }
   
   private handleShutdownEvent(): void {
+    console.log(\`\${componentName} shutdown initiated\`)
     this.cleanup()
+  }
+  
+  private handlePeerConnected(peer: any): void {
+    this.connections.add(peer.id)
+    console.log(\`Peer connected: \${peer.id}\`)
+  }
+  
+  private handlePeerDisconnected(peer: any): void {
+    this.connections.delete(peer.id)
+    console.log(\`Peer disconnected: \${peer.id}\`)
   }
   
   public async process(data: any): Promise<ProcessedData> {
@@ -1033,10 +1229,11 @@ function generateCodeSnippet(componentName) {
       const startTime = Date.now()
       const validated = await this.validate(data)
       const processed = await this.transform(validated)
+      const secured = await this.applySecurityLayer(processed)
       const endTime = Date.now()
       
       this.metrics.recordProcessingTime(endTime - startTime)
-      return processed
+      return secured
     } catch (error) {
       this.emit('error', error)
       throw error
@@ -1047,30 +1244,81 @@ function generateCodeSnippet(componentName) {
     if (!data || typeof data !== 'object') {
       throw new ValidationError('Invalid data format')
     }
+    
+    if (!data.timestamp || Date.now() - data.timestamp > 300000) {
+      throw new ValidationError('Data too old or missing timestamp')
+    }
+    
     return data
   }
   
-  private async transform(data: any): Promise<ProcessedData> {
+  private async transform(data: any): Promise<any> {
     return {
       ...data,
       processed: true,
       timestamp: Date.now(),
       component: componentName,
-      version: this.version
+      version: this.version,
+      signature: this.generateSignature(data)
+    }
+  }
+  
+  private async applySecurityLayer(data: any): Promise<ProcessedData> {
+    const encrypted = await this.encrypt(data)
+    const signed = await this.sign(encrypted)
+    return signed
+  }
+  
+  private generateSignature(data: any): string {
+    return \`sig_\${Date.now()}_\${Math.random().toString(36).substring(2)}\`
+  }
+  
+  private async encrypt(data: any): Promise<any> {
+    // Encryption logic would go here
+    return { ...data, encrypted: true }
+  }
+  
+  private async sign(data: any): Promise<ProcessedData> {
+    return {
+      ...data,
+      signature: this.generateSignature(data),
+      verified: true
     }
   }
   
   private async establishPeerConnections(): Promise<void> {
-    // Establish connections to peer nodes
     const peers = this.config.peers || []
     for (const peer of peers) {
-      await this.connectToPeer(peer)
+      try {
+        await this.connectToPeer(peer)
+        this.emit('peer_connected', peer)
+      } catch (error) {
+        console.error(\`Failed to connect to peer \${peer.id}:\`, error)
+      }
     }
   }
   
   private async connectToPeer(peer: PeerConfig): Promise<void> {
     console.log(\`Connecting to peer: \${peer.address}\`)
     // Connection logic here
+    this.connections.add(peer.id)
+  }
+  
+  private async setupNetworkProtocols(): Promise<void> {
+    // Network protocol setup
+    console.log('Setting up network protocols...')
+  }
+  
+  private performHealthCheck(): void {
+    const status = this.getStatus()
+    if (status.errors > 10) {
+      console.warn(\`\${componentName} health warning: \${status.errors} errors\`)
+    }
+  }
+  
+  private attemptRecovery(error: Error): void {
+    console.log(\`Attempting recovery from error: \${error.message}\`)
+    // Recovery logic here
   }
   
   public getMetrics(): ComponentMetrics {
@@ -1082,12 +1330,14 @@ function generateCodeSnippet(componentName) {
       initialized: this.isInitialized,
       version: this.version,
       uptime: Date.now() - this.metrics.startTime,
-      errors: this.metrics.errorCount
+      errors: this.metrics.errorCount,
+      connections: this.connections.size
     }
   }
   
   private cleanup(): void {
     this.eventHandlers.clear()
+    this.connections.clear()
     this.state.disconnect()
     console.log(\`\${componentName} cleaned up\`)
   }
@@ -1107,6 +1357,8 @@ interface ProcessedData {
   timestamp: number
   component: string
   version: string
+  signature?: string
+  verified?: boolean
 }
 
 interface ComponentStatus {
@@ -1114,6 +1366,7 @@ interface ComponentStatus {
   version: string
   uptime: number
   errors: number
+  connections?: number
 }
 
 class ValidationError extends Error {

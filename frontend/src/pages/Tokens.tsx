@@ -12,9 +12,16 @@ export default function Tokens() {
   const [transferAddress, setTransferAddress] = useState('')
   const [transferStatus, setTransferStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [stakeStatus, setStakeStatus] = useState<'idle' | 'loading' | 'success'>('idle')
+  const [notification, setNotification] = useState<{ type: 'warning' | 'error' | 'success'; message: string } | null>(null)
   
   // Live leaderboard data
   const [leaderboard, setLeaderboard] = useState<Array<{ address: string; balance: number }>>([])  
+  
+  // Notification helper
+  const showNotification = (type: 'warning' | 'error' | 'success', message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 5000) // Auto-dismiss after 5 seconds
+  }
   
   // Stable leaderboard management with user persistence
   useEffect(() => {
@@ -139,7 +146,7 @@ export default function Tokens() {
     const newTotal = currentMinted + amount
     
     if (newTotal > 1000) {
-      alert('Maximum mint limit is 1000 tokens per user')
+      showNotification('warning', `🪙 You've reached your limit! Maximum mint is 1000 tokens per wallet. You can mint ${1000 - currentMinted} more tokens.`)
       return
     }
     
@@ -147,6 +154,7 @@ export default function Tokens() {
       updateUserWallet(user.walletAddress, (user.balance || 0) + amount)
       updateUserMintedAmount(amount)
       setMintAmount('')
+      showNotification('success', `🎉 Successfully minted ${amount} KRYPT tokens! Added to your wallet.`)
     }
   }
 
@@ -154,7 +162,7 @@ export default function Tokens() {
     const amount = parseFloat(stakeAmount) || 0
     
     if (amount > (user?.balance || 0)) {
-      alert('Insufficient balance')
+      showNotification('warning', `💰 Insufficient balance! You have ${(user?.balance || 0).toFixed(2)} KRYPT tokens available.`)
       return
     }
     
@@ -238,6 +246,31 @@ export default function Tokens() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Custom Notification */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 max-w-md">
+          <div className={`p-4 rounded-lg border-2 ${
+            notification.type === 'success' 
+              ? 'bg-terminal-green/10 border-terminal-green text-terminal-green' 
+              : notification.type === 'warning'
+              ? 'bg-yellow-400/10 border-yellow-400 text-yellow-400'
+              : 'bg-red-400/10 border-red-400 text-red-400'
+          }`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-3 text-xs opacity-70 hover:opacity-100"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
