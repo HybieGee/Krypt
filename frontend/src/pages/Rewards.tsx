@@ -154,20 +154,10 @@ export default function Rewards() {
           setRaffleEntries(prev => [...prev, result.entry])
         }
         
-        // Don't do immediate refresh - let optimistic update show first
-        // Only do delayed refreshes to allow KV consistency to propagate
+        // Only do very delayed refreshes to allow KV consistency
+        // Optimistic updates should persist until real data arrives
         setTimeout(async () => {
-          console.log('🔄 Delayed refresh #1 (5s)...')
-          await loadRaffleData()
-        }, 5000)
-        
-        setTimeout(async () => {
-          console.log('🔄 Delayed refresh #2 (15s)...')
-          await loadRaffleData()
-        }, 15000)
-        
-        setTimeout(async () => {
-          console.log('🔄 Delayed refresh #3 (30s)...')
+          console.log('🔄 Delayed refresh #1 (30s)...')
           await loadRaffleData()
         }, 30000)
         

@@ -177,15 +177,15 @@ export default function Tokens() {
         
         // Update backend with new balance and staked amount
         const apiService = ApiService.getInstance()
-        await apiService.updateUserBalance(
+        const result = await apiService.updateUserBalance(
           user.walletAddress, 
           newBalance,
           user.mintedAmount, // Preserve existing minted amount
           newStakedAmount     // Update staked amount
         )
         
-        // Update frontend state
-        updateUserWallet(user.walletAddress, newBalance)
+        // Update frontend state with backend response
+        updateUserWallet(user.walletAddress, result.balance || newBalance)
         const dailyReturn = getDailyReturn(stakeDuration, amount)
         addStake(amount, stakeDuration, dailyReturn)
         
