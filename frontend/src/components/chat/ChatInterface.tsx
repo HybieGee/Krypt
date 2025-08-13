@@ -26,8 +26,13 @@ export default function ChatInterface() {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const chatMessages = await apiService.getChatMessages()
-        setMessages(chatMessages)
+        const response = await apiService.getChatMessages()
+        console.log('📨 Chat response:', { 
+          messageCount: response.length, 
+          timestamp: new Date().toLocaleTimeString(),
+          lastMessage: response[response.length - 1]?.message || 'No messages'
+        })
+        setMessages(response)
       } catch (error) {
         console.error('Failed to load chat messages:', error)
       }
@@ -69,11 +74,23 @@ export default function ChatInterface() {
       )
 
       if (result.success) {
+        console.log('✅ Message sent successfully:', result.message)
         setInput('')
         // Immediately refresh messages after sending
-        setTimeout(() => refreshMessages(), 100)
+        setTimeout(() => {
+          console.log('🔄 First refresh attempt...')
+          refreshMessages()
+        }, 100)
         // Also refresh again after a bit in case of KV delays
-        setTimeout(() => refreshMessages(), 1000)
+        setTimeout(() => {
+          console.log('🔄 Second refresh attempt...')
+          refreshMessages()
+        }, 1000)
+        // Third attempt for stubborn KV consistency
+        setTimeout(() => {
+          console.log('🔄 Third refresh attempt...')
+          refreshMessages()
+        }, 3000)
       } else {
         console.error('Failed to send message:', result.message)
       }

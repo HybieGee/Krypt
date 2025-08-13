@@ -327,6 +327,10 @@ export default {
           return handleGetChatMessages(env);
         case url.pathname === '/api/chat/send' && request.method === 'POST':
           return handleSendChatMessage(request, env);
+        case url.pathname === '/api/chat/stream' && request.method === 'GET':
+          return handleChatStream(env);
+        case url.pathname === '/api/chat/latest' && request.method === 'GET':
+          return handleGetLatestMessage(env);
 
         // User & Leaderboard endpoints
         case url.pathname === '/api/user/balance' && request.method === 'POST':
@@ -2898,13 +2902,21 @@ async function automaticRaffleDraw(env, raffleType, prizeAmount) {
 async function handleGetChatMessages(env) {
   try {
     const messages = await kvGetJSON(env, 'chat_messages', []);
+    console.log(`📨 Chat messages fetch: ${messages.length} messages found`);
+    
     // Return last 100 messages to prevent excessive data
     const recentMessages = messages.slice(-100);
     
     return new Response(JSON.stringify({
       success: true,
       messages: recentMessages,
-      timestamp: Date.now() // Add timestamp for debugging
+      timestamp: Date.now(),
+      totalMessages: messages.length,
+      debugInfo: {
+        kvFetch: 'success',
+        messageCount: messages.length,
+        lastMessage: messages.length > 0 ? messages[messages.length - 1] : null
+      }
     }), { 
       headers: {
         ...JSON_HEADERS,
@@ -2959,17 +2971,57 @@ async function handleSendChatMessage(request, env) {
       messages.splice(0, messages.length - 1000);
     }
     
+    // Write to KV
     await kvPutJSON(env, 'chat_messages', messages);
+    
+    // Also store with timestamp for immediate access
+    await kvPutJSON(env, `chat_latest`, {
+      message: chatMessage,
+      timestamp: Date.now(),
+      totalCount: messages.length
+    });
+    
+    console.log(`✅ Chat message sent: ${chatMessage.username} - "${chatMessage.message}" (Total: ${messages.length})`);
     
     return new Response(JSON.stringify({
       success: true,
-      message: chatMessage
+      message: chatMessage,
+      debugInfo: {
+        totalMessages: messages.length,
+        kvWrite: 'success',
+        latestStored: true
+      }
     }), { headers: JSON_HEADERS });
   } catch (error) {
     console.error('Send chat message error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: 'Failed to send message'
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
+async function handleGetLatestMessage(env) {
+  try {
+    const latest = await kvGetJSON(env, 'chat_latest', null);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      latest: latest,
+      timestamp: Date.now()
+    }), { 
+      headers: {
+        ...JSON_HEADERS,
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  } catch (error) {
+    console.error('Get latest message error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Failed to get latest message'
     }), { status: 500, headers: JSON_HEADERS });
   }
 }
