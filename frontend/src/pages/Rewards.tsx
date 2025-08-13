@@ -109,7 +109,12 @@ export default function Rewards() {
       ])
       console.log('Raffle entries:', entries)
       console.log('Raffle status:', status)
-      console.log('User tickets:', tickets)
+      console.log('User tickets details:', {
+        availableTickets: tickets.availableTickets,
+        totalTickets: tickets.totalTickets,
+        usedTickets: tickets.usedTickets,
+        fullResponse: tickets
+      })
       setRaffleEntries(entries || [])
       setRaffleStatus(status || {})
       setRaffleTickets(tickets.availableTickets || 0)
