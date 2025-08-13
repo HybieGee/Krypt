@@ -804,6 +804,16 @@ async function handleDevelopmentTick(env) {
     // Generate next component
     const result = await generateNextComponent(env);
     
+    if (result.rateLimited) {
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Rate limited - no new component generated',
+        component: result.componentName,
+        progress: result.newProgress,
+        rateLimited: true
+      }), { headers: JSON_HEADERS });
+    }
+    
     return new Response(JSON.stringify({
       success: true,
       message: 'Component generated',
@@ -922,6 +932,24 @@ async function handleSeedDevelopment(env) {
 async function generateNextComponent(env) {
   try {
     const currentProgress = await kvGetJSON(env, 'dev_progress', 0);
+    
+    // Rate limiting: Check last generation time to prevent duplicates
+    const lastGenTime = await kvGetJSON(env, 'last_component_gen_time', 0);
+    const timeSinceLastGen = Date.now() - lastGenTime;
+    
+    // Don't generate if less than 10 seconds since last generation
+    if (timeSinceLastGen < 10000) {
+      console.log(`⏸️ Rate limited: ${timeSinceLastGen}ms since last generation`);
+      return {
+        componentName: getComponentName(currentProgress - 1),
+        newProgress: currentProgress,
+        rateLimited: true
+      };
+    }
+    
+    // Update last generation time immediately to prevent race conditions
+    await kvPutJSON(env, 'last_component_gen_time', Date.now());
+    
     const componentName = getComponentName(currentProgress);
     const logs = await kvGetJSON(env, 'dev_logs', []);
     
@@ -2749,15 +2777,19 @@ async function runAutonomousDevelopment(env) {
     // Generate multiple components to maintain continuous flow
     const componentsToGenerate = Math.min(COMPONENTS_PER_CRON, BLOCKCHAIN_COMPONENTS - currentProgress);
     
+    let actualGenerated = 0;
     for (let i = 0; i < componentsToGenerate; i++) {
-      await generateNextComponent(env);
+      const result = await generateNextComponent(env);
+      if (!result.rateLimited) {
+        actualGenerated++;
+      }
       // Small delay between components for realistic timing
       if (i < componentsToGenerate - 1) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
     
-    console.log(`✅ Generated ${componentsToGenerate} components. Progress: ${currentProgress + componentsToGenerate}/${BLOCKCHAIN_COMPONENTS}`);
+    console.log(`✅ Generated ${actualGenerated}/${componentsToGenerate} components (some may have been rate limited). Progress: ${currentProgress + actualGenerated}/${BLOCKCHAIN_COMPONENTS}`);
   } catch (error) {
     console.error('Autonomous development error:', error);
   }
