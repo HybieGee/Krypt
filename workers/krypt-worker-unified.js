@@ -821,16 +821,17 @@ async function generateNextComponent(env) {
     
     // 6. Final completion with code snippet
     const shortCodeSnippet = generateShortCodeSnippet(componentName);
+    const actualLineCount = codeSnippet.split('\n').length;
     developmentLogs.push({
       id: `comp-${currentProgress}-${baseTime}`,
       ts: baseTime,
       level: 'system',
-      msg: `✅ ${componentName} component developed (${linesAdded} lines coded)`,
+      msg: `✅ ${componentName} component developed (${actualLineCount} lines coded)`,
       details: {
         component: componentName,
         progress: currentProgress + 1,
         totalComponents: 4500,
-        linesAdded,
+        linesAdded: actualLineCount, // Use actual line count
         commitHash,
         snippet: shortCodeSnippet, // For terminal display
         code: codeSnippet // Full code for development logs
@@ -988,46 +989,188 @@ function generateCodeSnippet(componentName) {
     `export class ${componentName} {
   private readonly version = '1.0.0'
   private state: BlockchainState
+  private config: ChainConfig
+  private isInitialized: boolean = false
+  private eventHandlers: Map<string, Function[]> = new Map()
+  private metrics: ComponentMetrics
   
   constructor(config: ChainConfig) {
+    this.config = config
     this.state = new BlockchainState(config)
+    this.metrics = new ComponentMetrics(componentName)
     this.initialize()
   }
   
-  async initialize() {
-    console.log('Initializing ${componentName}...')
-    // Implementation here
+  async initialize(): Promise<void> {
+    try {
+      console.log(\`Initializing \${componentName}...\`)
+      await this.validateConfiguration()
+      await this.setupEventHandlers()
+      await this.initializeConnections()
+      this.isInitialized = true
+      this.metrics.recordInitialization()
+      console.log(\`\${componentName} initialized successfully\`)
+    } catch (error) {
+      console.error(\`Failed to initialize \${componentName}:\`, error)
+      throw new InitializationError(\`\${componentName} startup failed\`)
+    }
   }
-}`,
-    `const ${componentName} = {
-  async process(data: any): Promise<ProcessedData> {
-    const result = await this.validate(data)
-    return this.transform(result)
-  },
   
-  validate(data: any): boolean {
-    return data !== null && typeof data === 'object'
-  },
-  
-  transform(data: any): ProcessedData {
-    return { ...data, processed: true, timestamp: Date.now() }
+  private async validateConfiguration(): Promise<void> {
+    if (!this.config.network) {
+      throw new ConfigurationError('Network configuration required')
+    }
+    if (!this.config.security) {
+      throw new ConfigurationError('Security configuration required')
+    }
   }
-}`,
-    `interface I${componentName} {
-  id: string
-  createdAt: number
-  updatedAt: number
+  
+  private async setupEventHandlers(): Promise<void> {
+    this.on('data', this.handleDataEvent.bind(this))
+    this.on('error', this.handleErrorEvent.bind(this))
+    this.on('shutdown', this.handleShutdownEvent.bind(this))
+  }
+  
+  private async initializeConnections(): Promise<void> {
+    await this.state.connect()
+    await this.establishPeerConnections()
+  }
+  
+  public on(event: string, handler: Function): void {
+    if (!this.eventHandlers.has(event)) {
+      this.eventHandlers.set(event, [])
+    }
+    this.eventHandlers.get(event)!.push(handler)
+  }
+  
+  public emit(event: string, data?: any): void {
+    const handlers = this.eventHandlers.get(event) || []
+    handlers.forEach(handler => handler(data))
+  }
+  
+  private handleDataEvent(data: any): void {
+    this.metrics.recordDataProcessed(data.size || 0)
+  }
+  
+  private handleErrorEvent(error: Error): void {
+    this.metrics.recordError(error)
+    console.error(\`\${componentName} error:\`, error)
+  }
+  
+  private handleShutdownEvent(): void {
+    this.cleanup()
+  }
+  
+  public async process(data: any): Promise<ProcessedData> {
+    if (!this.isInitialized) {
+      throw new Error(\`\${componentName} not initialized\`)
+    }
+    
+    try {
+      const startTime = Date.now()
+      const validated = await this.validate(data)
+      const processed = await this.transform(validated)
+      const endTime = Date.now()
+      
+      this.metrics.recordProcessingTime(endTime - startTime)
+      return processed
+    } catch (error) {
+      this.emit('error', error)
+      throw error
+    }
+  }
+  
+  private async validate(data: any): Promise<any> {
+    if (!data || typeof data !== 'object') {
+      throw new ValidationError('Invalid data format')
+    }
+    return data
+  }
+  
+  private async transform(data: any): Promise<ProcessedData> {
+    return {
+      ...data,
+      processed: true,
+      timestamp: Date.now(),
+      component: componentName,
+      version: this.version
+    }
+  }
+  
+  private async establishPeerConnections(): Promise<void> {
+    // Establish connections to peer nodes
+    const peers = this.config.peers || []
+    for (const peer of peers) {
+      await this.connectToPeer(peer)
+    }
+  }
+  
+  private async connectToPeer(peer: PeerConfig): Promise<void> {
+    console.log(\`Connecting to peer: \${peer.address}\`)
+    // Connection logic here
+  }
+  
+  public getMetrics(): ComponentMetrics {
+    return this.metrics
+  }
+  
+  public getStatus(): ComponentStatus {
+    return {
+      initialized: this.isInitialized,
+      version: this.version,
+      uptime: Date.now() - this.metrics.startTime,
+      errors: this.metrics.errorCount
+    }
+  }
+  
+  private cleanup(): void {
+    this.eventHandlers.clear()
+    this.state.disconnect()
+    console.log(\`\${componentName} cleaned up\`)
+  }
 }
 
-class ${componentName}Implementation implements I${componentName} {
-  constructor(
-    public readonly id: string,
-    public readonly createdAt: number = Date.now(),
-    public updatedAt: number = Date.now()
-  ) {}
-  
-  update(): void {
-    this.updatedAt = Date.now()
+interface ComponentMetrics {
+  startTime: number
+  errorCount: number
+  recordInitialization(): void
+  recordDataProcessed(size: number): void
+  recordError(error: Error): void
+  recordProcessingTime(time: number): void
+}
+
+interface ProcessedData {
+  processed: boolean
+  timestamp: number
+  component: string
+  version: string
+}
+
+interface ComponentStatus {
+  initialized: boolean
+  version: string
+  uptime: number
+  errors: number
+}
+
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
+class InitializationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InitializationError'
+  }
+}
+
+class ConfigurationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ConfigurationError'
   }
 }`
   ];
