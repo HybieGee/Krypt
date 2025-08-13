@@ -121,7 +121,9 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
         scrollbarColor: '#00ff41 #1a1a1a',
         minHeight: '100%',
         contain: 'layout style',
-        willChange: 'scroll-position'
+        willChange: 'scroll-position',
+        display: 'flex',
+        flexDirection: 'column-reverse'
       }}
       onScroll={checkScrollPosition}
     >
