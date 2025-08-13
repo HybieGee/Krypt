@@ -2618,15 +2618,46 @@ async function handleAdminSetCount(request, env) {
 
 async function handleAdminClearVisitors(env) {
   try {
-    const result = await env.EARLY_ACCESS.list();
-    await Promise.all(result.keys.map(key => env.EARLY_ACCESS.delete(key.name)));
+    console.log('🚨 NUCLEAR RESET: Starting complete data wipe...');
     
-    return new Response(JSON.stringify({ success: true }), { headers: JSON_HEADERS });
+    // 1. Clear EARLY_ACCESS namespace (visitor tracking)
+    console.log('Clearing EARLY_ACCESS namespace...');
+    const earlyAccessResult = await env.EARLY_ACCESS.list();
+    await Promise.all(earlyAccessResult.keys.map(key => env.EARLY_ACCESS.delete(key.name)));
+    
+    // 2. Clear ALL KRYPT_DATA entries (development progress, logs, user data, etc.)
+    console.log('Clearing KRYPT_DATA namespace...');
+    const kryptDataResult = await env.KRYPT_DATA.list();
+    await Promise.all(kryptDataResult.keys.map(key => env.KRYPT_DATA.delete(key.name)));
+    
+    // 3. Re-initialize basic system data
+    console.log('Re-initializing basic system data...');
+    await kvPutJSON(env, 'dev_progress', 0);
+    await kvPutJSON(env, 'dev_logs', []);
+    await kvPutJSON(env, 'dev_code', []);
+    await kvPutJSON(env, 'early_access_count', 0);
+    await kvPutJSON(env, 'total_users', 0);
+    await kvPutJSON(env, 'total_lines_of_code', 0);
+    await kvPutJSON(env, 'total_commits', 0);
+    await kvPutJSON(env, 'total_tests_run', 0);
+    await kvPutJSON(env, 'last_component_gen_time', 0);
+    
+    console.log('✅ NUCLEAR RESET COMPLETE: All data wiped and reset');
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Nuclear reset complete - all user data cleared',
+      timestamp: new Date().toISOString(),
+      clearedItems: {
+        earlyAccess: earlyAccessResult.keys.length,
+        kryptData: kryptDataResult.keys.length
+      }
+    }), { headers: JSON_HEADERS });
   } catch (error) {
-    console.error('Admin clear visitors error:', error);
+    console.error('Nuclear reset error:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: 'Failed to clear visitors' 
+      error: 'Nuclear reset failed: ' + error.message 
     }), { status: 500, headers: JSON_HEADERS });
   }
 }
