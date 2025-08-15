@@ -105,7 +105,7 @@ export class GitHubService {
 
     return {
       id: `github-${commit.sha}`,
-      timestamp: new Date(commit.commit.date),
+      timestamp: new Date(commit.commit.author.date),
       type: 'github' as const,
       message: `🔄 GitHub Commit: ${title}`,
       details: {
