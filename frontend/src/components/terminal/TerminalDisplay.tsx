@@ -150,6 +150,7 @@ export default function TerminalDisplay({ logs, shouldScrollToBottom = false }: 
               </span>
               <span className={`flex-1 ${
                 log.type === 'commit' ? 'text-red-400' :
+                log.type === 'github' ? 'text-purple-400' :
                 log.type === 'phase' ? 'text-blue-400' :
                 log.type === 'system' ? 'text-red-400' :
                 log.type === 'api' ? 'text-cyan-400' :

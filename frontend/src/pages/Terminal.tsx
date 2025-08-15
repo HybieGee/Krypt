@@ -3,9 +3,10 @@ import TerminalDisplay from '@/components/terminal/TerminalDisplay'
 import ChatInterface from '@/components/chat/ChatInterface'
 import ProgressBar from '@/components/terminal/ProgressBar'
 import { useStore } from '@/store/useStore'
+import { githubService } from '@/services/githubService'
 
 export default function Terminal() {
-  const { blockchainProgress, terminalLogs } = useStore()
+  const { blockchainProgress, terminalLogs, addTerminalLog } = useStore()
   const [activeTab, setActiveTab] = useState<'terminal' | 'logs'>('terminal')
   const [logFilter, setLogFilter] = useState<string>('all')
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true) // Start with true to auto-scroll on page load
@@ -86,6 +87,33 @@ export default function Terminal() {
       logsViewRef.current.scrollTop = logsViewRef.current.scrollHeight
     }
   }
+
+  // Poll GitHub for new commits
+  useEffect(() => {
+    // Initial fetch of recent commits
+    const fetchInitialCommits = async () => {
+      const commits = await githubService.fetchLatestCommits(5)
+      commits.forEach((commit, index) => {
+        setTimeout(() => {
+          const terminalLog = githubService.formatCommitForTerminal(commit)
+          addTerminalLog(terminalLog)
+        }, index * 500) // Stagger the initial commits
+      })
+    }
+
+    fetchInitialCommits()
+
+    // Poll for new commits every 30 seconds
+    const interval = setInterval(async () => {
+      const newCommit = await githubService.checkForNewCommits()
+      if (newCommit) {
+        const terminalLog = githubService.formatCommitForTerminal(newCommit)
+        addTerminalLog(terminalLog)
+      }
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Aggressive layout fix function
   const forceLayoutReset = () => {
@@ -213,11 +241,11 @@ export default function Terminal() {
                   ↓ Bottom
                 </button>
                 <a
-                  href="https://github.com/KryptAI/krypt-blockchain"
+                  href="https://github.com/KryptTerminal/KryptChain"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1 text-xs bg-terminal-green/20 border border-terminal-green/50 text-terminal-green hover:bg-terminal-green/30 transition-colors rounded flex items-center space-x-1 font-medium"
-                  title="View Krypt AI blockchain code repository"
+                  title="View Krypt's blockchain repository"
                 >
                   <span>📁</span>
                   <span>Code</span>
@@ -247,6 +275,7 @@ export default function Terminal() {
                       <option value="all">All Logs</option>
                       <option value="code">Code Generation</option>
                       <option value="commit">Commits</option>
+                      <option value="github">GitHub Activity</option>
                       <option value="api">API Requests</option>
                       <option value="system">System</option>
                       <option value="test">Tests</option>
