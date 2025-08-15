@@ -1592,8 +1592,8 @@ async function generateNextComponent(env) {
     const lastGenTime = await kvGetJSON(env, 'last_component_gen_time', 0);
     const timeSinceLastGen = Date.now() - lastGenTime;
     
-    // Don't generate if less than 40 seconds since last generation (full sequence takes ~35 seconds)
-    if (timeSinceLastGen < 40000) {
+    // Allow rapid generation for launch day - only prevent duplicates
+    if (timeSinceLastGen < 2000) { // 2 seconds minimum to prevent exact duplicates
       console.log(`⏸️ Rate limited: ${timeSinceLastGen}ms since last generation`);
       return {
         componentName: getComponentName(currentProgress - 1),
@@ -3595,21 +3595,32 @@ export class TestComponent {
     };
 
     // Try to commit to GitHub
-    const commitSha = await commitCodeToGitHub(testLog, env);
-    
-    if (commitSha) {
-      return new Response(JSON.stringify({ 
-        success: true,
-        message: 'Successfully committed to GitHub!',
-        sha: commitSha,
-        url: `https://github.com/KryptTerminal/KryptChain/commit/${commitSha}`
-      }), { 
-        headers: JSON_HEADERS 
-      });
-    } else {
+    try {
+      const commitSha = await commitCodeToGitHub(testLog, env);
+      
+      if (commitSha) {
+        return new Response(JSON.stringify({ 
+          success: true,
+          message: 'Successfully committed to GitHub!',
+          sha: commitSha,
+          url: `https://github.com/KryptTerminal/KryptChain/commit/${commitSha}`
+        }), { 
+          headers: JSON_HEADERS 
+        });
+      } else {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Failed to commit to GitHub - commitCodeToGitHub returned null'
+        }), { 
+          status: 500,
+          headers: JSON_HEADERS 
+        });
+      }
+    } catch (commitError) {
+      console.error('Commit error in test:', commitError);
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Failed to commit to GitHub - check logs'
+        error: `GitHub commit error: ${commitError.message}`
       }), { 
         status: 500,
         headers: JSON_HEADERS 
