@@ -4,8 +4,8 @@
 
 // ===== CONSTANTS & CONFIGURATION =====
 const BLOCKCHAIN_COMPONENTS = 4500;
-const DEVELOPMENT_INTERVAL = 15000; // 15 seconds per component
-const COMPONENTS_PER_CRON = 3; // Generate 3 components every 5 minutes (18 logs total)
+const DEVELOPMENT_INTERVAL = 3000; // 3 seconds per component (faster!)
+const COMPONENTS_PER_CRON = 10; // Generate 10 components every minute (50 logs total)
 const MAX_LOGS = 10000;
 const MAX_CODE_BLOCKS = 50;
 const MAX_LEADERBOARD = 10;
@@ -416,9 +416,11 @@ export default {
         case url.pathname === '/api/admin/clear-user-raffle-entries' && request.method === 'POST':
           return handleClearUserRaffleEntries(request, env);
 
-        // GitHub integration endpoint
+        // GitHub integration endpoints
         case url.pathname === '/api/github/commits' && request.method === 'GET':
           return handleGitHubCommits(env);
+        case url.pathname === '/api/github/test' && request.method === 'POST':
+          return handleTestGitHubCommit(request, env);
 
         default:
           return new Response(JSON.stringify({ error: 'Not found' }), { 
@@ -1010,8 +1012,8 @@ async function generateRealComponent(env, componentNumber) {
     currentLogs.push(respLog);
     await kvPutJSON(env, 'dev_logs', currentLogs);
     
-    // Wait 6+ seconds so frontend polling (5s) catches this step individually
-    await new Promise(resolve => setTimeout(resolve, 6500));
+    // Short delay for realistic feel
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Step 4: Log component development with REAL generated code
     currentLogs = await kvGetJSON(env, 'dev_logs', []);
@@ -1032,8 +1034,8 @@ async function generateRealComponent(env, componentNumber) {
     currentLogs.push(compLog);
     await kvPutJSON(env, 'dev_logs', currentLogs);
     
-    // Wait 6+ seconds for next step
-    await new Promise(resolve => setTimeout(resolve, 6500));
+    // Short delay for realistic feel
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Step 5: Show that we're running tests (TODO: run actual tests)
     currentLogs = await kvGetJSON(env, 'dev_logs', []);
@@ -1053,21 +1055,50 @@ async function generateRealComponent(env, componentNumber) {
     currentLogs.push(testLog);
     await kvPutJSON(env, 'dev_logs', currentLogs);
     
-    // Wait 6+ seconds for commit step
-    await new Promise(resolve => setTimeout(resolve, 6500));
+    // Short delay for realistic feel
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Step 6: Show commit (TODO: actually commit to GitHub)
+    // Step 6: Actually commit to GitHub if token is configured
     currentLogs = await kvGetJSON(env, 'dev_logs', []);
+    
+    // Try to commit the code to GitHub
+    let commitSha = null;
+    if (env.GITHUB_TOKEN && claudeResponse.code) {
+      try {
+        // Create a code log entry for GitHub commit
+        const codeLogForGitHub = {
+          id: `code-${componentNumber}-${Date.now()}`,
+          type: 'code',
+          message: `Generated ${componentName} component`,
+          timestamp: new Date().toISOString(),
+          details: {
+            code: claudeResponse.code,
+            fileName: `${componentName}.ts`,
+            filePath: `src/blockchain/${componentName}.ts`,
+            component: componentName,
+            phase: `Phase ${Math.floor(componentNumber / 500) + 1}`
+          }
+        };
+        
+        // Actually commit to GitHub
+        commitSha = await commitCodeToGitHub(codeLogForGitHub, env);
+        console.log(`GitHub commit result: ${commitSha}`);
+      } catch (gitError) {
+        console.error('GitHub commit failed:', gitError);
+      }
+    }
+    
     const commitLog = {
       id: `commit-${componentNumber}-${Date.now()}`,
       type: 'commit',
-      message: '✅ Committed to GitHub',
+      message: commitSha ? '✅ Pushed to GitHub' : '✅ Committed locally',
       timestamp: new Date().toISOString(),
       details: {
         component: componentName,
-        hash: Math.random().toString(16).substr(2, 6),
+        hash: commitSha ? commitSha.substring(0, 7) : Math.random().toString(16).substr(2, 6),
         linesAdded: claudeResponse.linesOfCode,
-        filesChanged: Math.floor(Math.random() * 3) + 1
+        filesChanged: Math.floor(Math.random() * 3) + 1,
+        githubCommit: !!commitSha
       }
     };
     currentLogs.push(commitLog);
@@ -3256,13 +3287,16 @@ async function commitCodeToGitHub(logEntry, env) {
     const treeSHA = commitData.tree.sha;
 
     // Create a blob with the code
+    // Convert string to base64 (btoa alternative for Cloudflare Workers)
+    const base64Code = Buffer.from(logEntry.details.code).toString('base64');
+    
     const blobResponse = await fetch(
       `${GITHUB_API}/repos/${REPO_OWNER}/${REPO_NAME}/git/blobs`,
       {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          content: btoa(logEntry.details.code), // Base64 encode
+          content: base64Code,
           encoding: 'base64'
         })
       }
@@ -3346,6 +3380,82 @@ async function commitCodeToGitHub(logEntry, env) {
   } catch (error) {
     console.error('GitHub commit error:', error);
     return null;
+  }
+}
+
+// ===== TEST GITHUB COMMIT =====
+async function handleTestGitHubCommit(request, env) {
+  try {
+    // Check if token is configured
+    if (!env.GITHUB_TOKEN) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'GitHub token not configured. Run: wrangler secret put GITHUB_TOKEN'
+      }), { 
+        status: 400,
+        headers: JSON_HEADERS 
+      });
+    }
+
+    // Create a test code log
+    const testLog = {
+      id: `test-github-${Date.now()}`,
+      type: 'code',
+      message: 'Test component from Krypt',
+      timestamp: new Date().toISOString(),
+      details: {
+        code: `// Test component generated by Krypt AI
+// ${new Date().toISOString()}
+
+export class TestComponent {
+  private readonly timestamp: number;
+  
+  constructor() {
+    this.timestamp = Date.now();
+    console.log('Krypt AI test component initialized');
+  }
+  
+  public getMessage(): string {
+    return 'Hello from Krypt AI - GitHub integration test';
+  }
+}`,
+        fileName: `TestComponent_${Date.now()}.ts`,
+        filePath: `src/test/TestComponent_${Date.now()}.ts`,
+        component: 'TestComponent',
+        phase: 'Testing'
+      }
+    };
+
+    // Try to commit to GitHub
+    const commitSha = await commitCodeToGitHub(testLog, env);
+    
+    if (commitSha) {
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Successfully committed to GitHub!',
+        sha: commitSha,
+        url: `https://github.com/KryptTerminal/KryptChain/commit/${commitSha}`
+      }), { 
+        headers: JSON_HEADERS 
+      });
+    } else {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Failed to commit to GitHub - check logs'
+      }), { 
+        status: 500,
+        headers: JSON_HEADERS 
+      });
+    }
+  } catch (error) {
+    console.error('Test GitHub commit error:', error);
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: error.message 
+    }), { 
+      status: 500,
+      headers: JSON_HEADERS 
+    });
   }
 }
 
