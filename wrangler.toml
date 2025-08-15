@@ -13,9 +13,9 @@ binding = "EARLY_ACCESS"
 id = "b465f2964e3d4fb2ad7cd164dee8a343"
 preview_id = "b465f2964e3d4fb2ad7cd164dee8a343"
 
-# Scheduled triggers for autonomous development - REAL DATA GENERATION
+# Scheduled triggers for autonomous development - EVERY MINUTE WITH STAGGERED LOGS
 [triggers]
-crons = ["* * * * *"]  # Every minute but with faster processing
+crons = ["* * * * *"]  # Every minute, but logs appear every 12 seconds
 
 # Durable Objects for real-time chat
 [[durable_objects.bindings]]
