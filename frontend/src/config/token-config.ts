@@ -15,7 +15,7 @@ export const tokenConfig = {
   chainName: 'Ethereum',
   
   // Display Settings
-  showContractAddress: false, // Set to true when token launches
+  showContractAddress: True, // Set to true when token launches
   explorerUrl: 'https://etherscan.io/token/', // Will append contract address
   
   // Launch Date (for countdown)
