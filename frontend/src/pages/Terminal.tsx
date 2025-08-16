@@ -90,15 +90,31 @@ export default function Terminal() {
 
   // Poll GitHub for new commits
   useEffect(() => {
-    // Initial fetch of recent commits
+    // Initial fetch of recent commits - but only if no recent nuclear reset
     const fetchInitialCommits = async () => {
-      const commits = await githubService.fetchLatestCommits(5)
-      commits.forEach((commit, index) => {
-        setTimeout(() => {
-          const terminalLog = githubService.formatCommitForTerminal(commit)
-          addTerminalLog(terminalLog)
-        }, index * 500) // Stagger the initial commits
-      })
+      try {
+        // Check when the last nuclear reset happened
+        const resetResponse = await fetch('https://kryptterminal.com/api/stats')
+        const stats = await resetResponse.json()
+        
+        // If nuclear reset was less than 1 hour ago, don't load old commits
+        const now = Date.now()
+        const oneHourAgo = now - (60 * 60 * 1000)
+        const lastActivity = stats.lastActivity ? new Date(stats.lastActivity).getTime() : 0
+        
+        // Only fetch initial commits if there's been recent activity or it's been a while since reset
+        if (lastActivity > oneHourAgo) {
+          const commits = await githubService.fetchLatestCommits(5)
+          commits.forEach((commit, index) => {
+            setTimeout(() => {
+              const terminalLog = githubService.formatCommitForTerminal(commit)
+              addTerminalLog(terminalLog)
+            }, index * 500) // Stagger the initial commits
+          })
+        }
+      } catch (error) {
+        console.log('Could not check reset status, skipping initial commit load')
+      }
     }
 
     fetchInitialCommits()
