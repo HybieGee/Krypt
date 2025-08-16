@@ -3,7 +3,7 @@
 
 export const tokenConfig = {
   // Contract Address - Update this when token is deployed
-  contractAddress: '', // Leave empty until launch, then add: '0x...'
+  contractAddress: 'FWo1Uf63592N6LwfngytUFaaM5n1ZYs1afi9cwmRpump', // Leave empty until launch, then add: '0x...'
   
   // Token Details
   tokenSymbol: 'KRYPT',
@@ -23,7 +23,7 @@ export const tokenConfig = {
   
   // DEX Links (update when available)
   dexLinks: {
-    pumpfun: '', // Pump.fun token URL - add this first
+    pumpfun: 'https://pump.fun/coin/FWo1Uf63592N6LwfngytUFaaM5n1ZYs1afi9cwmRpump', // Pump.fun token URL - add this first
     uniswap: '',
     sushiswap: '',
     pancakeswap: '',
