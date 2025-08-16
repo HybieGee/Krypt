@@ -20,31 +20,24 @@ export class GitHubService {
 
   async fetchLatestCommits(limit: number = 10): Promise<GitHubCommit[]> {
     try {
-      // Try direct GitHub API first
-      const response = await fetch(
-        `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/commits?per_page=${limit}`,
-        {
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-          }
-        }
-      )
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          console.log('Repository not found or is private, trying worker fallback')
-          // Try worker fallback
-          return this.fetchFromWorker()
-        }
-        throw new Error(`GitHub API error: ${response.status}`)
+      // Try GitHub API first for best reliability
+      const response = await fetch(`${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/commits?per_page=${limit}`)
+      
+      if (response.ok) {
+        const commits = await response.json()
+        return commits
       }
-
-      const commits = await response.json()
-      return commits
-    } catch (error) {
-      console.error('Error fetching GitHub commits, trying worker:', error)
-      // Fallback to worker API if CORS or other issues
+      
+      // Fallback to worker API
       return this.fetchFromWorker()
+    } catch (error) {
+      console.error('Error fetching GitHub commits:', error)
+      try {
+        return this.fetchFromWorker()
+      } catch (fallbackError) {
+        console.error('Worker fallback failed:', fallbackError)
+        return []
+      }
     }
   }
 

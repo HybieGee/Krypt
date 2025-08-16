@@ -7,8 +7,7 @@ export default function Tokenomics() {
   const [activeSection, setActiveSection] = useState('overview')
 
   const tokenDistribution = [
-    { label: 'Community Pool', amount: 920000000, percentage: 92, color: 'bg-terminal-green' },
-    { label: 'Community Rewards', amount: 50000000, percentage: 5, color: 'bg-cyan-400' },
+    { label: 'Community Pool', amount: 970000000, percentage: 97, color: 'bg-terminal-green' },
     { label: 'Development Fund', amount: 30000000, percentage: 3, color: 'bg-orange-400' }
   ]
 
@@ -284,11 +283,7 @@ export default function Tokenomics() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Community Pool:</span>
-                        <span className="text-white font-medium">92%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Community Rewards:</span>
-                        <span className="text-cyan-400 font-medium">5%</span>
+                        <span className="text-white font-medium">97%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Development Fund:</span>
@@ -329,19 +324,6 @@ export default function Tokenomics() {
                   </ul>
                 </div>
 
-                <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
-                  <h3 className="text-xl font-semibold text-terminal-green mb-3">Community Rewards Pool</h3>
-                  <p className="text-gray-300 mb-4">
-                    5% of tokens are reserved for rewarding active community members and contributors 
-                    to the Krypt ecosystem.
-                  </p>
-                  <ul className="text-sm text-gray-400 space-y-1">
-                    <li>• Development milestone celebrations</li>
-                    <li>• Community event participation</li>
-                    <li>• Bug reporting and valuable feedback</li>
-                    <li>• Content creation and promotion</li>
-                  </ul>
-                </div>
 
                 <div className="bg-black/50 p-6 rounded border border-terminal-green/10">
                   <h3 className="text-xl font-semibold text-terminal-green mb-3">Future Blockchain Benefits</h3>

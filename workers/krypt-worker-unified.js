@@ -17,7 +17,7 @@ const PHASE_INTERVAL_MS = 12_000; // 12 seconds per phase
 const PHASES = [
   { key: 'sending',  type: 'api',    mk: (c)=>({ message: 'Sending request to Krypt AI...', details: { component: c } }) },
   { key: 'received', type: 'api',    mk: (c, ctx)=>({ message: `✅ Krypt AI response received${ctx.responseTime ? ` (${ctx.responseTime}ms)` : ''}`, details: { component: c, tokensUsed: ctx.tokensUsed, responseTime: ctx.responseTime } }) },
-  { key: 'developed',type: 'system', mk: (c, ctx)=>({ message: `✅ Component developed (${ctx.linesOfCode || 0} lines coded)`, details: { component: c, progress: ctx.componentNumber, totalComponents: 4500, linesAdded: ctx.linesOfCode || 0, fileName: `${c}.ts`, filePath: `src/blockchain/${c}.ts` } }) },
+  { key: 'developed',type: 'system', mk: (c, ctx)=>({ message: `✅ Component developed (${ctx.linesOfCode || 0} lines coded)`, details: { component: c, progress: ctx.componentNumber, totalComponents: 4500, linesAdded: ctx.linesOfCode || 0, fileName: `${c}.ts`, filePath: `src/blockchain/${c}.ts`, code: ctx.code } }) },
   { key: 'tested',   type: 'test',   mk: (c, ctx)=>({ message: '✅ Tests passed', details: { component: c, testsRun: ctx.testsRun, passed: ctx.testsRun, failed: 0, coverage: ctx.coverage } }) },
   { key: 'committed',type: 'commit', mk: (c, ctx)=>({ message: ctx.githubOk ? '🔄 Pushed to GitHub' : '✅ Committed locally', details: { component: c, hash: (ctx.commitSha || ctx.randomHash || '').slice(0,7), linesAdded: ctx.linesOfCode || 0, filesChanged: ctx.filesChanged || 1, githubCommit: !!ctx.githubOk } }) },
 ];
@@ -71,10 +71,14 @@ async function kvPutJSON(env, key, value) {
 async function advancePhaseIfNeeded(env) {
   const phase = await kvGetJSON(env, 'dev_phase', null);
   const started = await kvGetJSON(env, 'dev_phase_started_at', null);
-  if (phase === null || started === null) return { changed: false };
+  const step = await kvGetJSON(env, 'dev_step', 'idle');
+  
+  // Only advance phases when we have an active phase clock
+  if (phase === null || started === null) {
+    return { changed: false };
+  }
 
   const elapsed = Date.now() - started;
-  const step = await kvGetJSON(env, 'dev_step', 'idle');
   const claude = await kvGetJSON(env, 'dev_claude_response', null);
 
   // Maximum phase allowed by real state:
@@ -96,7 +100,9 @@ async function advancePhaseIfNeeded(env) {
   const testsRun = Math.floor(Math.random() * 6) + 4;
   const coverage = `${Math.floor(Math.random() * 15) + 85}%`;
 
-  for (let next = phase + 1; next <= nextTarget; next++) {
+  // Advance only ONE phase at a time for proper 12-second intervals
+  const next = phase + 1;
+  if (next <= nextTarget) {
     const p = PHASES[next];
     const ctx = {
       componentNumber: compNo,
@@ -113,7 +119,7 @@ async function advancePhaseIfNeeded(env) {
       let commitSha = null;
       if (env.GITHUB_TOKEN && claude?.response?.code) {
         try {
-          const result = await commitCodeToGitHub(env, {
+          const logEntry = {
             type: 'code',
             message: `feat: Add ${component} component`,
             details: {
@@ -122,8 +128,9 @@ async function advancePhaseIfNeeded(env) {
               filePath: `src/blockchain/${component}.ts`,
               component
             }
-          });
-          commitSha = result?.sha || null;
+          };
+          const result = await commitCodeToGitHub(logEntry, env);
+          commitSha = result || null;
         } catch (_) {}
       }
       ctx.githubOk = !!commitSha;
@@ -156,8 +163,9 @@ async function advancePhaseIfNeeded(env) {
     }
 
     await kvPutJSON(env, 'dev_phase', next);
+    return { changed: true };
   }
-  return { changed: true };
+  return { changed: false };
 }
 
 // ===== VISITOR DEDUPLICATION =====
@@ -427,6 +435,8 @@ export default {
           return handleKryptProgressUpdate(request, env);
         case url.pathname === '/api/krypt/autonomous/start' && request.method === 'POST':
           return handleStartAutonomousDevelopment(request, env);
+        case url.pathname === '/api/manual-trigger' && request.method === 'POST':
+          return handleManualTrigger(request, env);
 
         // Development Code endpoints
         case url.pathname === '/api/dev/code' && request.method === 'GET':
@@ -559,6 +569,9 @@ export default {
       
       // Run step-based development progression
       await runStepBasedDevelopment(env);
+      
+      // Also advance phases for any active components (backup mechanism)
+      await advancePhaseIfNeeded(env);
       
       // Keep milestone and raffle checks for real user interactions
       await checkAndTriggerMilestones(env);
@@ -1072,6 +1085,43 @@ async function handleStartAutonomousDevelopment(request, env) {
   }
 }
 
+// Manual trigger to test scheduled logic
+async function handleManualTrigger(request, env) {
+  try {
+    const { adminKey } = await request.json();
+    
+    if (adminKey !== 'krypt_master_reset_2024') {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid admin key' 
+      }), { status: 401, headers: JSON_HEADERS });
+    }
+    
+    console.log('🔧 Manual trigger: Testing step-based development');
+    
+    // Run the exact same logic as scheduled handler
+    await runStepBasedDevelopment(env);
+    
+    const currentStep = await kvGetJSON(env, 'dev_step', 'idle');
+    const currentProgress = await kvGetJSON(env, 'dev_progress', 0);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Manual trigger executed',
+      currentStep,
+      currentProgress,
+      timestamp: new Date().toISOString()
+    }), { headers: JSON_HEADERS });
+    
+  } catch (error) {
+    console.error('Manual trigger error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), { status: 500, headers: JSON_HEADERS });
+  }
+}
+
 // Generate ACTUAL component using REAL Claude AI API calls
 async function generateRealComponent(env, componentNumber) {
   const componentNames = [
@@ -1220,6 +1270,37 @@ async function runStepBasedDevelopment(env) {
       await runComponentTests(env, componentNumber);
     } else if (currentStep === 'tested') {
       await commitComponent(env, componentNumber);
+    } else if (currentStep === 'committed') {
+      // Check if all 5 phases have been displayed (phase 4 completed)
+      const currentPhase = await kvGetJSON(env, 'dev_phase', null);
+      const phaseStarted = await kvGetJSON(env, 'dev_phase_started_at', null);
+      
+      if (currentPhase !== null && phaseStarted !== null) {
+        const elapsed = Date.now() - phaseStarted;
+        const completedPhases = Math.min(4, Math.floor(elapsed / PHASE_INTERVAL_MS));
+        
+        // Only reset if all phases are complete OR more than 60 seconds have passed
+        if (completedPhases >= 4 || elapsed > 60000) {
+          // After all phases are shown, prepare for next component
+          await Promise.all([
+            kvPutJSON(env, 'dev_step', 'idle'),
+            kvPutJSON(env, 'dev_progress', componentNumber),
+            // Reset phase state after completion to prevent re-emission
+            kvPutJSON(env, 'dev_phase', null),
+            kvPutJSON(env, 'dev_phase_started_at', null)
+          ]);
+          console.log(`✅ Component ${componentNumber} completed, ready for next`);
+        } else {
+          console.log(`⏳ Waiting for phases to complete (${completedPhases}/4 shown)`);
+        }
+      } else {
+        // No active phase clock, proceed to next component
+        await Promise.all([
+          kvPutJSON(env, 'dev_step', 'idle'),
+          kvPutJSON(env, 'dev_progress', componentNumber)
+        ]);
+        console.log(`✅ Component ${componentNumber} completed, ready for next`);
+      }
     }
     
   } catch (error) {
@@ -1275,6 +1356,17 @@ async function startComponentGeneration(env, componentNumber) {
       response: claudeResponse,
       responseTime
     });
+    
+    // Add code block for display
+    if (claudeResponse.code) {
+      const codeBlocks = await kvGetJSON(env, 'dev_code', []);
+      codeBlocks.push(claudeResponse.code);
+      if (codeBlocks.length > MAX_CODE_BLOCKS) {
+        codeBlocks.splice(0, codeBlocks.length - MAX_CODE_BLOCKS);
+      }
+      await kvPutJSON(env, 'dev_code', codeBlocks);
+    }
+    
     await kvPutJSON(env, 'dev_step', 'received');
     
     console.log(`✅ Claude API response received for ${componentName} in ${responseTime}ms`);
@@ -1311,8 +1403,15 @@ async function commitComponent(env, componentNumber) {
 
 async function handleLogsStream(env) {
   return createSSEStream(env, async (env) => {
-    // E) Call the helper inside the SSE stream handler
-    try { await advancePhaseIfNeeded(env); } catch (_) {}
+    // E) Call the helper inside the SSE stream handler every 3 seconds
+    try { 
+      const result = await advancePhaseIfNeeded(env); 
+      if (result.changed) {
+        console.log('📡 SSE: Phase advanced via stream');
+      }
+    } catch (e) {
+      console.error('SSE phase advancement error:', e);
+    }
     
     const logs = await kvGetJSON(env, 'dev_logs', []);
     return { logs: logs.slice(-20) };

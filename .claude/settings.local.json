@@ -40,7 +40,8 @@
       "Bash(npx wrangler:*)",
       "Bash(for i in {1..3})",
       "Bash(done)",
-      "Bash(wrangler tail:*)"
+      "Bash(wrangler tail:*)",
+      "Bash(for i in {1..5})"
     ],
     "deny": []
   }
